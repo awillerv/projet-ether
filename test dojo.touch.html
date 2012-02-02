@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+    <title>Test Dojo</title>
+	<script src="http://ajax.googleapis.com/ajax/libs/dojo/1.7.1/dojo/dojo.js" data-dojo-config="parseOnLoad: true, isDebug: true"></script>
+	<script>
+		dojo.require("dojo.touch");
+		dojo.require("dojox.gesture.tap");
+		
+        dojo.ready(function() {
+			dojo.connect(dojo.byId('press'), dojo.touch.press, function(event) { alert('touch press at '+event.pageX+', '+event.pageY); });
+			dojo.connect(dojo.byId('move'), dojo.touch.move, function(event) { alert('touch move at '+event.pageX+', '+event.pageY); });
+			dojo.connect(dojo.byId('release'), dojo.touch.release, function(event) { alert('touch release at '+event.pageX+', '+event.pageY); });
+			dojo.connect(dojo.byId('tap'), dojox.gesture.tap, function(event) { console.log(event); alert('gesture tap'); });
+			dojo.connect(dojo.byId('doubletap'), dojox.gesture.tap.doubletap, function(event) { alert('gesture double tap'); });
+			dojo.connect(dojo.byId('hold'), dojox.gesture.tap.hold, function(event) { alert('gesture tap hold'); });
+        });
+    </script>
+</head>
+<body>
+	<div id="press" style="margin:10px; width:100px; height:100px; background-color: lightgrey;">Prend en compte "touch press"</div>
+	<div id="move" style="margin:10px; width:100px; height:100px; background-color: lightgrey;">Prend en compte "touch move"</div>
+	<div id="release" style="margin:10px; width:100px; height:100px; background-color: lightgrey;">Prend en compte "touch release"</div>
+	<div id="tap" style="margin:10px; width:100px; height:100px; background-color: lightgrey;">Prend en compte "gesture tap"</div>
+	<div id="doubletap" style="margin:10px; width:100px; height:100px; background-color: lightgrey;">Prend en compte "gesture double tap"</div>
+	<div id="hold" style="margin:10px; width:100px; height:100px; background-color: lightgrey;">Prend en compte "gesture tap hold"</div>
+</body>
+</html>
