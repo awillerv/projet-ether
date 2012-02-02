@@ -1,0 +1,38 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xml:lang="fr">
+  <head>
+    <title>Node Test</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.js"></script>
+    <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript" src="/js/functions.js"></script>
+    <link rel="stylesheet" type="text/css" href="/css/style.css" />
+  </head>
+
+  <body>
+    <form>
+      <h1>Welcome to our mini-messenger service !</h1>
+      <h2>You are identified as user n°<span id="user_id"></span></h2>
+      <h3>Type in a message..</h3>
+      <input id="msg" type="text"/>
+      <p id="msg_error">Error : the message field above is empty !</p>
+      <br/>
+      <h3>..to a friend (select his user id number)</h3>
+      <br/>
+      <label for="user_ids_left">Who is at your left?</label>
+      <select id="user_ids_left" name="user_ids_left">
+      </select>
+      <label for="user_ids_right">Who is at your right?</label>
+      <select id="user_ids_right" name="user_ids_right">
+      </select>
+      <p id="send_left_error">Error : nobody is at your left !</p>
+      <p id="send_right_error">Error : nobody is at your right !</p>
+      <br/>
+      <input id="send_left" type="button" value="send to the friend at your left"/>
+      <input id="send_right" type="button" value="send to the friend at your right"/>
+    </form>
+    <br/>
+    <div id="rcv_msg"></div>
+  </body>
+
+</html>
