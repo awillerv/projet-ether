@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+    <title>ETHER</title>
+	<link rel="stylesheet" href="dojo-release-1.7.1/dijit/themes/claro/claro.css">
+	<style>
+		body {
+			margin: 0px;
+			padding: 0px;
+			font-family: arial;
+			overflow: hidden;
+		}
+		#chargement {
+			margin: 100px auto;
+			padding: 10px 30px;
+			text-align: center;
+		}
+		#chargement #progressbar {
+			width: 250px;
+			margin: auto;
+		}
+		#connexion {
+			text-align: center;
+		}
+		#connexion #tableauConnexion {
+			margin: auto;
+		}
+		#application {
+		
+		}
+	</style>
+	<script src="dojo-release-1.7.1/dojo/dojo.js" data-dojo-config="parseOnLoad: true, isDebug: true"></script>
+	<script>
+		require(["dojo/parser", "dojox/validate/web", "dijit/ProgressBar", "dijit/form/ValidationTextBox", "dijit/form/RadioButton", "dijit/form/Form", "dojo/domReady!"], function() {
+			changementPage("chargement", "connexion");
+		});
+		
+		function show(id) {
+			dojo.setStyle(dojo.byId(id), { display: "" });
+		}
+		
+		function hide(id) {
+			dojo.setStyle(dojo.byId(id), { display: "none" });
+		}
+		
+		function changementPage(anciennePage, nouvellePage) {
+			dojo.fadeOut({
+				node: anciennePage,
+				duration: 1000,
+				beforeBegin: function() {
+					dojo.setStyle(dojo.byId(nouvellePage), { display: "", opacity: "0", filter: "alpha(opacity=0)" });
+				},
+				onEnd: function() {
+					dojo.setStyle(dojo.byId(anciennePage), { display: "none" } );
+					dojo.fadeIn({ node: nouvellePage, duration: 1000 }).play();
+				}
+			}).play();
+		}
+		
+		function connexion(form) {
+			if(form.validate()) {
+				var valeursEntrees = dijit.byId('formulaireConnexion').get('value');
+				console.log(valeursEntrees);
+				changementPage("connexion", "application");
+			} else {
+				var valeursEntrees = dijit.byId('formulaireConnexion').get('value');
+				console.log(valeursEntrees);
+			}
+			return false;
+		}
+    </script>
+</head>
+<body class="claro">
+	<div id="chargement">
+		<div id="progressbar" data-dojo-type="dijit.ProgressBar" indeterminate="true"></div>
+		<p>Veuillez patienter, chargement en cours...</p>
+	</div>
+	<div id="connexion" style="display: none;">
+		<h1>Connexion à ETHER</h1>
+		<form id="formulaireConnexion" data-dojo-type="dijit.form.Form" method="post" onsubmit="return connexion(this);">
+			<table id="tableauConnexion" cellspacing="4">
+				<tr>
+					<td colspan="2"><input type="text" required="true" name="prenom" id="prenom" placeholder="Votre prénom" data-dojo-type="dijit.form.ValidationTextBox" missingMessage="Ce champ est obligatoire" /></td>
+				</tr>
+				<tr>
+					<td colspan="2"><input type="text" required="true" name="nom" id="nom" placeholder="Votre nom" data-dojo-type="dijit.form.ValidationTextBox" missingMessage="Ce champ est obligatoire" /></td>
+				</tr>
+				<tr>
+					<td>
+						<input type="radio" id="participant" name="estAnimateur" value="false" checked="checked" data-dojo-type="dijit.form.RadioButton" onclick="hide('champCache');" /> 
+						<label for="participant">Participant</label>
+					</td>
+					<td>
+						<input type="radio" id="animateur" name="estAnimateur" value="true" data-dojo-type="dijit.form.RadioButton" onclick="show('champCache');" />
+						<label for="animateur">Animateur</label>
+					</td>
+				</tr>
+				<tr id="champCache" style="display:none;">
+					<td colspan="2"><input type="password" name="motDePasse" id="motDePasse" placeholder="Mot de passe" data-dojo-type="dijit.form.TextBox"/></td>
+				</tr>
+			</table>
+			<input type="submit" value="Se connecter" label="Se connecter" id="boutonConnexion" data-dojo-type="dijit.form.Button" />
+		</form>
+	</div>
+	<div id="application" style="display: none;">
+		<p>IHM d'ETHER</p>
+	</div>
+</body>
+</html>
