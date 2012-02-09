@@ -1,0 +1,104 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xml:lang="fr">
+  <head>
+    <title>Node Test 3</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+    <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.js"></script>
+    <script type="text/javascript">
+      $(window).load(function(){
+        $('#nick_error').hide();
+        $('#msg_form').hide();
+        $('#chat').hide();
+        $('#loading').hide();
+
+        var socket = io.connect('http://localhost');
+
+        $('#nick_val').bind('click',function(){
+          var nick = $('#nick').val();
+          if(nick.length > 0){
+            socket.emit('set nickname', nick);
+            $('#loading').show();
+            console.log('nickname ok and sent to server');
+          }
+          else{
+            $('#nick_error').show();
+            console.log('incorrect nickname chosen');
+          }
+        });
+
+        socket.on('ready', function(){
+          $('#nick_form').hide();
+          $('#chat').show();
+          $('#msg_form').show();
+          $('#msg_error').hide();
+          $('#loading').hide();
+        });
+        
+        $('#bdc_msg_val').bind('click',function(){
+          var msg = $('#msg').val();
+          $('#msg').val('');
+          if(msg.length > 0){
+            socket.emit('bdc_msg', msg);
+            console.log('broadcasted message sent to server from user');
+          }
+          else{
+            $('#msg_error').show();
+            console.log('incorrect message typed');
+          }
+        });
+        
+        $('#self_msg_val').bind('click',function(){
+          var msg = $('#msg').val();
+          $('#msg').val('');
+          if(msg.length > 0){
+            socket.emit('self_msg', msg);
+            console.log('self message sent to server from user');
+          }
+          else{
+            $('#msg_error').show();
+            console.log('incorrect message typed');
+          }
+        });
+
+        $('#msg').bind('focus',function(){
+          $('#msg_error').hide();
+        });
+        
+        $('#nick').bind('focus',function(){
+          $('#nick_error').hide();
+        });
+
+        socket.on('pbl_msg', function(user_nick, user_msg){
+          $('#chat').append('<p>' + user_nick + ' : ' + user_msg + '</p>');
+        });
+        
+        socket.on('pvt_msg', function(user_nick, user_msg){
+          $('#chat').append('<p> (private) ' + user_nick + ' : ' + user_msg + '</p>');
+        });
+      });
+    </script>
+  </head>
+
+  <body>
+    <h1>Mini-Chat</h1>
+    <form id="nick_form">
+      <h3>Please Choose A Nickname</h3>
+      <input id="nick" type="text"/>
+      <input id="nick_val" type="button" value="ok"/>
+      <p id="nick_error">Error : Please enter a nickname before validating</p>
+      <p id="loading">Connecting to server...</p>
+    </form>
+    <div id="chat">
+      <h3>Welcome to the Mini-Chat !</h3>
+    </div>
+    <form id="msg_form">
+      <h3>Type in a message</h3>
+      <input id="msg" type="text"/>
+      <input id="bdc_msg_val" type="button" value="Send to everybody"/>
+      <input id="self_msg_val" type="button" value="Send to yourself"/>
+      <p id="msg_error">Error : Please enter a message before validating</p>
+    </form>
+  </body>
+
+</html>
