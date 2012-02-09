@@ -1,0 +1,72 @@
+<html>
+  <head>
+    <title>ETHER</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+    <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript" src="/js/jquery.js"></script>
+    <script type="text/javascript" src="/js/functions.js"></script>
+  </head>
+
+  <body>
+    <h1>Ether</h1>
+    <div id="identification">
+      <form id="identification_form">
+      
+        <h3>Veuillez remplir le formulaire pour vous connecter à Ether</h3>
+        
+        <label for="prenom">Prénom : </label><br/>
+        <input id="prenom" name="prenom" type="text"/><br/>
+        <p id="erreur_prenom">Veuillez entrer un prénom</p>
+        
+        <label for="nom">Nom : </label><br/>
+        <input id="nom" name="nom" type="text"/><br/>
+        <p id="erreur_nom">Veuillez entrer un nom</p>
+        
+        <label for="estAnimateur">Etes-vous un animateur : </label><br/>
+        <input id="estAnimateur" type="radio" name="estAnimateur" value="true"/>Oui
+        <input id="nestPasAnimateur" type="radio" name="estAnimateur" value="false" checked />Non<br/>
+        
+        <div id="mdp">
+          <label for="mdpEntre">Entrez le mot de passe pour les animateurs : </label><br/>
+          <input id="mdpEntre" name="mdpEntre" type="text"/><br/>
+          <p id="erreur_mdpEntre">Le mot de passe entré est erroné</p>
+        </div>
+          
+        <input id="identification_val" type="button" value="Envoyer"/>
+        
+        <p id="loading">Identification en cours...</p>
+        
+      </form>
+    </div>
+    <div id="application">
+    
+      <h3>liste des participants</h3>
+      
+      <select id="participants" name="participants">
+      </select>
+      
+      <form id="application_form">
+      
+        <label for="msg">Taper votre message : </label><br/>
+        <input id="msg" name="msg" type="text"/><br/>
+        <!--<a id="add_msg_input">Cliquer ici pour ajouter un champ de texte</a>-->
+        <p id="erreur_msg">Veuillez entrer un message</p>
+        
+        <input id="envoi" type="button" value="Envoyer à la personne sélectionnée dans la liste"/>
+        <input id="envoi_animateurs" type="button" value="Envoyer aux animateurs"/>
+        <input id="envoi_non_animateurs" type="button" value="Envoyer aux participants non animateurs"/>
+        <input id="envoi_tous" type="button" value="Envoyer à tous"/>
+        
+        <p id="msg_bien_recu">Le message que vous venez d'envoyer a été bien reçu</p>
+        
+      </form>
+      
+      <div id="reception">
+      
+        <h3>messages reçus</h3>  
+        
+      </div>
+    </div>
+  </body>
+
+</html>
