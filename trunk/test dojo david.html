@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+    <title>Test Dojo</title>
+	<script src="dojo-release-1.7.1/dojo/dojo.js" data-dojo-config="parseOnLoad: true, isDebug: true"></script>
+	<script>
+		dojo.require("dojo.touch");
+		dojo.require("dojox.gesture.tap");
+		dojo.require("ether.PostIt");
+		dojo.require("ether.cible");
+        dojo.ready(function() {
+			var cible = ether.cible("dropzone");
+			cible.onDrop = function(objet) {
+				console.log(objet);
+				objet.destroy();
+			};
+			//console.log(cible.contient(1764,225));
+			var test = ether.PostIt("moveable",{}, cible);	
+        });
+    </script>
+</head>
+<body>
+		<div id="moveable" style="margin: 10px; width: 100px; height: 100px; background-color: lightgrey;">Moveable</div>
+		<div id="dropzone" style="margin: 10px; width: 100px; height: 100px; background-color: lightgrey;">Drop zone</div>
+</body>
+</html>
