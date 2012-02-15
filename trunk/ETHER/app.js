@@ -31,24 +31,27 @@ function msg(type, id, contenu, participant){
   this.contenu = contenu;
 }
 
-function validation(participant, mdpEntre){
-  if(participant.estAnimateur){
-    if(mdpEntre != MDP){
-      return false;
-    }
-  }
-  return true;
+function trim(str){
+  return str.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
 }
 
 var participants = new Array();
 participants[TOUS] = new participant('tous', '', undefined, undefined);
-participants[ANIMATEURS] = new participants('animateurs', '', true, undefined);
-participants[NON_ANIMATEURS] = new participants('non animateurs', '', false, undefined);
+participants[ANIMATEURS] = new participant('animateurs', '', true, undefined);
+participants[NON_ANIMATEURS] = new participant('non animateurs', '', false, undefined);
 
 io.sockets.on('connection', function (socket) {
   console.log('nouvelle connexion : socket id = ' + socket.id);
   
   var maCle = 0;
+  function login_unique(participant){
+    for(i in participants){
+      if(participants[i].prenom == trim(participant.prenom) && participants[i].nom == trim(participant.nom)){
+        return false;
+      }
+    }
+    return true;
+  }
   
   socket.on('identification', function(participant, mdpEntre){
     var succes = true;
@@ -62,30 +65,47 @@ io.sockets.on('connection', function (socket) {
       succes = 'mdpEntre';
     }
     if(succes){
-      if(validation(participant, mdpEntre)){
-        participant.socketID = socket.id;
-        participants.push(participant);
-        maCle = participants.length - 1;
-        socket.emit('identification reussie', participants);
-        socket.broadcast.emit('connexion nouveau participant', participant);
-        console.log(
-          'identification reussie pour ' + participant.prenom + ' ' + participant.nom +
-          ' qui ' + ((participant.estAnimateur) ? 'est' : "n'est pas") +
-          ' animateur avec le socket id = ' + socket.id +
-          ' et dont la cle vaut ' + maCle
-        );      
+      if(login_unique(participant)){
+        if(!participant.estAnimateur || (participant.estAnimateur && trim(mdpEntre) == MDP)){
+          participant.socketID = socket.id;
+          participant.prenom = trim(participant.prenom);
+          participant.nom = trim(participant.nom);
+          participants.push(participant);
+          maCle = participants.length - 1;
+          socket.emit('identification reussie', participants);
+          socket.broadcast.emit('connexion nouveau participant', participant);
+          console.log(
+            'identification reussie pour ' + participant.prenom + ' ' + participant.nom +
+            ' qui ' + ((participant.estAnimateur) ? 'est' : "n'est pas") +
+            ' animateur avec le socket id = ' + socket.id +
+            ' et dont la cle vaut ' + maCle
+          );      
+        }
+        else{
+          socket.emit('identification echouee', 'faux mdpEntre');
+          console.log(
+            'identification erronee pour ' + participant.prenom + ' ' + participant.nom +
+            ' qui ' + ((participant.estAnimateur) ? 'est' : "n'est pas") +
+            ' animateur avec le socket id = ' + socket.id + ' cause = mauvais mot de passe'
+          );  
+        }
       }
       else{
-        socket.emit('identification echouee', 'faux mdpEntre');
+        socket.emit('identification echouee', 'login deja pris');
         console.log(
-          'identification erronee pour ' + participant.prenom + ' ' + participant.nom +
-          ' qui ' + ((participant.estAnimateur) ? 'est' : "n'est pas") +
-          ' animateur avec le socket id = ' + socket.id
-        );  
+            'identification erronee pour ' + participant.prenom + ' ' + participant.nom +
+            ' qui ' + ((participant.estAnimateur) ? 'est' : "n'est pas") +
+            ' animateur avec le socket id = ' + socket.id + ' cause = login deja pris'
+          ); 
       }
     }
     else{
       socket.emit('identification echouee', succes);
+      console.log(
+        'identification erronee pour ' + participant.prenom + ' ' + participant.nom +
+        ' qui ' + ((participant.estAnimateur) ? 'est' : "n'est pas") +
+        ' animateur avec le socket id = ' + socket.id + ' cause = ' + succes
+      ); 
     }
   });
   
