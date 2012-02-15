@@ -74,18 +74,37 @@ $(window).load(function(){
     }
   });
   
-  socket.on('identification echouee', function(){
-    $('#loading').hide();
-    $('#erreur_mdpEntre').show();
+  socket.on('identification echouee', function(msgErreur){
+    switch(msgErreur){
+      case 'faux mdpEntre':
+        $('#loading').hide();
+        $('#erreur_mdpEntre').show();
+        break;
+        
+      case 'prenom':
+        $('#erreur_prenom').show();
+        break;
+      
+      case 'nom':
+        $('#erreur_nom').show();
+        break;
+      
+      case 'mdpEntre':
+        $('#erreur_mdpEntre').show();
+        break;
+    }
   });
   
   var participants = new Array();
+  participants[TOUS] = new participant('tous', '', undefined, undefined);
+  participants[ANIMATEURS] = new participants('animateurs', '', true, undefined);
+  participants[NON_ANIMATEURS] = new participants('non animateurs', '', false, undefined);
   
   socket.on('identification reussie', function(liste_participants){
     $('#identification').hide();
     $('#application').show();
     $('#erreur_msg').hide();
-    $('#msg_bien_recu').hide();
+    $('#msg_bien_envoye').hide();
     participants = liste_participants;
     maCle = participants.length - 1;
     majParticipants();
@@ -147,6 +166,25 @@ $(window).load(function(){
     envoi($('#msg').val(), NON_ANIMATEURS);
   });
   
+  socket.on('envoi reussi', function(){
+    console.log(
+      "envoi du message " + id_message + " à destination de " +
+      participants[cle_destinataire].prenom + ' ' + participants[cle_destinataire].nom +
+      " réussi"
+    );
+    $('#msg_bien_envoye').text("Le message " + id_message + " a bien été envoyé");
+    $('#msg_bien_envoye').show();
+  }
+  
+  socket.on('envoi echoue', function(id_message, cle_destinataire){
+    console.log(
+      "envoi du message " + id_message + " à destination de " +
+      participants[cle_destinataire].prenom + ' ' + participants[cle_destinataire].nom +
+      " échoué"
+    );
+    $('#erreur_msg').show();
+  });
+  
   socket.on('reception', function(m, cle_emetteur){
     var p = participants[cle_emetteur];
     $('#reception').append(
@@ -156,16 +194,17 @@ $(window).load(function(){
       '(cle = ' + cle +
       ') : ' + m.contenu +'</p>'
     );
-    socket.emit('reception client',m, cle_emetteur, true);
+    socket.emit('reception client',m.id, cle_emetteur, true);
   });
   
-  socket.on('reception serveur', function(m, cle_destinataire, succes){
-    if(succes){
-      $('#msg_bien_recu').show();
-    }
+  /*
+  socket.on('reception serveur', function(id_message, cle_destinataire, succes){
+    $('#msg_bien_envoye').text("Le message " + id_message + " a bien été envoyé");
+    $('#msg_bien_envoye').show();
   });
+  */
   
   $('#msg').bind('focus',function(){
-    $('#msg_bien_recu').hide();
+    $('#msg_bien_envoye').hide();
   });
 });
