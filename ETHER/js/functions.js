@@ -19,7 +19,8 @@ var TOUS = -1,
 $(window).load(function(){
   $('#application').hide();
   $('#erreur_prenom').hide();
-  $('#erreur_nom').hide();  
+  $('#erreur_nom').hide();
+  $('#erreur_login_deja_pris').hide(); 
   $('#mdp').hide();
   $('#loading').hide();
   
@@ -39,10 +40,12 @@ $(window).load(function(){
   
   $('#prenom').bind('focus',function(){
     $('#erreur_prenom').hide();
+    $('#erreur_login_deja_pris').hide();
   });
   
   $('#nom').bind('focus',function(){
     $('#erreur_nom').hide();
+    $('#erreur_login_deja_pris').hide();
   });
   
   $('#mdpEntre').bind('focus',function(){
@@ -92,13 +95,17 @@ $(window).load(function(){
       case 'mdpEntre':
         $('#erreur_mdpEntre').show();
         break;
+      
+      case 'login deja pris':
+        $('#erreur_login_deja_pris').show();
+        break;
     }
   });
   
   var participants = new Array();
   participants[TOUS] = new participant('tous', '', undefined, undefined);
-  participants[ANIMATEURS] = new participants('animateurs', '', true, undefined);
-  participants[NON_ANIMATEURS] = new participants('non animateurs', '', false, undefined);
+  participants[ANIMATEURS] = new participant('animateurs', '', true, undefined);
+  participants[NON_ANIMATEURS] = new participant('non animateurs', '', false, undefined);
   
   socket.on('identification reussie', function(liste_participants){
     $('#identification').hide();
@@ -166,7 +173,7 @@ $(window).load(function(){
     envoi($('#msg').val(), NON_ANIMATEURS);
   });
   
-  socket.on('envoi reussi', function(){
+  socket.on('envoi reussi', function(id_message, cle_destinataire){
     console.log(
       "envoi du message " + id_message + " à destination de " +
       participants[cle_destinataire].prenom + ' ' + participants[cle_destinataire].nom +
@@ -174,7 +181,7 @@ $(window).load(function(){
     );
     $('#msg_bien_envoye').text("Le message " + id_message + " a bien été envoyé");
     $('#msg_bien_envoye').show();
-  }
+  });
   
   socket.on('envoi echoue', function(id_message, cle_destinataire){
     console.log(
