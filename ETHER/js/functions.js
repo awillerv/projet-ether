@@ -6,7 +6,7 @@ function participant(prenom, nom, estAnimateur, socketID){
   this.socketID = socketID;
 }
 
-function msg(type, id, contenu, participant){
+function msg(type, id, contenu){
   this.type = type;
   this.id = id;
   this.contenu = contenu;
@@ -29,30 +29,30 @@ $(window).load(function(){
   
   var socket = io.connect('http://localhost');
   
-  $('#estAnimateur').bind('click',function(){
+  $('#estAnimateur').on('click',function(){
       $('#mdp').show();
       $('#erreur_mdpEntre').hide();
   });
       
-  $('#nestPasAnimateur').bind('click',function(){
+  $('#nestPasAnimateur').on('click',function(){
       $('#mdp').hide();
   });
   
-  $('#prenom').bind('focus',function(){
+  $('#prenom').on('focus',function(){
     $('#erreur_prenom').hide();
     $('#erreur_login_deja_pris').hide();
   });
   
-  $('#nom').bind('focus',function(){
+  $('#nom').on('focus',function(){
     $('#erreur_nom').hide();
     $('#erreur_login_deja_pris').hide();
   });
   
-  $('#mdpEntre').bind('focus',function(){
+  $('#mdpEntre').on('focus',function(){
     $('#erreur_mdpEntre').hide();
   });
   
-  $('#identification_val').bind('click',function(){
+  $('#identification_val').on('click',function(){
     moi.prenom = $('#prenom').val();
     moi.nom = $('#nom').val();
     moi.estAnimateur = (($('input[name=estAnimateur]:checked', '#identification_form').val() == 'true') ? true : false);
@@ -142,35 +142,54 @@ $(window).load(function(){
     }
   }
   
-  $('#msg').bind('focus',function(){
+  $('#add_msg_input').on('click',function(){
+    $('#inputs').append(
+      '<input name="input" type="text"/><br/>'
+    );
+  });
+  
+  $('#remove_msg_input').on('click',function(){
+    if($('input[name=input]').length>1){
+      $('input[name=input]').last().next().remove();
+      $('input[name=input]').last().remove();
+    }
+  });
+  
+  $('#msg').on('focus',function(){
     $('#erreur_msg').hide();
   });
   
-  function envoi(contenu, cle_destinataire){
-    if(contenu != '' && cle_destinataire != ''){
-      msg_id = Math.floor(Math.random()*1000001);
-      var m = new msg('text', msg_id, contenu);
-      socket.emit('envoi', m, cle_destinataire);
-    }
-    else{
-      $('#erreur_msg').show();
-    }
+  function envoi(cle_destinataire){
+    var msgs = new Array();
+    $('input[name=input]').each(function(i){
+      if($(this).val() != '' && cle_destinataire != ''){
+        msg_id = Math.floor(Math.random()*1000001);
+        var m = new msg('text', msg_id, $(this).val());
+        msgs.push(m);
+      }
+      else{
+        $('#erreur_msg').show();
+        return false;
+      }
+    });
+    socket.emit('envoi', msgs, cle_destinataire);
+    return true;
   }
   
-  $('#envoi').bind('click',function(){
-    envoi($('#msg').val(), $('#participants').val());
+  $('#envoi').on('click',function(){
+    envoi($('#participants').val());
   });
   
-  $('#envoi_animateurs').bind('click',function(){
-    envoi($('#msg').val(), ANIMATEURS);
+  $('#envoi_animateurs').on('click',function(){
+    envoi(ANIMATEURS);
   });
   
-  $('#envoi_tous').bind('click',function(){
-    envoi($('#msg').val(), TOUS);
+  $('#envoi_tous').on('click',function(){
+    envoi(TOUS);
   });
   
-  $('#envoi_non_animateurs').bind('click',function(){
-    envoi($('#msg').val(), NON_ANIMATEURS);
+  $('#envoi_non_animateurs').on('click',function(){
+    envoi(NON_ANIMATEURS);
   });
   
   socket.on('envoi reussi', function(id_message, cle_destinataire){
@@ -195,7 +214,7 @@ $(window).load(function(){
   socket.on('reception', function(m, cle_emetteur){
     var p = participants[cle_emetteur];
     $('#reception').append(
-      '<p>Message ' + m.id + ' de ' +
+      '<p id="' + m.id + '">Message ' + m.id + ' de ' +
       p.prenom + ' ' +
       p.nom + ((p.estAnimateur) ? ' (animateur) ' : ' ') +
       '(cle = ' + cle +
@@ -211,7 +230,7 @@ $(window).load(function(){
   });
   */
   
-  $('#msg').bind('focus',function(){
+  $('#msg').on('focus',function(){
     $('#msg_bien_envoye').hide();
   });
 });

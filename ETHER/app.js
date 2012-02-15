@@ -25,7 +25,7 @@ function participant(prenom, nom, estAnimateur, socketID){
   this.socketID = socketID;
 }
 
-function msg(type, id, contenu, participant){
+function msg(type, id, contenu){
   this.type = type;
   this.id = id;
   this.contenu = contenu;
@@ -114,51 +114,55 @@ io.sockets.on('connection', function (socket) {
     socket.broadcast.emit('deconnexion participant', maCle);
   });
   
-  socket.on('envoi', function(m, cle){
-    if(m.contenu != '' && cle != ''){
-      socket.emit('envoi reussi', m.id, cle);
-      switch(cle){
-        case TOUS:
-          socket.broadcast.emit('reception', m, maCle);
-          console.log(
-            "envoi d'un message " + m.id + " de contenu " + '"' + m.contenu +
-            '"' + " à tous de la part de " +
-            participants[maCle].prenom + ' ' + participants[maCle].nom
-          );
-          break;
-        
-        case ANIMATEURS:
-          for(i in  participants){
-            if(participants[i].estAnimateur && i != maCle){
-              io.sockets.socket(participants[i].socketID).emit('reception', m, maCle);
+  socket.on('envoi', function(msgs, cle){
+    var m = new msg('text', -1, '');
+    for(i in msgs){
+      m = msgs[i];
+      if(m.contenu != '' && cle != ''){
+        socket.emit('envoi reussi', m.id, cle);
+        switch(cle){
+          case TOUS:
+            socket.broadcast.emit('reception', m, maCle);
+            console.log(
+              "envoi d'un message " + m.id + " de contenu " + '"' + m.contenu +
+              '"' + " à tous de la part de " +
+              participants[maCle].prenom + ' ' + participants[maCle].nom
+            );
+            break;
+          
+          case ANIMATEURS:
+            for(j in  participants){
+              if(participants[j].estAnimateur && j != maCle){
+                io.sockets.socket(participants[j].socketID).emit('reception', m, maCle);
+              }
             }
-          }
-          console.log(
-            "envoi d'un message " + m.id + " de contenu " + '"' + m.contenu +
-            '"' + " à tous les animateurs de la part de " +
-            participants[maCle].prenom + ' ' + participants[maCle].nom
-          );
-          break;
-        
-        case NON_ANIMATEURS:
-          for(i in  participants){
-            if(!participants[i].estAnimateur && i != maCle){
-              io.sockets.socket(participants[i].socketID).emit('reception', m, maCle);
+            console.log(
+              "envoi d'un message " + m.id + " de contenu " + '"' + m.contenu +
+              '"' + " à tous les animateurs de la part de " +
+              participants[maCle].prenom + ' ' + participants[maCle].nom
+            );
+            break;
+          
+          case NON_ANIMATEURS:
+            for(j in  participants){
+              if(!participants[j].estAnimateur && j != maCle){
+                io.sockets.socket(participants[j].socketID).emit('reception', m, maCle);
+              }
             }
-          }
-          console.log(
-            "envoi d'un message " + m.id + " de contenu " + '"' + m.contenu +
-            '"' + " à tous les non animateurs de la part de " +
-            participants[maCle].prenom + ' ' + participants[maCle].nom
-          );
-          break;
-        
-        default: 
-          io.sockets.socket(participants[cle].socketID).emit('reception', m, maCle);
+            console.log(
+              "envoi d'un message " + m.id + " de contenu " + '"' + m.contenu +
+              '"' + " à tous les non animateurs de la part de " +
+              participants[maCle].prenom + ' ' + participants[maCle].nom
+            );
+            break;
+          
+          default: 
+            io.sockets.socket(participants[cle].socketID).emit('reception', m, maCle);
+        }
       }
-    }
-    else{
-      socket.emit('envoi echoue', m.id, cle);
+      else{
+        socket.emit('envoi echoue', m.id, cle);
+      }
     }
   });
   
