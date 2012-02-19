@@ -41,35 +41,49 @@
       </form>
     </div>
     <div id="application">
-    
-      <h3>liste des participants</h3>
-      
-      <select id="participants" name="participants">
-      </select>
-      
-      <form id="application_form">
-      
-        <label for="msg">Taper votre message : </label><br/>
-        <div id="inputs">
-          <input name="input" type="text"/><br/>
-        </div>
-        <a id="add_msg_input">Cliquer ici pour ajouter un champ de texte</a><br/>
-        <a id="remove_msg_input">Cliquer ici pour supprimer un champ de texte</a><br/>
-        <p id="erreur_msg">Veuillez entrer un message</p>
-        
-        <input id="envoi" type="button" value="Envoyer à la personne sélectionnée dans la liste"/>
-        <input id="envoi_animateurs" type="button" value="Envoyer aux animateurs"/>
-        <input id="envoi_non_animateurs" type="button" value="Envoyer aux participants non animateurs"/>
-        <input id="envoi_tous" type="button" value="Envoyer à tous"/>
-        
-        <p id="msg_bien_envoye"></p>
-        
-      </form>
+      <table>
+        <tr>
+          <td>
+            <h3>liste des participants</h3>
+            
+            <select id="participants" name="participants">
+            </select>
+            
+            <form id="application_form">
+            
+              <label for="msg">Taper votre message : </label><br/>
+              <div id="inputs">
+                <input name="input" type="text"/><br/>
+              </div>
+              <a id="add_msg_input">Cliquer ici pour ajouter un champ de texte</a><br/>
+              <a id="remove_msg_input">Cliquer ici pour supprimer un champ de texte</a><br/>
+              <p id="erreur_msg">Veuillez entrer un message</p>
+              
+              <input id="envoi" type="button" value="Envoyer à la personne sélectionnée dans la liste"/>
+              <input id="envoi_animateurs" type="button" value="Envoyer aux animateurs"/><br/>
+              <input id="envoi_non_animateurs" type="button" value="Envoyer aux participants non animateurs"/>
+              <input id="envoi_tous" type="button" value="Envoyer à tous"/>
+              
+              <p id="msg_bien_envoye"></p>
+              
+            </form>
+          </td>
+          <td id="upload">
+            <input type="file" id="fileupload" multiple="true">
+            <p id="loadingUpload">Chargement des images soumises sur le serveur...</p>
+            <p id="erreurUpload"></p>
+            <p id="erreurType">Le type du document est invalide</p>
+          </td>
+        </tr>
+      </table>
       
       <div id="reception">
-      
-        <h3>messages reçus</h3>  
-        
+        <div id="texte">
+          <h3>textes reçus</h3>  
+        </div>
+        <div id="image">
+          <h3>images reçus</h3>
+        </div>
       </div>
     </div>
   </body>

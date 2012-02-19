@@ -14,7 +14,8 @@ function msg(type, id, contenu){
 
 var TOUS = -1,
     ANIMATEURS = -2,
-    NON_ANIMATEURS = -3;
+    NON_ANIMATEURS = -3,
+    URL = 'http://localhost:490';
 
 $(window).load(function(){
   $('#application').hide();
@@ -112,6 +113,9 @@ $(window).load(function(){
     $('#application').show();
     $('#erreur_msg').hide();
     $('#msg_bien_envoye').hide();
+    $('#loadingUpload').hide();
+    $('#erreurUpload').hide();
+    $('#erreurType').hide();
     participants = liste_participants;
     maCle = participants.length - 1;
     majParticipants();
@@ -159,12 +163,12 @@ $(window).load(function(){
     $('#erreur_msg').hide();
   });
   
-  function envoi(cle_destinataire){
+  function envoi(type, cle_destinataire){
     var msgs = new Array();
     $('input[name=input]').each(function(i){
       if($(this).val() != '' && cle_destinataire != ''){
         msg_id = Math.floor(Math.random()*1000001);
-        var m = new msg('text', msg_id, $(this).val());
+        var m = new msg(type, msg_id, $(this).val());
         msgs.push(m);
       }
       else{
@@ -177,19 +181,19 @@ $(window).load(function(){
   }
   
   $('#envoi').on('click',function(){
-    envoi($('#participants').val());
+    envoi('texte', $('#participants').val());
   });
   
   $('#envoi_animateurs').on('click',function(){
-    envoi(ANIMATEURS);
+    envoi('texte', ANIMATEURS);
   });
   
   $('#envoi_tous').on('click',function(){
-    envoi(TOUS);
+    envoi('texte', TOUS);
   });
   
   $('#envoi_non_animateurs').on('click',function(){
-    envoi(NON_ANIMATEURS);
+    envoi('texte', NON_ANIMATEURS);
   });
   
   socket.on('envoi reussi', function(id_message, cle_destinataire){
@@ -213,24 +217,58 @@ $(window).load(function(){
   
   socket.on('reception', function(m, cle_emetteur){
     var p = participants[cle_emetteur];
-    $('#reception').append(
+    $('#' + m.type).append(
       '<p id="' + m.id + '">Message ' + m.id + ' de ' +
       p.prenom + ' ' +
       p.nom + ((p.estAnimateur) ? ' (animateur) ' : ' ') +
       '(cle = ' + cle +
       ') : ' + m.contenu +'</p>'
     );
-    socket.emit('reception client',m.id, cle_emetteur, true);
+    socket.emit('reception reussie',m.id, cle_emetteur, true);
   });
-  
-  /*
-  socket.on('reception serveur', function(id_message, cle_destinataire, succes){
-    $('#msg_bien_envoye').text("Le message " + id_message + " a bien été envoyé");
-    $('#msg_bien_envoye').show();
-  });
-  */
   
   $('#msg').on('focus',function(){
     $('#msg_bien_envoye').hide();
+  });
+  
+  function handleUploads(files){
+    for (var i = 0; i < files.length; i++) {
+      var reader = new FileReader();
+      reader.onloadstart = function(){
+        $('#loadingUpload').show();
+      };
+      reader.onloadend = function(){
+        $('#loadingUpload').hide();
+      };
+      reader.onerror = function(){
+        $('#erreurUpload').val("Erreur dans le chargement de l'image " + i);
+        $('#erreurUpload').show();
+      };
+      reader.onload = function(d){
+        console.log('image ' + i + ' correctement uploadee');
+        socket.emit('upload', d.target.result);
+      };
+      reader.readAsDataURL(files[i]);
+    }
+  }
+  
+  $('#fileupload').on({
+    focus: function(){
+      $('#erreurUpload').hide();
+      $('#erreurType').hide();
+    },
+    change: function() {
+      handleUploads(this.files);
+    }
+  });
+  
+  socket.on('upload reussi', function(chemin, num){
+    $('#image').append(
+      '<a id="image' + num + '" href="' + '/' + chemin + '" target="_blank">' + '/' + chemin + '</a><br/>'
+    );
+  });
+  
+  socket.on('upload echoue', function(){
+    $('#erreurType').show();
   });
 });
