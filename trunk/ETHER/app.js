@@ -157,11 +157,6 @@ io.sockets.on('connection', function (socket) {
     }
   });
   
-  socket.on('disconnect',function(){
-    participants.splice(maCle,1);
-    socket.broadcast.emit('deconnexion participant', maCle);
-  });
-  
   socket.on('envoi', function(msgs, cle){
     var m = new msg('text', -1, '');
     for(i in msgs){
@@ -240,12 +235,12 @@ io.sockets.on('connection', function (socket) {
     data = new Buffer(data[1], 'base64').toString('binary');    
     
     // Get the number of files in the upload dir.
-    fs.readdir('uploads', function(err, files) {
+    fs.readdir('uploads', function(err, files){
       if(err) throw err;
       // Create a new file with a number as name that is one higher then the current amount of files in the uploads directory.
       var nom = 'uploads/' + files.length + '.' + allowedTypes[type];
 
-      fs.writeFile(nom, data, 'binary', function(err) {
+      fs.writeFile(nom, data, 'binary', function(err){
         if(err) throw err;
         console.log(nom + ' uploade');
 
@@ -253,5 +248,22 @@ io.sockets.on('connection', function (socket) {
         socket.emit('upload reussi', nom, files.length);
       });
     });
+  });
+  
+  socket.on('disconnect',function(){
+    participants.splice(maCle,1);
+    if(participants.length > 0){
+      socket.broadcast.emit('deconnexion participant', maCle);
+    }
+    else{
+      fs.readdir('uploads', function(err, files){
+        if(err) throw err;
+        for(i in files){
+          var nom = 'uploads/' + files[i];
+          fs.unlinkSync(nom)
+            console.log(nom + ' detruit');
+        }
+      });
+    }
   });
 });
