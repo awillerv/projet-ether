@@ -84,11 +84,11 @@ socket.set('log level', 1);
 socket.sockets.on('connection', function(client) {
   client.on('message', function(data) {
     // data is an URL data scheme with base64 encoding (http://tools.ietf.org/html/rfc2397).
-    console.log('message received');
+    console.log('message received : '+data.substr(0,100));
     data = data.split(';base64,');
-
+    //console.log('message received 2 : '+data.substr(0,100));
     var type = data[0].substr(5); // strip the data:
-
+    //console.log(data[1]);
     if (!allowedTypes[type]) {
       console.log('unallowed type !');
       return;
