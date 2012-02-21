@@ -50,6 +50,7 @@ for(ct in allowedTypes){
 // RegExp to test for valid files (only the ones in allowedTypes).
 // Files must be in a subdirectory so users can't access the javascript files for nodejs.
 //var validFile = new RegExp('^\/[a-z]+\/[0-9a-z\-]+\.('+allowedExtensions.join('|')+')$');
+var testType = new RegExp('(\/uploads\/[0-9]+\.('+allowedExtensions.join('|')+'))$');
 var nomValide = /^[a-zA-Z0-9]+$/;
 var extValide = new RegExp('('+allowedExtensions.join('|')+')$');
 
@@ -161,6 +162,7 @@ io.sockets.on('connection', function (socket) {
     for(i in msgs){
       m = msgs[i];
       if(m.contenu != '' && cle != ''){
+        m.type = (testType.test(m.contenu) ? 'image' : 'texte');
         socket.emit('envoi reussi', m.id, cle);
         switch(cle){
           case TOUS:
@@ -208,8 +210,7 @@ io.sockets.on('connection', function (socket) {
     }
   });
   
-  socket.on('reception reussie', function(id_message, cle_emetteur, succes){
-    //io.sockets.socket(participants[cle_emetteur].socketID).emit('reception serveur', id_message, maCle, succes);
+  socket.on('resultat reception', function(id_message, cle_emetteur, succes){
     console.log("Le message " + id_message + " envoyé par " +
       participants[cle_emetteur].prenom + ' ' + participants[cle_emetteur].nom +
       ((succes) ? " a bien " : " n'a pas ") + "été reçu par " +
