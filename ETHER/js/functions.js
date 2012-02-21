@@ -16,6 +16,23 @@ var TOUS = -1,
     ANIMATEURS = -2,
     NON_ANIMATEURS = -3;
 
+// Allowed content types and extensions.
+var allowedTypes = {
+  'image/png':       'png',
+  'image/jpeg':      'jpg',
+  'image/gif':       'gif'
+};
+
+var allowedExtensions = []; // Array of allowed extensions.
+var contentTypes      = {}; // Reverse lookup of allowedTypes.
+
+for(ct in allowedTypes){
+  allowedExtensions[allowedExtensions.length] = allowedTypes[ct];
+  contentTypes[allowedTypes[ct]] = ct;
+}
+
+var testType = new RegExp('(\/uploads\/[0-9]+\.('+allowedExtensions.join('|')+'))$');
+
 $(window).load(function(){
   $('#application').hide();
   $('#erreur_prenom').hide();
@@ -163,11 +180,12 @@ $(window).load(function(){
     $('#erreur_msg').hide();
   });
   
-  function envoi(type, cle_destinataire){
+  function envoi(cle_destinataire){
     var msgs = new Array();
     $('input[name=input]').each(function(i){
       if($(this).val() != '' && cle_destinataire != ''){
-        msg_id = Math.floor(Math.random()*1000001);
+        var type = (testType.test($(this).val()) ? 'image' : 'texte');
+        var msg_id = Math.floor(Math.random()*1000001);
         var m = new msg(type, msg_id, $(this).val());
         msgs.push(m);
       }
@@ -181,19 +199,19 @@ $(window).load(function(){
   }
   
   $('#envoi').on('click',function(){
-    envoi('texte', $('#participants').val());
+    envoi($('#participants').val());
   });
   
   $('#envoi_animateurs').on('click',function(){
-    envoi('texte', ANIMATEURS);
+    envoi(ANIMATEURS);
   });
   
   $('#envoi_tous').on('click',function(){
-    envoi('texte', TOUS);
+    envoi(TOUS);
   });
   
   $('#envoi_non_animateurs').on('click',function(){
-    envoi('texte', NON_ANIMATEURS);
+    envoi(NON_ANIMATEURS);
   });
   
   socket.on('envoi reussi', function(id_message, cle_destinataire){
@@ -215,16 +233,45 @@ $(window).load(function(){
     $('#erreur_msg').show();
   });
   
+  function getNom(url){
+    var debut = url.length - 1,
+        fin = url.length - 1;
+    
+    while(url.charAt(fin) != '.' && fin >= 0){
+      fin--;
+    }
+    debut = fin;
+    while(url.charAt(debut) != '/' && debut >= 0){
+      debut--;
+    }
+    return url.substr(debut + 1, fin - debut - 1);
+  }
+  
   socket.on('reception', function(m, cle_emetteur){
     var p = participants[cle_emetteur];
-    $('#' + m.type).append(
-      '<p id="' + m.id + '">Message ' + m.id + ' de ' +
-      p.prenom + ' ' +
-      p.nom + ((p.estAnimateur) ? ' (animateur) ' : ' ') +
-      '(cle = ' + cle +
-      ') : ' + m.contenu +'</p>'
-    );
-    socket.emit('reception reussie',m.id, cle_emetteur, true);
+    if(m.type == 'texte'){
+      $('#texte').append(
+        '<p id="' + m.id + '">Message ' + m.id + ' de ' +
+        p.prenom + ' ' +
+        p.nom + ((p.estAnimateur) ? ' (animateur) ' : ' ') +
+        '(cle = ' + cle +
+        ') : ' + m.contenu +'</p>'
+      );
+      socket.emit('resultat reception',m.id, cle_emetteur, true);
+    }
+    else if(m.type == 'image'){
+      $('#image').append(
+        '<p id="' + m.id + '">Message ' + m.id + ' de ' +
+        p.prenom + ' ' +
+        p.nom + ((p.estAnimateur) ? ' (animateur) ' : ' ') +
+        '(cle = ' + cle +
+        ') : <a id="image' + getNom(m.contenu) + '" href="' + m.contenu + '" target="_blank">' + m.contenu + '</a></p>'
+      );
+      socket.emit('resultat reception',m.id, cle_emetteur, true);
+    }
+    else{
+      socket.emit('resultat reception',m.id, cle_emetteur, false);
+    }
   });
   
   $('#msg').on('focus',function(){
