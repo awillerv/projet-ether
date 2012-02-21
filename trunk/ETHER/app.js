@@ -74,7 +74,6 @@ app.get('/uploads/:nom.:ext', function(req, res){
           res.send('Le fichier n\'existe pas sur le serveur', 404);
         } else {
           res.contentType(ext);
-          //res.attachment(__dirname + '/uploads/' + chemin);
           res.end(data);
         }
       });
@@ -220,7 +219,7 @@ io.sockets.on('connection', function (socket) {
   
   socket.on('upload', function(data){
     // data is an URL data scheme with base64 encoding (http://tools.ietf.org/html/rfc2397).
-    console.log('image reçue : ' + data.substr(0,20));
+    console.log('image reçue : ' + data.substr(0,40));
     data = data.split(';base64,');
     
     var type = data[0].substr(5); // strip the data:
