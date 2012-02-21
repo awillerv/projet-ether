@@ -14,8 +14,7 @@ function msg(type, id, contenu){
 
 var TOUS = -1,
     ANIMATEURS = -2,
-    NON_ANIMATEURS = -3,
-    URL = 'http://localhost:490';
+    NON_ANIMATEURS = -3;
 
 $(window).load(function(){
   $('#application').hide();
@@ -116,6 +115,7 @@ $(window).load(function(){
     $('#loadingUpload').hide();
     $('#erreurUpload').hide();
     $('#erreurType').hide();
+    $('#tailleMaxDepassee').hide();
     participants = liste_participants;
     maCle = participants.length - 1;
     majParticipants();
@@ -231,7 +231,7 @@ $(window).load(function(){
     $('#msg_bien_envoye').hide();
   });
   
-  function handleUploads(files){
+  function handleUploads(files, tailleMax){
     for (var i = 0; i < files.length; i++) {
       var reader = new FileReader();
       reader.onloadstart = function(){
@@ -241,24 +241,33 @@ $(window).load(function(){
         $('#loadingUpload').hide();
       };
       reader.onerror = function(){
-        $('#erreurUpload').val("Erreur dans le chargement de l'image " + i);
+        console.log("Erreur dans le chargement de l'image " + i);
+        $('#erreurUpload').text("Erreur dans le chargement de l'image " + i);
         $('#erreurUpload').show();
       };
       reader.onload = function(d){
         console.log('image ' + i + ' correctement uploadee');
         socket.emit('upload', d.target.result);
       };
-      reader.readAsDataURL(files[i]);
+      if(files[i].size < tailleMax){
+        reader.readAsDataURL(files[i]);
+      }
+      else{
+        console.log("image " + i + " de taille " + files[i].size + " trop importante (taille max = " + tailleMax + ")");
+        $('#tailleMaxDepassee').text("image " + i + " de taille " + files[i].size + " trop importante (taille max = " + tailleMax + ")");
+        $('#tailleMaxDepassee').show();
+      }
     }
   }
   
   $('#fileupload').on({
-    focus: function(){
+    click: function(){
       $('#erreurUpload').hide();
       $('#erreurType').hide();
+      $('#tailleMaxDepassee').hide();
     },
     change: function() {
-      handleUploads(this.files);
+      handleUploads(this.files, 2000000);
     }
   });
   
