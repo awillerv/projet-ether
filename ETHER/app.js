@@ -114,7 +114,7 @@ io.sockets.on('connection', function (socket) {
     }
     if(succes == true){
       if(login_unique(participant)){
-        if(!participant.estAnimateur == 'false' || (participant.estAnimateur == 'true' && trim(mdpEntre) == MDP)){
+        if(participant.estAnimateur == 'false' || (participant.estAnimateur == 'true' && trim(mdpEntre) == MDP)){
           participant.socketID = socket.id;
           participant.prenom = trim(participant.prenom);
           participant.nom = trim(participant.nom);
