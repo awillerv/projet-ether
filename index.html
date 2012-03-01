@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+    <title>ETHER</title>
+	<link rel="shortcut icon" type="image/x-icon" href="images/logo_ether_favicon.ico"/>
+	<link rel="stylesheet" href="dojo-release-1.7.1/dijit/themes/claro/claro.css">
+	<style>
+		body {
+			margin: 0px;
+			padding: 0px;
+			font-family: arial;
+			overflow: hidden;
+		}
+		#chargement {
+			margin: 100px auto;
+			padding: 10px 30px;
+			text-align: center;
+			width: 100%;
+			position: absolute;
+		}
+		#chargement #progressbar {
+			width: 250px;
+			margin: auto;
+		}
+		#connexion {
+			text-align: center;
+		}
+		#connexion #tableauConnexion {
+			margin: auto;
+		}
+		#application {
+		
+		}
+		img.iconLogout {
+			background-image: url("images/logout.png");
+			width: 24px;
+			height: 24px;
+		}
+	</style>
+	<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+	<script src="dojo-release-1.7.1/dojo/dojo.js" data-dojo-config="parseOnLoad: true, isDebug: true"></script>
+	<script>
+		require(["dojo/parser", "dojo/on", "dojox/validate/web", 
+		"dijit/ProgressBar", "dijit/form/ValidationTextBox", "dijit/form/RadioButton", "dijit/form/Form", 
+		"dijit/MenuBar", "dijit/PopupMenuBarItem", "dijit/DropDownMenu", "dijit/MenuItem", "dijit/MenuSeparator",
+		"dijit/form/Textarea", "dijit/form/FilteringSelect",
+		"dojo/keys", "dojo/domReady!"], function(parser, on, validate) {
+		
+			var TOUS = -1,
+				ANIMATEURS = -2,
+				NON_ANIMATEURS = -3;	
+			var moi = new participant('', '', false, 0); 
+			var socket = io.connect('http://localhost');
+			
+			parser.parse();
+			changementPage("chargement", "connexion");
+			on(dijit.byId("boutonConnexion"), "click", function(event) {
+				if(event.type=="click" || (event.type=="keyup" && event.keyCode==dojo.keys.ENTER)) {
+					if(dijit.byId("formulaireConnexion").validate()) {
+						var valeursEntrees = dijit.byId('formulaireConnexion').get('value');
+						moi = new participant(valeursEntrees.prenom, valeursEntrees.nom, valeursEntrees.estAnimateur, 0);
+						socket.emit('identification', moi, valeursEntrees.motDePasse);
+						//changementPage("connexion", "chargement");
+					}
+				}
+			});
+			
+			dijit.byId("motDePasse").validator = function() {
+				return (dijit.byId("participant").get("value") || dijit.byId("motDePasse").get("value")!="");
+			}
+			
+			socket.on('identification echouee', function(msgErreur) {
+				//changementPage("chargement", "connexion");
+				switch(msgErreur){
+					case 'faux mdpEntre':
+						dijit.byId("motDePasse").focus();
+						dijit.byId("motDePasse").displayMessage("Le mot de passe entré est incorrect");
+						break;
+						
+					case 'prenom':
+						dijit.byId("prenom").validate();
+						dijit.byId("prenom").focus();
+						dijit.byId("prenom").displayMessage("Ce champ est obligatoire");
+						break;
+					  
+					case 'nom':
+						dijit.byId("nom").validate();
+						dijit.byId("nom").focus();
+						dijit.byId("nom").displayMessage("Ce champ est obligatoire");
+						break;
+					  
+					case 'mdpEntre':
+						dijit.byId("motDePasse").validate();
+						dijit.byId("motDePasse").focus();
+						dijit.byId("motDePasse").displayMessage("Le mot de passe est obligatoire pour les animateurs");
+						break;
+					  
+					case 'login deja pris':
+						dijit.byId("prenom").focus();
+						dijit.byId("prenom").displayMessage("\""+dijit.byId("prenom").get("value")+" "+dijit.byId("nom").get("value")+"\" est déjà connecté(e) à Ether");
+						break;
+				}
+			});
+			
+			var participants = new Array();
+			participants[TOUS] = new participant('tous', '', undefined, undefined);
+			participants[ANIMATEURS] = new participant('animateurs', '', true, undefined);
+			participants[NON_ANIMATEURS] = new participant('non animateurs', '', false, undefined);
+			  
+			socket.on('identification reussie', function(liste_participants){
+				if(moi.estAnimateur=="true")
+					dojo.byId("moi").innerHTML = moi.prenom+" "+moi.nom+"<br />(animateur)";
+				else
+					dojo.byId("moi").innerHTML = moi.prenom+" "+moi.nom;
+				participants = liste_participants;
+				maCle = participants.length - 1;
+				majParticipants();
+				//changementPage("chargement", "application");
+				changementPage("connexion", "application");
+			});
+			
+			dijit.byId("menuDeconnexion").onClick = function() {
+				if(confirm("Etes-vous sûr de vouloir vous déconnecter ?")) {
+					changementPage("application", "chargement");
+					location.reload();
+				}
+			}
+			
+			socket.on('connexion nouveau participant', function(participant){
+				participants.push(participant);
+				majParticipants();
+			});
+			  
+			socket.on('deconnexion participant', function(key){
+				participants.splice(key,1);
+				majParticipants();
+			});
+		});
+		
+		function majParticipants() {
+		
+		}
+		
+		function participant(prenom, nom, estAnimateur, socketID) {
+			this.prenom = prenom;
+			this.nom = nom;
+			this.estAnimateur = estAnimateur;
+			this.socketID = socketID;
+		}
+
+		function msg(type, id, contenu) {
+			this.type = type;
+			this.id = id;
+			this.contenu = contenu;
+		}
+		
+		function show(id) {
+			dojo.setStyle(dojo.byId(id), { display: "" });
+		}
+		
+		function hide(id) {
+			dojo.setStyle(dojo.byId(id), { display: "none" });
+		}
+		
+		function changementPage(anciennePage, nouvellePage) {
+			dojo.fadeOut({
+				node: anciennePage,
+				duration: 1000,
+				beforeBegin: function() {
+					dojo.setStyle(dojo.byId(nouvellePage), { display: "", opacity: "0", filter: "alpha(opacity=0)" });
+				},
+				onEnd: function() {
+					dojo.setStyle(dojo.byId(anciennePage), { display: "none" } );
+					dojo.fadeIn({ node: nouvellePage, duration: 1000 }).play();
+				}
+			}).play();
+		}
+    </script>
+</head>
+<body class="claro">
+	<div id="chargement">
+		<div id="progressbar" data-dojo-type="dijit.ProgressBar" indeterminate="true"></div>
+		<p>Veuillez patienter, chargement en cours...</p>
+	</div>
+	<div id="connexion" style="display: none;">
+		<img src="images/logo_ether_petit.png" alt="logo Ether"/>
+		<h1>Connexion à ETHER</h1>
+		<form id="formulaireConnexion" data-dojo-type="dijit.form.Form"> <!--method="post" onsubmit="return connexion(this);">-->
+			<table id="tableauConnexion" cellspacing="4">
+				<tr>
+					<td colspan="2"><input type="text" required="true" name="prenom" id="prenom" placeholder="Votre prénom" data-dojo-type="dijit.form.ValidationTextBox" missingMessage="Ce champ est obligatoire" /></td>
+				</tr>
+				<tr>
+					<td colspan="2"><input type="text" required="true" name="nom" id="nom" placeholder="Votre nom" data-dojo-type="dijit.form.ValidationTextBox" missingMessage="Ce champ est obligatoire" /></td>
+				</tr>
+				<tr>
+					<td>
+						<input type="radio" id="participant" name="estAnimateur" value="false" checked="checked" data-dojo-type="dijit.form.RadioButton" onclick="hide('champCache');" /> 
+						<label for="participant">Participant</label>
+					</td>
+					<td>
+						<input type="radio" id="animateur" name="estAnimateur" value="true" data-dojo-type="dijit.form.RadioButton" onclick="show('champCache');" />
+						<label for="animateur">Animateur</label>
+					</td>
+				</tr>
+				<tr id="champCache" style="display:none;">
+					<td colspan="2"><input type="password" name="motDePasse" id="motDePasse" placeholder="Mot de passe" data-dojo-type="dijit.form.ValidationTextBox" invalidMessage="Le mot de passe est obligatoire pour les animateurs"/></td>
+				</tr>
+			</table>
+			<input type="button" value="Se connecter" label="Se connecter" id="boutonConnexion" data-dojo-type="dijit.form.Button" />
+		</form>
+	</div>
+	<div id="application" style="display: none;">
+		<div data-dojo-type="dijit.MenuBar" id="navMenu">
+			<div data-dojo-type="dijit.PopupMenuBarItem">
+				<span>ETHER</span>
+				<div data-dojo-type="dijit.DropDownMenu">
+					<div data-dojo-type="dijit.MenuItem" data-dojo-props="disabled:true">Connecté(e) en tant que :<br /><span id="moi"></span></div>
+					<div data-dojo-type="dijit.MenuSeparator"></div>
+					<div id="menuDeconnexion" data-dojo-type="dijit.MenuItem" data-dojo-props="iconClass:'iconLogout'">Se déconnecter</div>
+				</div>
+			</div>
+			<div data-dojo-type="dijit.PopupMenuBarItem">
+				<span>Taper un texte</span>
+				<div data-dojo-type="dijit.DropDownMenu">
+					<textarea data-dojo-type="dijit.form.Textarea"></textarea>
+					<div data-dojo-type="dijit.MenuItem">Ajouter à l'écran</div>
+				</div>
+			</div>
+			<div data-dojo-type="dijit.MenuBarItem">
+				<span>Uploader une photo</span>
+			</div>
+			<select data-dojo-type="dijit.form.FilteringSelect" name="listeParticipants" data-dojo-props="required:false,value:'',placeHolder:'Ajouter un participant'">
+				<option value="AP">Apples</option>
+				<option value="OR">Oranges</option>
+				<option value="PE">Pears</option>
+			</select>
+		</div>
+	</div>
+</body>
+</html>
