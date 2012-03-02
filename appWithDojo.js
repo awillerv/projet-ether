@@ -56,7 +56,6 @@ var extValide = new RegExp('('+allowedExtensions.join('|')+')$');
 
 app.use("/dojo-release-1.7.1", express.static(__dirname + '/dojo-release-1.7.1'));
 app.use("/images", express.static(__dirname + '/images'));
-app.use("/uploads", express.static(__dirname + '/uploads'));
 app.listen(490);
 
 app.get('/', function (req, res) {
@@ -235,10 +234,10 @@ io.sockets.on('connection', function (socket) {
     data = new Buffer(data[1], 'base64').toString('binary');    
     
     // Get the number of files in the upload dir.
-    fs.readdir('C:/Users/Drexal/travail/nodejs/google code/uploads', function(err, files){
+    fs.readdir(__dirname + '/uploads', function(err, files){
       if(err) throw err;
       // Create a new file with a number as name that is one higher then the current amount of files in the uploads directory.
-      var nom = 'uploads/' + files.length + '.' + allowedTypes[type];
+      var nom = __dirname + '/uploads/' + files.length + '.' + allowedTypes[type];
 
       fs.writeFile(nom, data, 'binary', function(err){
         if(err) throw err;
@@ -257,10 +256,10 @@ io.sockets.on('connection', function (socket) {
       socket.broadcast.emit('deconnexion participant', maCle);
     }
     else{
-      fs.readdir('C:/Users/Drexal/travail/nodejs/google code/uploads', function(err, files){
+      fs.readdir(__dirname + '/uploads', function(err, files){
         if(err) throw err;
         for(i in files){
-          var nom = 'uploads/' + files[i];
+          var nom = __dirname + '/uploads/' + files[i];
           fs.unlinkSync(nom)
             console.log(nom + ' detruit');
         }

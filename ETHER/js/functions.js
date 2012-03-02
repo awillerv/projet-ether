@@ -280,6 +280,7 @@ $(window).load(function(){
   
   function handleUploads(files, tailleMax){
     for (var i = 0; i < files.length; i++) {
+	console.log(files[i]);
       var reader = new FileReader();
       reader.onloadstart = function(){
         $('#loadingUpload').show();
