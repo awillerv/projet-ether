@@ -43,8 +43,8 @@
 	<script>
 		require(["dojo/parser", "dojo/on", "dojox/validate/web", 
 		"dijit/ProgressBar", "dijit/form/ValidationTextBox", "dijit/form/RadioButton", "dijit/form/Form", 
-		"dijit/MenuBar", "dijit/PopupMenuBarItem", "dijit/DropDownMenu", "dijit/MenuItem", "dijit/MenuSeparator",
-		"dijit/form/Textarea", "dijit/form/FilteringSelect",
+		"dijit/MenuBar", "dijit/PopupMenuBarItem", "dijit/DropDownMenu", "dijit/MenuItem", "ether/MenuItem", "dijit/MenuSeparator",
+		"dojox/form/Uploader", "dijit/form/Textarea", "dijit/form/FilteringSelect",
 		"dojo/keys", "dojo/domReady!"], function(parser, on, validate) {
 		
 			var TOUS = -1,
@@ -216,7 +216,10 @@
 			<div data-dojo-type="dijit.PopupMenuBarItem">
 				<span>ETHER</span>
 				<div data-dojo-type="dijit.DropDownMenu">
-					<div data-dojo-type="dijit.MenuItem" data-dojo-props="disabled:true">Connecté(e) en tant que :<br /><span id="moi"></span></div>
+					<div data-dojo-type="ether.MenuItem">Connecté(e) en tant que :<br /><span id="moi"></span></div>
+					<div data-dojo-type="dijit.MenuSeparator"></div>
+					<div data-dojo-type="dijit.MenuItem" data-dojo-props="disabled:true">Charger une session</div>
+					<div data-dojo-type="dijit.MenuItem" data-dojo-props="disabled:true">Sauvegarder la session</div>
 					<div data-dojo-type="dijit.MenuSeparator"></div>
 					<div id="menuDeconnexion" data-dojo-type="dijit.MenuItem" data-dojo-props="iconClass:'iconLogout'">Se déconnecter</div>
 				</div>
@@ -224,13 +227,11 @@
 			<div data-dojo-type="dijit.PopupMenuBarItem">
 				<span>Taper un texte</span>
 				<div data-dojo-type="dijit.DropDownMenu">
-					<textarea data-dojo-type="dijit.form.Textarea"></textarea>
+					<div data-dojo-type="ether.MenuItem"><textarea data-dojo-type="dijit.form.Textarea"></textarea></div>
 					<div data-dojo-type="dijit.MenuItem">Ajouter à l'écran</div>
 				</div>
 			</div>
-			<div data-dojo-type="dijit.MenuBarItem">
-				<span>Uploader une photo</span>
-			</div>
+			<input multiple="true" type="file" data-dojo-type="dojox.form.Uploader" label="Uploader une photo" />
 			<select data-dojo-type="dijit.form.FilteringSelect" name="listeParticipants" data-dojo-props="required:false,value:'',placeHolder:'Ajouter un participant'">
 				<option value="AP">Apples</option>
 				<option value="OR">Oranges</option>

@@ -72,7 +72,7 @@ $(window).load(function(){
   $('#identification_val').on('click',function(){
     moi.prenom = $('#prenom').val();
     moi.nom = $('#nom').val();
-    moi.estAnimateur = (($('input[name=estAnimateur]:checked', '#identification_form').val() == 'true') ? true : false);
+    moi.estAnimateur = $('input[name=estAnimateur]:checked', '#identification_form').val();
     var mdpEntre = $('#mdpEntre').val();
     
     var envoi = true;
@@ -320,7 +320,7 @@ $(window).load(function(){
   
   socket.on('upload reussi', function(chemin, num){
     $('#image').append(
-      '<a id="image' + num + '" href="' + '/' + chemin + '" target="_blank">' + '/' + chemin + '</a><br/>'
+      '<a id="image' + num + '" href="' + '/' + chemin + '" target="_blank">' + '<img src="' + '/' + chemin + '"/>' + '</a><br/>'
     );
   });
   
