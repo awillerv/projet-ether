@@ -41,17 +41,35 @@
 	<script type="text/javascript" src="/socket.io/socket.io.js"></script>
 	<script src="dojo-release-1.7.1/dojo/dojo.js" data-dojo-config="parseOnLoad: true, isDebug: true"></script>
 	<script>
-		require(["dojo/parser", "dojo/on", "dojox/validate/web", 
+		require(["dojo/parser", "dojo/on", "dojox/validate/web", "dijit/_base/manager",
 		"dijit/ProgressBar", "dijit/form/ValidationTextBox", "dijit/form/RadioButton", "dijit/form/Form", 
 		"dijit/MenuBar", "dijit/PopupMenuBarItem", "dijit/DropDownMenu", "dijit/MenuItem", "ether/MenuItem", "dijit/MenuSeparator",
 		"dojox/form/Uploader", "dijit/form/Textarea", "dijit/form/FilteringSelect",
-		"dojo/keys", "dojo/domReady!"], function(parser, on, validate) {
+		"dojo/keys", "dojo/domReady!"], function(parser, on, validate, manager) {
 		
 			var TOUS = -1,
 				ANIMATEURS = -2,
 				NON_ANIMATEURS = -3;	
 			var moi = new participant('', '', false, 0); 
 			var socket = io.connect('http://localhost');
+			var participants = new Array();
+			participants[TOUS] = new participant('tous', '', undefined, undefined);
+			participants[ANIMATEURS] = new participant('animateurs', '', true, undefined);
+			participants[NON_ANIMATEURS] = new participant('non animateurs', '', false, undefined);
+			// Allowed content types and extensions.
+			var tailleMaxUpload = 2000000;
+			var allowedTypes = {
+				'image/png':       'png',
+				'image/jpeg':      'jpg',
+				'image/gif':       'gif'
+			};
+			var allowedExtensions = []; // Array of allowed extensions.
+			var contentTypes      = {}; // Reverse lookup of allowedTypes.
+			for(ct in allowedTypes){
+				allowedExtensions[allowedExtensions.length] = allowedTypes[ct];
+				contentTypes[allowedTypes[ct]] = ct;
+			}
+			var testType = new RegExp('(\/uploads\/[0-9]+\.('+allowedExtensions.join('|')+'))$');
 			
 			parser.parse();
 			changementPage("chargement", "connexion");
@@ -102,12 +120,7 @@
 						break;
 				}
 			});
-			
-			var participants = new Array();
-			participants[TOUS] = new participant('tous', '', undefined, undefined);
-			participants[ANIMATEURS] = new participant('animateurs', '', true, undefined);
-			participants[NON_ANIMATEURS] = new participant('non animateurs', '', false, undefined);
-			  
+			 
 			socket.on('identification reussie', function(liste_participants){
 				if(moi.estAnimateur=="true")
 					dojo.byId("moi").innerHTML = moi.prenom+" "+moi.nom+"<br />(animateur)";
@@ -126,6 +139,43 @@
 					location.reload();
 				}
 			}
+			
+			dijit.byId("uploadPhotos").onChange = function() {
+				var files = dijit.byId("uploadPhotos")._files;
+				for (var i = 0; i < files.length; i++) {
+					var reader = new FileReader();
+					var nomUpload = files[i].name;
+					var tailleUpload = files[i].size;
+					reader.onloadstart = function() {
+						dijit.byId("uploadPhotos").label = "test";
+						console.log("debut du téléchargement");
+					};
+					reader.onloadend = function() {
+						console.log("fin du téléchargement");
+					};
+					reader.onerror = function(){
+						console.log('Erreur lors du téléchargement de l\'image "' + nomUpload + '"');
+					};
+					reader.onload = function(d){
+						console.log('image "' + nomUpload + '" correctement uploadee');
+						socket.emit('upload', d.target.result);
+					};
+					if(files[i].size < tailleMaxUpload) {
+						reader.readAsDataURL(files[i]);
+					}
+					else {
+						console.log("image \"" + nomUpload + "\" de taille " +	tailleUpload + " trop importante (taille max = " + tailleMaxUpload + ")");
+					}
+				}
+			};
+
+			socket.on('upload reussi', function(chemin, num){
+				console.log('upload serveur réussi');
+			});
+			  
+			socket.on('upload echoue', function(){
+				console.log('upload serveur échoué');
+			});	
 			
 			socket.on('connexion nouveau participant', function(participant){
 				participants.push(participant);
@@ -231,7 +281,7 @@
 					<div data-dojo-type="dijit.MenuItem">Ajouter à l'écran</div>
 				</div>
 			</div>
-			<input multiple="true" type="file" data-dojo-type="dojox.form.Uploader" label="Uploader une photo" />
+			<input id="uploadPhotos" name="uploadPhotos" multiple="true" type="file" data-dojo-type="dojox.form.Uploader" data-dojo-props="label:'Uploader une photo',uploadOnSelect:true" />
 			<select data-dojo-type="dijit.form.FilteringSelect" name="listeParticipants" data-dojo-props="required:false,value:'',placeHolder:'Ajouter un participant'">
 				<option value="AP">Apples</option>
 				<option value="OR">Oranges</option>
