@@ -4,7 +4,7 @@ var fs = require('fs'),
     app = express.createServer(),
     io = require('socket.io').listen(app);
 
-var MDP = "ether"
+var MDP = "ether";
 
 var TOUS = -1,
     ANIMATEURS = -2,
