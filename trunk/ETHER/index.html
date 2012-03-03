@@ -44,11 +44,15 @@
       <table>
         <tr>
           <td>
+            <p id="moi"></p>
             <h3>liste des participants</h3>
-            
-            <select id="participants" name="participants">
-            </select>
-            
+            <div id="selection_participants">
+              <select name="participants">
+              </select>
+            </div>
+            <a id="add_participant_input">Cliquer ici pour ajouter un destinataire</a><br/>
+            <a id="remove_participant_input">Cliquer ici pour supprimer un destinataire</a><br/>
+
             <form id="application_form">
             
               <label for="msg">Taper votre message : </label><br/>
@@ -59,7 +63,7 @@
               <a id="remove_msg_input">Cliquer ici pour supprimer un champ de texte</a><br/>
               <p id="erreur_msg">Veuillez entrer un message</p>
               
-              <input id="envoi" type="button" value="Envoyer à la personne sélectionnée dans la liste"/>
+              <input id="envoi" type="button" value="Envoyer aux personnes sélectionnées dans les listes"/>
               <input id="envoi_animateurs" type="button" value="Envoyer aux animateurs"/><br/>
               <input id="envoi_non_animateurs" type="button" value="Envoyer aux participants non animateurs"/>
               <input id="envoi_tous" type="button" value="Envoyer à tous"/>

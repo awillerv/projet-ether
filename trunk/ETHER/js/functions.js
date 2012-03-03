@@ -72,7 +72,7 @@ $(window).load(function(){
   $('#identification_val').on('click',function(){
     moi.prenom = $('#prenom').val();
     moi.nom = $('#nom').val();
-    moi.estAnimateur = $('input[name=estAnimateur]:checked', '#identification_form').val();
+    moi.estAnimateur = (($('input[name=estAnimateur]:checked', '#identification_form').val() == 'true') ? true : false);
     var mdpEntre = $('#mdpEntre').val();
     
     var envoi = true;
@@ -136,6 +136,7 @@ $(window).load(function(){
     participants = liste_participants;
     maCle = participants.length - 1;
     majParticipants();
+    $('#moi').text('Vous etes connecte en tant que : ' + moi.prenom + ' ' + moi.nom + ' ' + ((moi.estAnimateur) ? '(animateur)' : ''));
   });
   
   socket.on('connexion nouveau participant', function(participant){
@@ -150,17 +151,19 @@ $(window).load(function(){
   
   function majParticipants(){
     $('option').remove();
-    for(cle in participants){
-      if(cle != maCle){
-        $('#participants').append(
-          $("<option></option>").attr("value",cle).text(
-            participants[cle].prenom + ' ' +
-            participants[cle].nom +
-            ((participants[cle].estAnimateur == true)? ' (animateur)' : '')
-          )
-        );
+    $('select[name="participants"]').each(function(index){
+      for(cle in participants){
+        if(cle != maCle){
+          $(this).append(
+            $("<option></option>").attr("value",cle).text(
+              participants[cle].prenom + ' ' +
+              participants[cle].nom +
+              ((participants[cle].estAnimateur == true)? ' (animateur)' : '')
+            )
+          );
+        }
       }
-    }
+    });
   }
   
   $('#add_msg_input').on('click',function(){
@@ -170,9 +173,19 @@ $(window).load(function(){
   });
   
   $('#remove_msg_input').on('click',function(){
-    if($('input[name=input]').length>1){
-      $('input[name=input]').last().next().remove();
-      $('input[name=input]').last().remove();
+    if($('input[name="input"]').length>1){
+      $('input[name="input"]').last().next().remove();
+      $('input[name="input"]').last().remove();
+    }
+  });
+  
+  $('#add_participant_input').on('click',function(){
+    $('select[name="participants"]:first-child').clone().appendTo('#selection_participants');
+  });
+  
+  $('#remove_participant_input').on('click',function(){
+    if($('select[name="participants"]').length>1){
+      $('select[name="participants"]').last().remove();
     }
   });
   
@@ -180,38 +193,50 @@ $(window).load(function(){
     $('#erreur_msg').hide();
   });
   
-  function envoi(cle_destinataire){
-    var msgs = new Array();
-    $('input[name=input]').each(function(i){
-      if($(this).val() != '' && cle_destinataire != ''){
-        var type = (testType.test($(this).val()) ? 'image' : 'texte');
-        var msg_id = Math.floor(Math.random()*1000001);
-        var m = new msg(type, msg_id, $(this).val());
-        msgs.push(m);
-      }
-      else{
-        $('#erreur_msg').show();
-        return false;
-      }
-    });
-    socket.emit('envoi', msgs, cle_destinataire);
+  function envoi(cles_destinataires){
+    for(var i in cles_destinataires){
+      var msgs = new Array();
+      $('input[name="input"]').each(function(index){
+        if($(this).val() != '' && cles_destinataires[i] != ''){
+          var type = (testType.test($(this).val()) ? 'image' : 'texte');
+          var msg_id = Math.floor(Math.random()*1000001);
+          var m = new msg(type, msg_id, $(this).val());
+          msgs.push(m);
+        }
+        else{
+          $('#erreur_msg').show();
+          return false;
+        }
+      });
+      socket.emit('envoi', msgs, cles_destinataires[i]);
+    }
     return true;
   }
   
   $('#envoi').on('click',function(){
-    envoi($('#participants').val());
+    var dest = new Array();
+    $('select[name="participants"]').each(function(index){
+      dest.push($(this).val());
+    });
+    envoi(dest);
   });
   
   $('#envoi_animateurs').on('click',function(){
-    envoi(ANIMATEURS);
+    var dest = new Array();
+    dest.push(ANIMATEURS);
+    envoi(dest);
   });
   
   $('#envoi_tous').on('click',function(){
-    envoi(TOUS);
+    var dest = new Array();
+    dest.push(TOUS);
+    envoi(dest);
   });
   
   $('#envoi_non_animateurs').on('click',function(){
-    envoi(NON_ANIMATEURS);
+    var dest = new Array();
+    dest.push(NON_ANIMATEURS);
+    envoi(dest);
   });
   
   socket.on('envoi reussi', function(id_message, cle_destinataire){
