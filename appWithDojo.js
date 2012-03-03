@@ -121,8 +121,8 @@ io.sockets.on('connection', function (socket) {
           participant.nom = trim(participant.nom);
           participants.push(participant);
           maCle = participants.length - 1;
-          socket.emit('identification reussie', participants);
-          socket.broadcast.emit('connexion nouveau participant', participant);
+          socket.emit('identification reussie', participants, maCle);
+          socket.broadcast.emit('connexion nouveau participant', participant, maCle);
           console.log(
             'identification reussie pour ' + participant.prenom + ' ' + participant.nom +
             ' qui ' + ((participant.estAnimateur) ? 'est' : "n'est pas") +

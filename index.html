@@ -65,7 +65,7 @@
 		require(["dojo/parser", "dojo/on", "dojox/validate/web", "dojo/dom-construct",
 		"dijit/ProgressBar", "dijit/form/ValidationTextBox", "dijit/form/RadioButton", "dijit/form/Form", 
 		"dijit/MenuBar", "dijit/PopupMenuBarItem", "dijit/DropDownMenu", "dijit/MenuItem", "ether/MenuItem", "dijit/MenuSeparator", "dijit/PopupMenuItem", "dijit/CheckedMenuItem",
-		"dojox/form/Uploader", "dijit/form/Textarea", "dijit/form/FilteringSelect",
+		"dojox/form/Uploader", "dijit/form/Textarea", "dijit/form/FilteringSelect", "dojo/data/ItemFileReadStore",
 		"dijit/layout/BorderContainer", "dijit/layout/ContentPane",
 		"dojo/keys", "dojo/domReady!"], function(parser, on, validate, domConstruct) {
 		
@@ -144,17 +144,29 @@
 				}
 			});
 			 
-			socket.on('identification reussie', function(liste_participants){
+			socket.on('identification reussie', function(liste_participants, key){
 				if(moi.estAnimateur=="true")
 					dojo.byId("moi").innerHTML = moi.prenom+" "+moi.nom+"<br />(animateur)";
 				else
 					dojo.byId("moi").innerHTML = moi.prenom+" "+moi.nom;
 				participants = liste_participants;
-				maCle = participants.length - 1;
+				maCle = key;
 				majParticipants();
 				changementPage("connexion", "application");
 				dijit.byId("applicationContainer").resize();
 			});
+			
+			function majParticipants() {
+				var itemsParticipants = new Array();
+				for(var i=0; i<participants.length; i++) {
+					if(i!=maCle) {
+						itemsParticipants.push({ value: 'participant_'+i, name: participants[i].prenom+' '+participants[i].nom });
+					}
+				}
+				listeParticipants.clearOnClose = true;
+				listeParticipants.data = { identifier: 'value', label: 'name', items: itemsParticipants };
+				listeParticipants.close();
+			}
 			
 			dijit.byId("menuDeconnexion").onClick = function() {
 				if(confirm("Etes-vous sûr de vouloir vous déconnecter ?")) {
@@ -181,7 +193,7 @@
 						dijit.showTooltip('Lecture du fichier ' + nomUpload, 'uploadPhotos', ['below']);
 					};
 					reader.onloadend = function() {
-						dijit.showTooltip('<img src="images/upload.gif" />Upload du fichier...', 'uploadPhotos', ['below']);
+						dijit.showTooltip('<img src="images/upload.gif" /> Upload du fichier...', 'uploadPhotos', ['below']);
 					};
 					reader.onerror = function() {
 						dijit.showTooltip('Erreur lors de la lecture du fichier ' + nomUpload, 'uploadPhotos', ['below']);
@@ -194,37 +206,38 @@
 						reader.readAsDataURL(files[i]);
 					}
 					else {
-						dijit.showTooltip('Impossible d\'uploader le fichier ' + nomUpload + ' qui est trop volumineux (taille maximale acceptée : 2Mo)', 'uploadPhotos', ['below']);
+						dijit.showTooltip('<img src="images/erreur.png" /> Impossible d\'uploader le fichier ' + nomUpload + ' qui est trop volumineux (taille maximale acceptée : 2Mo)', 'uploadPhotos', ['below']);
 						setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
 					}
 				}
 			};
 
 			socket.on('upload reussi', function(chemin, numero, nom) {
-				dijit.showTooltip('Upload de l\'image réussi !', 'uploadPhotos', ['below']);
+				dijit.showTooltip('<img src="images/ok.png" /> Upload de l\'image réussi !', 'uploadPhotos', ['below']);
 				setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
 				domConstruct.create("img", { src: chemin, id:"photo_" + numero, alt: nom }, dojo.byId("applicationCenter"));
 			});
 			  
-			socket.on('upload echoue', function(){
-				dijit.showTooltip('Echec de l\'upload : le fichier n\'est pas une image ! (les extensions acceptées sont .png, .jpg et .gif)', 'uploadPhotos', ['below']);
+			socket.on('upload echoue', function() {
+				dijit.showTooltip('<img src="images/erreur.png" /> Echec de l\'upload : le fichier n\'est pas une image ! (les extensions acceptées sont .png, .jpg et .gif)', 'uploadPhotos', ['below']);
 				setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
 			});	
 			
-			socket.on('connexion nouveau participant', function(participant){
-				participants.push(participant);
+			socket.on('connexion nouveau participant', function(participant, key) {
+				participants[key] = participant;
 				majParticipants();
 			});
 			  
-			socket.on('deconnexion participant', function(key){
+			socket.on('deconnexion participant', function(key) {
 				participants.splice(key,1);
+				if(key<maCle)
+					maCle--;
 				majParticipants();
 			});
 		});
 		
-		function majParticipants() {
-		
-		}
+		var dataParticipants = { identifier:'value', label:'name', items: [] };
+		var listeParticipants = new dojo.data.ItemFileReadStore({ data: dataParticipants });
 		
 		function participant(prenom, nom, estAnimateur, socketID) {
 			this.prenom = prenom;
@@ -268,7 +281,7 @@
 		<p>Veuillez patienter, chargement en cours...</p>
 	</div>
 	<div id="connexion" style="display: none;">
-		<img src="images/logo_ether_petit.png" alt="logo Ether"/>
+		<img src="images/logo_ether.png" alt="logo Ether"/>
 		<h1>Connexion à ETHER</h1>
 		<form id="formulaireConnexion" data-dojo-type="dijit.form.Form"> <!--method="post" onsubmit="return connexion(this);">-->
 			<table id="tableauConnexion" cellspacing="4">
@@ -317,11 +330,7 @@
 			</div>
 			<input id="uploadPhotos" name="uploadPhotos" multiple="true" type="file" data-dojo-type="dojox.form.Uploader" data-dojo-props="label:'Uploader une photo',uploadOnSelect:true" />
 			<div data-dojo-type="dijit.Tooltip" data-dojo-props="connectId:'uploadPhotos',position:['below']"></div>
-			<select id="listeParticipants" name="listeParticipants" data-dojo-type="dijit.form.FilteringSelect" data-dojo-props="required:false,value:'',placeHolder:'Ajouter un participant'">
-				<option value="AP">Apples</option>
-				<option value="OR">Oranges</option>
-				<option value="PE">Pears</option>
-			</select>
+			<select id="selectionParticipants" name="selectionParticipants" data-dojo-type="dijit.form.FilteringSelect" data-dojo-props="store:listeParticipants,searchAttr:'name',required:false,value:'',placeHolder:'Ajouter un participant'"></select>
 			<div data-dojo-type="dijit.PopupMenuBarItem">
 				<span>Paramètres</span>
 				<div data-dojo-type="dijit.DropDownMenu">
