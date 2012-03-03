@@ -6,11 +6,14 @@
 	<link rel="shortcut icon" type="image/x-icon" href="images/logo_ether_favicon.ico"/>
 	<link rel="stylesheet" href="dojo-release-1.7.1/dijit/themes/claro/claro.css">
 	<style>
-		body {
+		 html, body, #application, #applicationContainer {
 			margin: 0px;
 			padding: 0px;
+			border: 0px;
 			font-family: arial;
 			overflow: hidden;
+			width: 100%;
+			height: 100%;
 		}
 		#chargement {
 			margin: 100px auto;
@@ -29,8 +32,26 @@
 		#connexion #tableauConnexion {
 			margin: auto;
 		}
-		#application {
-		
+		#applicationCenter {
+			margin: 0px;
+			padding: 0px;
+			border: 0px;
+		}
+		#applicationBottom {
+			height: 20%;
+			width: 100%;
+			margin: 0px;
+			padding: 0px;
+		}
+		img.iconLoad {
+			background-image: url("images/load.png");
+			width: 24px;
+			height: 24px;
+		}
+		img.iconSave {
+			background-image: url("images/save.png");
+			width: 24px;
+			height: 24px;
 		}
 		img.iconLogout {
 			background-image: url("images/logout.png");
@@ -39,13 +60,14 @@
 		}
 	</style>
 	<script type="text/javascript" src="/socket.io/socket.io.js"></script>
-	<script src="dojo-release-1.7.1/dojo/dojo.js" data-dojo-config="parseOnLoad: true, isDebug: true"></script>
+	<script src="dojo-release-1.7.1/dojo/dojo.js" data-dojo-config="parseOnLoad: false, isDebug: true"></script>
 	<script>
-		require(["dojo/parser", "dojo/on", "dojox/validate/web", "dijit/_base/manager",
+		require(["dojo/parser", "dojo/on", "dojox/validate/web", "dojo/dom-construct",
 		"dijit/ProgressBar", "dijit/form/ValidationTextBox", "dijit/form/RadioButton", "dijit/form/Form", 
-		"dijit/MenuBar", "dijit/PopupMenuBarItem", "dijit/DropDownMenu", "dijit/MenuItem", "ether/MenuItem", "dijit/MenuSeparator",
+		"dijit/MenuBar", "dijit/PopupMenuBarItem", "dijit/DropDownMenu", "dijit/MenuItem", "ether/MenuItem", "dijit/MenuSeparator", "dijit/PopupMenuItem", "dijit/CheckedMenuItem",
 		"dojox/form/Uploader", "dijit/form/Textarea", "dijit/form/FilteringSelect",
-		"dojo/keys", "dojo/domReady!"], function(parser, on, validate, manager) {
+		"dijit/layout/BorderContainer", "dijit/layout/ContentPane",
+		"dojo/keys", "dojo/domReady!"], function(parser, on, validate, domConstruct) {
 		
 			var TOUS = -1,
 				ANIMATEURS = -2,
@@ -61,7 +83,8 @@
 			var allowedTypes = {
 				'image/png':       'png',
 				'image/jpeg':      'jpg',
-				'image/gif':       'gif'
+				'image/gif':       'gif',
+				'image/bmp':       'bmp'
 			};
 			var allowedExtensions = []; // Array of allowed extensions.
 			var contentTypes      = {}; // Reverse lookup of allowedTypes.
@@ -70,16 +93,17 @@
 				contentTypes[allowedTypes[ct]] = ct;
 			}
 			var testType = new RegExp('(\/uploads\/[0-9]+\.('+allowedExtensions.join('|')+'))$');
-			
-			parser.parse();
+
 			changementPage("chargement", "connexion");
+			parser.parse();
+			new dijit.form.Textarea({ name: "menuEcrirePostit" }, "menuEcrirePostit");
+			
 			on(dijit.byId("boutonConnexion"), "click", function(event) {
 				if(event.type=="click" || (event.type=="keyup" && event.keyCode==dojo.keys.ENTER)) {
 					if(dijit.byId("formulaireConnexion").validate()) {
 						var valeursEntrees = dijit.byId('formulaireConnexion').get('value');
 						moi = new participant(valeursEntrees.prenom, valeursEntrees.nom, valeursEntrees.estAnimateur, 0);
 						socket.emit('identification', moi, valeursEntrees.motDePasse);
-						//changementPage("connexion", "chargement");
 					}
 				}
 			});
@@ -89,7 +113,6 @@
 			}
 			
 			socket.on('identification echouee', function(msgErreur) {
-				//changementPage("chargement", "connexion");
 				switch(msgErreur){
 					case 'faux mdpEntre':
 						dijit.byId("motDePasse").focus();
@@ -129,14 +152,22 @@
 				participants = liste_participants;
 				maCle = participants.length - 1;
 				majParticipants();
-				//changementPage("chargement", "application");
 				changementPage("connexion", "application");
+				dijit.byId("applicationContainer").resize();
 			});
 			
 			dijit.byId("menuDeconnexion").onClick = function() {
 				if(confirm("Etes-vous sûr de vouloir vous déconnecter ?")) {
 					changementPage("application", "chargement");
 					location.reload();
+				}
+			}
+			
+			dijit.byId("menuAjouterPostit").onClick = function() {
+				var texte = dijit.byId("menuEcrirePostit").get('value').replace(/\n/g,'<br />\n');
+				if(texte!='') {
+					dijit.byId("menuEcrirePostit").set('value', '');
+					domConstruct.create("div", { innerHTML: texte }, dojo.byId("applicationCenter"));
 				}
 			}
 			
@@ -147,34 +178,37 @@
 					var nomUpload = files[i].name;
 					var tailleUpload = files[i].size;
 					reader.onloadstart = function() {
-						dijit.byId("uploadPhotos").label = "test";
-						console.log("debut du téléchargement");
+						dijit.showTooltip('Lecture du fichier ' + nomUpload, 'uploadPhotos', ['below']);
 					};
 					reader.onloadend = function() {
-						console.log("fin du téléchargement");
+						dijit.showTooltip('<img src="images/upload.gif" />Upload du fichier...', 'uploadPhotos', ['below']);
 					};
-					reader.onerror = function(){
-						console.log('Erreur lors du téléchargement de l\'image "' + nomUpload + '"');
+					reader.onerror = function() {
+						dijit.showTooltip('Erreur lors de la lecture du fichier ' + nomUpload, 'uploadPhotos', ['below']);
 					};
-					reader.onload = function(d){
-						console.log('image "' + nomUpload + '" correctement uploadee');
-						socket.emit('upload', d.target.result);
+					reader.onload = function(d) {
+						dijit.showTooltip('Lecture de ' + nomUpload + 'réussie', 'uploadPhotos', ['below']);
+						socket.emit('upload', nomUpload, d.target.result);
 					};
 					if(files[i].size < tailleMaxUpload) {
 						reader.readAsDataURL(files[i]);
 					}
 					else {
-						console.log("image \"" + nomUpload + "\" de taille " +	tailleUpload + " trop importante (taille max = " + tailleMaxUpload + ")");
+						dijit.showTooltip('Impossible d\'uploader le fichier ' + nomUpload + ' qui est trop volumineux (taille maximale acceptée : 2Mo)', 'uploadPhotos', ['below']);
+						setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
 					}
 				}
 			};
 
-			socket.on('upload reussi', function(chemin, num){
-				console.log('upload serveur réussi');
+			socket.on('upload reussi', function(chemin, numero, nom) {
+				dijit.showTooltip('Upload de l\'image réussi !', 'uploadPhotos', ['below']);
+				setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
+				domConstruct.create("img", { src: chemin, id:"photo_" + numero, alt: nom }, dojo.byId("applicationCenter"));
 			});
 			  
 			socket.on('upload echoue', function(){
-				console.log('upload serveur échoué');
+				dijit.showTooltip('Echec de l\'upload : le fichier n\'est pas une image ! (les extensions acceptées sont .png, .jpg et .gif)', 'uploadPhotos', ['below']);
+				setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
 			});	
 			
 			socket.on('connexion nouveau participant', function(participant){
@@ -268,8 +302,8 @@
 				<div data-dojo-type="dijit.DropDownMenu">
 					<div data-dojo-type="ether.MenuItem">Connecté(e) en tant que :<br /><span id="moi"></span></div>
 					<div data-dojo-type="dijit.MenuSeparator"></div>
-					<div data-dojo-type="dijit.MenuItem" data-dojo-props="disabled:true">Charger une session</div>
-					<div data-dojo-type="dijit.MenuItem" data-dojo-props="disabled:true">Sauvegarder la session</div>
+					<div id="menuChargement" data-dojo-type="dijit.MenuItem" data-dojo-props="iconClass:'iconLoad', disabled:true">Charger une session</div>
+					<div id="menuSauvegarde" data-dojo-type="dijit.MenuItem" data-dojo-props="iconClass:'iconSave', disabled:true">Sauvegarder la session</div>
 					<div data-dojo-type="dijit.MenuSeparator"></div>
 					<div id="menuDeconnexion" data-dojo-type="dijit.MenuItem" data-dojo-props="iconClass:'iconLogout'">Se déconnecter</div>
 				</div>
@@ -277,16 +311,36 @@
 			<div data-dojo-type="dijit.PopupMenuBarItem">
 				<span>Taper un texte</span>
 				<div data-dojo-type="dijit.DropDownMenu">
-					<div data-dojo-type="ether.MenuItem"><textarea data-dojo-type="dijit.form.Textarea"></textarea></div>
-					<div data-dojo-type="dijit.MenuItem">Ajouter à l'écran</div>
+					<div data-dojo-type="ether.MenuItem"><textarea id="menuEcrirePostit"></textarea></div>
+					<div id="menuAjouterPostit" data-dojo-type="dijit.MenuItem">Ajouter à l'écran</div>
 				</div>
 			</div>
 			<input id="uploadPhotos" name="uploadPhotos" multiple="true" type="file" data-dojo-type="dojox.form.Uploader" data-dojo-props="label:'Uploader une photo',uploadOnSelect:true" />
-			<select data-dojo-type="dijit.form.FilteringSelect" name="listeParticipants" data-dojo-props="required:false,value:'',placeHolder:'Ajouter un participant'">
+			<div data-dojo-type="dijit.Tooltip" data-dojo-props="connectId:'uploadPhotos',position:['below']"></div>
+			<select id="listeParticipants" name="listeParticipants" data-dojo-type="dijit.form.FilteringSelect" data-dojo-props="required:false,value:'',placeHolder:'Ajouter un participant'">
 				<option value="AP">Apples</option>
 				<option value="OR">Oranges</option>
 				<option value="PE">Pears</option>
 			</select>
+			<div data-dojo-type="dijit.PopupMenuBarItem">
+				<span>Paramètres</span>
+				<div data-dojo-type="dijit.DropDownMenu">
+					<div data-dojo-type="dijit.PopupMenuItem">
+						<span>1er paramètre</span>
+						<div data-dojo-type="dijit.DropDownMenu">
+							<div id="menuParametresCorbeille" data-dojo-type="dijit.CheckedMenuItem" data-dojo-props="checked:true">Afficher la corbeille</div>
+							<div id="menuParametresATous" data-dojo-type="dijit.CheckedMenuItem" data-dojo-props="checked:true, disabled:true">Afficher l'envoi à tous</div>
+							<div id="menuParametresAuxAnimateurs" data-dojo-type="dijit.CheckedMenuItem" data-dojo-props="checked:true, disabled:true">Afficher l'envoi aux animateurs</div>
+						</div>
+					</div>
+					<div data-dojo-type="dijit.MenuItem" data-dojo-props="disabled:true">2ème paramètre</div>
+					<div data-dojo-type="dijit.MenuItem" data-dojo-props="disabled:true">3ème paramètre</div>
+				</div>
+			</div>
+		</div>
+		<div id="applicationContainer" data-dojo-type="dijit.layout.BorderContainer">
+			<div id="applicationCenter" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'center'"></div>
+			<div id="applicationBottom" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'bottom'"></div>
 		</div>
 	</div>
 </body>
