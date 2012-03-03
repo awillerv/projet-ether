@@ -194,22 +194,20 @@ $(window).load(function(){
   });
   
   function envoi(cles_destinataires){
-    for(var i in cles_destinataires){
-      var msgs = new Array();
-      $('input[name="input"]').each(function(index){
-        if($(this).val() != '' && cles_destinataires[i] != ''){
-          var type = (testType.test($(this).val()) ? 'image' : 'texte');
-          var msg_id = Math.floor(Math.random()*1000001);
-          var m = new msg(type, msg_id, $(this).val());
-          msgs.push(m);
-        }
-        else{
-          $('#erreur_msg').show();
-          return false;
-        }
-      });
-      socket.emit('envoi', msgs, cles_destinataires[i]);
-    }
+    var msgs = new Array();
+    $('input[name="input"]').each(function(index){
+      if($(this).val() != ''){
+        var type = (testType.test($(this).val()) ? 'image' : 'texte');
+        var msg_id = Math.floor(Math.random()*1000001);
+        var m = new msg(type, msg_id, $(this).val());
+        msgs.push(m);
+      }
+      else{
+        $('#erreur_msg').show();
+        return false;
+      }
+    });
+    socket.emit('envoi', msgs, cles_destinataires);
     return true;
   }
   
@@ -239,22 +237,35 @@ $(window).load(function(){
     envoi(dest);
   });
   
-  socket.on('envoi reussi', function(id_message, cle_destinataire){
-    console.log(
-      "envoi du message " + id_message + " à destination de " +
-      participants[cle_destinataire].prenom + ' ' + participants[cle_destinataire].nom +
-      " réussi"
-    );
-    $('#msg_bien_envoye').text("Le message " + id_message + " a bien été envoyé");
+  socket.on('envoi reussi', function(msg_ids, cles_destinataires){
+    var str = "envoi des messages ";
+    for(var i in msg_ids){
+      str += msg_ids[i] + ((i == msg_ids.length - 1) ? '' : ' ,');
+    }
+    str += " à destination de ";
+    for(var j in cles_destinataires){
+      str += participants[cles_destinataires[j]].prenom + ' '
+              + participants[cles_destinataires[j]].nom + ((j == cles_destinataires.length - 1) ? '' : ' ,');
+    }
+    str += " réussi";
+    console.log(str);
+    $('#msg_bien_envoye').text(str);
     $('#msg_bien_envoye').show();
   });
   
-  socket.on('envoi echoue', function(id_message, cle_destinataire){
-    console.log(
-      "envoi du message " + id_message + " à destination de " +
-      participants[cle_destinataire].prenom + ' ' + participants[cle_destinataire].nom +
-      " échoué"
-    );
+  socket.on('envoi echoue', function(msg_ids, cles_destinataires){
+    var str = "envoi des messages ";
+    for(var i in msg_ids){
+      str += msg_ids[i] + ((i == msg_ids.length - 1) ? '' : ' ,');
+    }
+    str += " à destination de ";
+    for(var j in cles_destinataires){
+      str += participants[cles_destinataires[j]].prenom + ' '
+              + participants[cles_destinataires[j]].nom + ((j == cles_destinataires.length - 1) ? '' : ' ,');
+    }
+    str += " échoué";
+    console.log(str);
+    $('#erreur_msg').text(str);
     $('#erreur_msg').show();
   });
   
