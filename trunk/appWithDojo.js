@@ -36,7 +36,8 @@ participants[NON_ANIMATEURS] = new participant('non animateurs', '', false, unde
 var allowedTypes = {
   'image/png':       'png',
   'image/jpeg':      'jpg',
-  'image/gif':       'gif'
+  'image/gif':       'gif',
+  'image/bmp':       'bmp'
 };
 
 var allowedExtensions = []; // Array of allowed extensions.
@@ -56,6 +57,7 @@ var extValide = new RegExp('('+allowedExtensions.join('|')+')$');
 
 app.use("/dojo-release-1.7.1", express.static(__dirname + '/dojo-release-1.7.1'));
 app.use("/images", express.static(__dirname + '/images'));
+app.use("/uploads", express.static(__dirname + '/uploads'));
 app.listen(490);
 
 app.get('/', function (req, res) {
@@ -217,7 +219,7 @@ io.sockets.on('connection', function (socket) {
     );
   });
   
-  socket.on('upload', function(data){
+  socket.on('upload', function(nomOriginal, data){
     // data is an URL data scheme with base64 encoding (http://tools.ietf.org/html/rfc2397).
     console.log('image reçue : ' + data.substr(0,40));
     data = data.split(';base64,');
@@ -238,13 +240,14 @@ io.sockets.on('connection', function (socket) {
       if(err) throw err;
       // Create a new file with a number as name that is one higher then the current amount of files in the uploads directory.
       var nom = __dirname + '/uploads/' + files.length + '.' + allowedTypes[type];
-
+	  var chemin = 'uploads/' + files.length + '.' + allowedTypes[type];
+	  
       fs.writeFile(nom, data, 'binary', function(err){
         if(err) throw err;
         console.log(nom + ' uploade');
 
         // Send the filename to the client.
-        socket.emit('upload reussi', nom, files.length);
+        socket.emit('upload reussi', chemin, files.length, nomOriginal);
       });
     });
   });
