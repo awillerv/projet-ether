@@ -240,7 +240,7 @@ io.sockets.on('connection', function (socket) {
       if(err) throw err;
       // Create a new file with a number as name that is one higher then the current amount of files in the uploads directory.
       var nom = __dirname + '/uploads/' + files.length + '.' + allowedTypes[type];
-	  var chemin = 'uploads/' + files.length + '.' + allowedTypes[type];
+	    var chemin = 'uploads/' + files.length + '.' + allowedTypes[type];
 	  
       fs.writeFile(nom, data, 'binary', function(err){
         if(err) throw err;

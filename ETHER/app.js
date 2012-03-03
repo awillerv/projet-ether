@@ -56,7 +56,7 @@ var extValide = new RegExp('('+allowedExtensions.join('|')+')$');
 
 app.use("/css", express.static(__dirname + '/css'));
 app.use("/js", express.static(__dirname + '/js'));
-
+app.use("/uploads", express.static(__dirname + '/uploads'));
 app.listen(490);
 
 app.get('/', function (req, res) {
@@ -157,56 +157,84 @@ io.sockets.on('connection', function (socket) {
     }
   });
   
-  socket.on('envoi', function(msgs, cle){
-    var m = new msg('text', -1, '');
-    for(i in msgs){
-      m = msgs[i];
-      if(m.contenu != '' && cle != ''){
-        m.type = (testType.test(m.contenu) ? 'image' : 'texte');
-        socket.emit('envoi reussi', m.id, cle);
-        switch(cle){
-          case TOUS:
-            socket.broadcast.emit('reception', m, maCle);
-            console.log(
-              "envoi d'un message " + m.id + " de contenu " + '"' + m.contenu +
-              '"' + " à tous de la part de " +
-              participants[maCle].prenom + ' ' + participants[maCle].nom
-            );
-            break;
-          
-          case ANIMATEURS:
-            for(j in  participants){
-              if(participants[j].estAnimateur && j != maCle){
-                io.sockets.socket(participants[j].socketID).emit('reception', m, maCle);
-              }
+  socket.on('envoi', function(msgs, cles){
+    var m = new msg('text', -1, ''),
+        msg_ids_ok = new Array(),
+        msg_ids_echoues = new Array(),
+        cles_ok = new Array(),
+        cles_echoues = new Array();
+    for(var i in cles){
+      cle = cles[i];
+      if(cle != ''){
+        cles_ok.push(cle);
+        for(var j in msgs){
+          m = msgs[j];
+          if(m.contenu != ''){
+            m.type = (testType.test(m.contenu) ? 'image' : 'texte');
+            if(i < 1){
+              msg_ids_ok.push(m.id);
             }
-            console.log(
-              "envoi d'un message " + m.id + " de contenu " + '"' + m.contenu +
-              '"' + " à tous les animateurs de la part de " +
-              participants[maCle].prenom + ' ' + participants[maCle].nom
-            );
-            break;
-          
-          case NON_ANIMATEURS:
-            for(j in  participants){
-              if(!participants[j].estAnimateur && j != maCle){
-                io.sockets.socket(participants[j].socketID).emit('reception', m, maCle);
-              }
+            switch(cle){
+              case TOUS:
+                socket.broadcast.emit('reception', m, maCle);
+                console.log(
+                  "envoi d'un message " + m.id + " de contenu " + '"' + m.contenu +
+                  '"' + " à tous de la part de " +
+                  participants[maCle].prenom + ' ' + participants[maCle].nom
+                );
+                break;
+              
+              case ANIMATEURS:
+                for(k in  participants){
+                  if(participants[k].estAnimateur && k != maCle){
+                    io.sockets.socket(participants[k].socketID).emit('reception', m, maCle);
+                  }
+                }
+                console.log(
+                  "envoi d'un message " + m.id + " de contenu " + '"' + m.contenu +
+                  '"' + " à tous les animateurs de la part de " +
+                  participants[maCle].prenom + ' ' + participants[maCle].nom
+                );
+                break;
+              
+              case NON_ANIMATEURS:
+                for(k in  participants){
+                  if(!participants[k].estAnimateur && k != maCle){
+                    io.sockets.socket(participants[k].socketID).emit('reception', m, maCle);
+                  }
+                }
+                console.log(
+                  "envoi d'un message " + m.id + " de contenu " + '"' + m.contenu +
+                  '"' + " à tous les non animateurs de la part de " +
+                  participants[maCle].prenom + ' ' + participants[maCle].nom
+                );
+                break;
+              
+              default: 
+                io.sockets.socket(participants[cle].socketID).emit('reception', m, maCle);
+                console.log(
+                  "envoi d'un message " + m.id + " de contenu " + '"' + m.contenu +
+                  '"' + " à " + participants[cle].prenom + ' ' + participants[cle].nom + " de la part de " +
+                  participants[maCle].prenom + ' ' + participants[maCle].nom
+                );
             }
-            console.log(
-              "envoi d'un message " + m.id + " de contenu " + '"' + m.contenu +
-              '"' + " à tous les non animateurs de la part de " +
-              participants[maCle].prenom + ' ' + participants[maCle].nom
-            );
-            break;
-          
-          default: 
-            io.sockets.socket(participants[cle].socketID).emit('reception', m, maCle);
+          }
+          else{
+            if(i < 1){
+              msg_ids_echoues.push(m.id);
+            }
+          }
         }
       }
       else{
-        socket.emit('envoi echoue', m.id, cle);
+        cles_echoues.push(cle);
       }
+    }
+    if(msg_ids_ok.length > 0 && cles_ok.length > 0){
+      socket.emit('envoi reussi', msg_ids_ok, cles_ok);
+    }
+    if(msg_ids_echoues.length > 0 && cles_echoues > 0){
+      socket.emit('envoi echoue', msg_ids_echoues, cles_echoues);
     }
   });
   
@@ -235,17 +263,17 @@ io.sockets.on('connection', function (socket) {
     data = new Buffer(data[1], 'base64').toString('binary');    
     
     // Get the number of files in the upload dir.
-    fs.readdir('uploads', function(err, files){
+    fs.readdir(__dirname + '/uploads', function(err, files){
       if(err) throw err;
       // Create a new file with a number as name that is one higher then the current amount of files in the uploads directory.
-      var nom = 'uploads/' + files.length + '.' + allowedTypes[type];
-
+      var nom = __dirname + '/uploads/' + files.length + '.' + allowedTypes[type];
+	    var chemin = 'uploads/' + files.length + '.' + allowedTypes[type];
       fs.writeFile(nom, data, 'binary', function(err){
         if(err) throw err;
         console.log(nom + ' uploade');
 
         // Send the filename to the client.
-        socket.emit('upload reussi', nom, files.length);
+        socket.emit('upload reussi', chemin, files.length);
       });
     });
   });
@@ -257,10 +285,10 @@ io.sockets.on('connection', function (socket) {
       socket.broadcast.emit('deconnexion participant', maCle);
     }
     else{
-      fs.readdir('uploads', function(err, files){
+      fs.readdir(__dirname + '/uploads', function(err, files){
         if(err) throw err;
         for(i in files){
-          var nom = 'uploads/' + files[i];
+          var nom = __dirname + '/uploads/' + files[i];
           fs.unlinkSync(nom)
             console.log(nom + ' detruit');
         }
