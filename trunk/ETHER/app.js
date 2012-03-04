@@ -93,7 +93,7 @@ io.sockets.on('connection', function (socket) {
   
   var maCle = 0;
   function login_unique(participant){
-    for(i in participants){
+    for(var i in participants){
       if(participants[i].prenom == trim(participant.prenom) && participants[i].nom == trim(participant.nom)){
         return false;
       }
@@ -281,12 +281,12 @@ io.sockets.on('connection', function (socket) {
   socket.on('disconnect',function(){
 	console.log("deconnexion du participant n°"+maCle);
     participants[maCle] = null;
-    console.log(participants);
     if(participants.length > 0){
+      console.log(participants);
       socket.broadcast.emit('deconnexion participant', maCle);
     }
     else{
-      participants = new Array();
+      console.log(participants);
       fs.readdir(__dirname + '/uploads', function(err, files){
         if(err) throw err;
         for(i in files){
