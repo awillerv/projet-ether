@@ -280,11 +280,13 @@ io.sockets.on('connection', function (socket) {
   
   socket.on('disconnect',function(){
 	console.log("deconnexion du participant n°"+maCle);
-    participants.splice(maCle,1);
+    participants[maCle] = null;
+    console.log(participants);
     if(participants.length > 0){
       socket.broadcast.emit('deconnexion participant', maCle);
     }
     else{
+      participants = new Array();
       fs.readdir(__dirname + '/uploads', function(err, files){
         if(err) throw err;
         for(i in files){

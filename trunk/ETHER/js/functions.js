@@ -144,8 +144,8 @@ $(window).load(function(){
     majParticipants();
   });
   
-  socket.on('deconnexion participant', function(key){
-    participants.splice(key,1);
+  socket.on('deconnexion participant', function(cle){
+    participants[cle] = null;
     majParticipants();
   });
   
@@ -153,7 +153,7 @@ $(window).load(function(){
     $('option').remove();
     $('select[name="participants"]').each(function(index){
       for(cle in participants){
-        if(cle != maCle){
+        if(cle != maCle && participants[cle] != null){
           $(this).append(
             $("<option></option>").attr("value",cle).text(
               participants[cle].prenom + ' ' +
