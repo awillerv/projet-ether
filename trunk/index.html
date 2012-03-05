@@ -229,9 +229,7 @@
 			});
 			  
 			socket.on('deconnexion participant', function(key) {
-				participants.splice(key,1);
-				if(key<maCle)
-					maCle--;
+				participants[maCle] = null;
 				majParticipants();
 			});
 		});

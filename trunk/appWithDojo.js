@@ -254,7 +254,7 @@ io.sockets.on('connection', function (socket) {
   
   socket.on('disconnect',function(){
 	console.log("deconnexion du participant n°"+maCle);
-    participants.splice(maCle,1);
+    participants[maCle] = null;
     if(participants.length > 0){
       socket.broadcast.emit('deconnexion participant', maCle);
     }
