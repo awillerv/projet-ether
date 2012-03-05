@@ -124,6 +124,10 @@ $(window).load(function(){
   participants[ANIMATEURS] = new participant('animateurs', '', true, undefined);
   participants[NON_ANIMATEURS] = new participant('non animateurs', '', false, undefined);
   
+  function remplirId(){
+    $('#moi').text('Vous etes connecte en tant que : ' + moi.prenom + ' ' + moi.nom + ' ' + ((moi.estAnimateur) ? '(animateur)' : ''));
+  }
+  
   socket.on('identification reussie', function(liste_participants){
     $('#identification').hide();
     $('#application').show();
@@ -136,7 +140,7 @@ $(window).load(function(){
     participants = liste_participants;
     maCle = participants.length - 1;
     majParticipants();
-    $('#moi').text('Vous etes connecte en tant que : ' + moi.prenom + ' ' + moi.nom + ' ' + ((moi.estAnimateur) ? '(animateur)' : ''));
+    remplirId();
   });
   
   socket.on('connexion nouveau participant', function(participant){
@@ -150,6 +154,7 @@ $(window).load(function(){
   });
   
   function majParticipants(){
+    console.log('maj des participants');
     $('option').remove();
     $('select[name="participants"]').each(function(index){
       for(cle in participants){
@@ -283,26 +288,35 @@ $(window).load(function(){
     return url.substr(debut + 1, fin - debut - 1);
   }
   
+  function ajouterMessage(m, id_emetteur){
+    switch(m.type){
+      case 'texte':
+        $('#texte').append(
+          '<p id="' + m.id + '" class="message">Message ' + m.id + ' de ' +
+          '<span class="id_emetteur">' + id_emetteur + '</span>' +
+          '(cle = ' + cle +
+          ') : ' + m.contenu +'</p>'
+        );
+        return true;
+        
+      case 'image':
+        $('#image').append(
+          '<p id="' + m.id + '" class="message">Message ' + m.id + ' de ' +
+          '<span class="id_emetteur">' + id_emetteur + '</span>' +
+          '(cle = ' + cle +
+          ') : <a id="image' + getNom(m.contenu) + '" href="' + m.contenu + '" target="_blank">' + m.contenu + '</a></p>'
+        );
+        return true;
+        
+      default:
+        return false;
+    }
+  }
+  
   socket.on('reception', function(m, cle_emetteur){
     var p = participants[cle_emetteur];
-    if(m.type == 'texte'){
-      $('#texte').append(
-        '<p id="' + m.id + '">Message ' + m.id + ' de ' +
-        p.prenom + ' ' +
-        p.nom + ((p.estAnimateur) ? ' (animateur) ' : ' ') +
-        '(cle = ' + cle +
-        ') : ' + m.contenu +'</p>'
-      );
-      socket.emit('resultat reception',m.id, cle_emetteur, true);
-    }
-    else if(m.type == 'image'){
-      $('#image').append(
-        '<p id="' + m.id + '">Message ' + m.id + ' de ' +
-        p.prenom + ' ' +
-        p.nom + ((p.estAnimateur) ? ' (animateur) ' : ' ') +
-        '(cle = ' + cle +
-        ') : <a id="image' + getNom(m.contenu) + '" href="' + m.contenu + '" target="_blank">' + m.contenu + '</a></p>'
-      );
+    var id_emetteur = p.prenom + ' ' + p.nom + ((p.estAnimateur) ? ' (animateur) ' : ' ');
+    if(ajouterMessage(m, id_emetteur)){
       socket.emit('resultat reception',m.id, cle_emetteur, true);
     }
     else{
@@ -316,7 +330,7 @@ $(window).load(function(){
   
   function handleUploads(files, tailleMax){
     for (var i = 0; i < files.length; i++) {
-	console.log(files[i]);
+	    // console.log(files[i]);
       var reader = new FileReader();
       reader.onloadstart = function(){
         $('#loadingUpload').show();
@@ -363,5 +377,112 @@ $(window).load(function(){
   
   socket.on('upload echoue', function(){
     $('#erreurType').show();
+  });
+  
+  $('#saveSession').on('click',function(){
+    // on vérifie que le localStorage est supporté
+    if(typeof(localStorage) == 'undefined' ) {
+      alert('Votre navigateur ne supporte pas l\'objet localStorage, du coup pas de sauvegarde de session!');
+    }
+    else{
+      console.log('localStorage ok');
+      
+      // on commence par vider la base de données
+      localStorage.clear();
+      console.log('bdd vidée');
+      
+      // on commence par enregistrer l'identité de l'utilisateur
+      var p = new Array('id', moi.prenom, moi.nom);
+      // on utilise un try/catch au cas où on aurait plus de place
+      try{
+        localStorage.setItem('id', p.join('|'));
+        console.log('id enregistré');
+      }
+      catch(e){
+        if (e == QUOTA_EXCEEDED_ERR){
+          alert('Plus de place pour stocker vos identifiants!');
+        }
+        console.log('impossible d\'enregistrer l\'id');
+      }
+        
+      // on enregistre ensuite les messages (texte ou image) du plus récent au plus ancien
+      var m = new Array();
+      $($('.message').get().reverse()).each(function(index){
+        m = ['texte', $(this).attr('id'), $(this).text(),$(this).children('span[class="id_emetteur"]:first-child').text()];
+        // on utilise un try/catch au cas où on aurait plus de place
+        try{
+          // les infos pertinentes seront séparées par un | dans la string enregistrée
+          localStorage.setItem('texte' + index, m.join('|'));
+          console.log('texte ' + index + ' enregistré');
+        }
+        catch(e){
+          if (e == QUOTA_EXCEEDED_ERR){
+            alert(
+            'Plus de place pour stocker vos messages (texte)! ' +
+            'Vos ' + (index + 1) + ' messages les plus récents ont toutefois été enregistrés'
+            );
+          }
+          console.log('impossible d\'enregistrer le texte ' + index);
+        }
+      });
+    }
+  });
+  
+  $('#loadSession').on('click',function(){
+    // on vérifie que le localStorage est supporté
+    if(typeof(localStorage) == 'undefined' ) {
+      alert('Votre navigateur ne supporte pas l\'objet localStorage, du coup pas de chargement de session!');
+    }
+    else{
+      console.log('localStorage ok');
+      var data = new Array();
+      var t = new Array();
+      for(var i = 0 ; i < localStorage.length ; i++){
+        // on transforme la string enregistrée en tableau, sachant que le séparateur est |
+        t = localStorage.getItem(localStorage.key(i)).split('|');
+        console.log(t);
+        var m = new msg('texte', 0, '');
+        var d = new Array();
+        switch(t[0]){
+          // si c'est l'identité de l'utilisateur courant
+          case 'id':
+            moi.prenom = t[1];
+            moi.nom = t[2];
+            console.log('id chargé');
+            break;
+          // si c'est un des messages reçus par l'utilisateur courant
+          case 'texte':
+            m.type = t[0];
+            m.id = t[1];
+            m.contenu = t[2];
+            d.push(m);
+            d.push(t[3]);
+            data.push(d);
+            console.log('message ' + i + ' chargé');
+            break;            
+        }
+      }
+      // on change les infos en haut de la page
+      remplirId();
+            
+      // on informe le serveur du changement d'identité
+      socket.emit('changement id', moi);
+      
+      // enfin on écrit les messages
+      data.reverse();
+      for(var j in data){
+        console.log(data[j]);
+        ajouterMessage(data[j][0], data[j][1]);
+      } 
+    }
+  });
+  
+  socket.on('changement id participant', function(participant, cle){
+    console.log('changement id participant');
+    console.log('ancien id ' + participants[cle].prenom + ' ' + participants[cle].nom);
+    console.log('nouvel id ' + participant.prenom + ' ' + participant.nom);
+    participants[cle].prenom = participant.prenom;
+    participants[cle].nom = participant.nom;
+    majParticipants();
   });
 });

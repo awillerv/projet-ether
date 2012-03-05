@@ -94,7 +94,7 @@ io.sockets.on('connection', function (socket) {
   var maCle = 0;
   function login_unique(participant){
     for(var i in participants){
-      if(participants[i].prenom == trim(participant.prenom) && participants[i].nom == trim(participant.nom)){
+      if(participants[i] != null && participants[i].prenom == trim(participant.prenom) && participants[i].nom == trim(participant.nom)){
         return false;
       }
     }
@@ -277,6 +277,15 @@ io.sockets.on('connection', function (socket) {
         socket.emit('upload reussi', chemin, files.length);
       });
     });
+  });
+  
+  socket.on('changement id', function(participant){
+    console.log('changement id participant');
+    console.log('ancien id ' + participants[maCle].prenom + ' ' + participants[maCle].nom);
+    console.log('nouvel id ' + participant.prenom + ' ' + participant.nom);
+    participants[maCle].prenom = participant.prenom;
+    participants[maCle].nom = participant.nom;
+    socket.broadcast.emit('changement id participant', participant, maCle);
   });
   
   socket.on('disconnect',function(){
