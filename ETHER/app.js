@@ -249,6 +249,7 @@ io.sockets.on('connection', function (socket) {
   socket.on('upload', function(data){
     // data is an URL data scheme with base64 encoding (http://tools.ietf.org/html/rfc2397).
     console.log('image reçue : ' + data.substr(0,40));
+    console.log('data length : ' + data.length);
     data = data.split(';base64,');
     
     var type = data[0].substr(5); // strip the data:
@@ -281,12 +282,21 @@ io.sockets.on('connection', function (socket) {
   socket.on('disconnect',function(){
 	console.log("deconnexion du participant n°"+maCle);
     participants[maCle] = null;
-    if(participants.length > 0){
-      console.log(participants);
+    var resteUtilisateurs = false;
+    var i = 0;
+    while(i < participants.length && !resteUtilisateurs){
+      if(participants[i] != null){
+        resteUtilisateurs = true;
+      }
+      else{
+        i++;
+      }
+    }
+    if(resteUtilisateurs){
       socket.broadcast.emit('deconnexion participant', maCle);
     }
     else{
-      console.log(participants);
+      participants.splice(0,participants.length);
       fs.readdir(__dirname + '/uploads', function(err, files){
         if(err) throw err;
         for(i in files){
