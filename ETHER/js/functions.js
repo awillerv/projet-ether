@@ -292,7 +292,7 @@ $(window).load(function(){
     switch(m.type){
       case 'texte':
         $('#texte').append(
-          '<p id="' + m.id + '" class="message">Message ' + m.id + ' de ' +
+          '<p id="' + m.id + '" class="texte">Message ' + m.id + ' de ' +
           '<span class="id_emetteur">' + id_emetteur + '</span>' +
           '(cle = ' + cle +
           ') : ' + m.contenu +'</p>'
@@ -300,11 +300,13 @@ $(window).load(function(){
         return true;
         
       case 'image':
+        console.log(m.contenu);
         $('#image').append(
-          '<p id="' + m.id + '" class="message">Message ' + m.id + ' de ' +
+          '<p id="' + m.id + '" class="image">Message ' + m.id + ' de ' +
           '<span class="id_emetteur">' + id_emetteur + '</span>' +
           '(cle = ' + cle +
-          ') : <a id="image' + getNom(m.contenu) + '" href="' + m.contenu + '" target="_blank">' + m.contenu + '</a></p>'
+          ') : ' + m.contenu + ' : ' +
+          '<a id="image' + getNom(m.contenu) + '" href="' + m.contenu + '" target="_blank"><img src="' + m.contenu + '"/></a></p>'
         );
         return true;
         
@@ -365,14 +367,14 @@ $(window).load(function(){
       $('#tailleMaxDepassee').hide();
     },
     change: function() {
-      handleUploads(this.files, 2000000);
+      handleUploads(this.files, 500000);
     }
   });
   
-  socket.on('upload reussi', function(chemin, num){
-    $('#image').append(
-      '<a id="image' + num + '" href="' + '/' + chemin + '" target="_blank">' + '<img src="' + '/' + chemin + '"/>' + '</a><br/>'
-    );
+  socket.on('upload reussi', function(chemin){
+    var id_emetteur = moi.prenom + ' ' + moi.nom + ((moi.estAnimateur) ? ' (animateur) ' : ' ');
+    var m = new msg('image', Math.floor(Math.random()*1000001), chemin);
+    ajouterMessage(m, id_emetteur);
   });
   
   socket.on('upload echoue', function(){
@@ -405,10 +407,11 @@ $(window).load(function(){
         console.log('impossible d\'enregistrer l\'id');
       }
         
-      // on enregistre ensuite les messages (texte ou image) du plus récent au plus ancien
+      // on enregistre ensuite les messages texte du plus récent au plus ancien
       var m = new Array();
-      $($('.message').get().reverse()).each(function(index){
-        m = ['texte', $(this).attr('id'), $(this).text(),$(this).children('span[class="id_emetteur"]:first-child').text()];
+      $($('.texte').get().reverse()).each(function(index){
+        // m = [type, message id, contenu, auteur id, extension]
+        m = ['texte', $(this).attr('id'), $(this).text(), $(this).children('span').text(), 'txt'];
         // on utilise un try/catch au cas où on aurait plus de place
         try{
           // les infos pertinentes seront séparées par un | dans la string enregistrée
@@ -419,11 +422,36 @@ $(window).load(function(){
           if (e == QUOTA_EXCEEDED_ERR){
             alert(
             'Plus de place pour stocker vos messages (texte)! ' +
-            'Vos ' + (index + 1) + ' messages les plus récents ont toutefois été enregistrés'
+            'Vos ' + (index + 1) + ' textes les plus récents ont toutefois été enregistrés'
             );
           }
           console.log('impossible d\'enregistrer le texte ' + index);
         }
+      });
+      
+      // on enregistre ensuite les messages image du plus récent au plus ancien
+      $($('.image').get().reverse()).each(function(index, el){
+        console.log($(this).children('a').attr('href') + ' requete envoyée');
+        socket.emit('data encode request', $(this).children('a').attr('href'));
+        socket.on('data encode response', function(data, ext){
+          // m = [type, message id, contenu, auteur id, extension]
+          m = ['image', $(el).attr('id'), data, $(el).children('span').text(), ext];
+          // on utilise un try/catch au cas où on aurait plus de place
+          try{
+            // les infos pertinentes seront séparées par un | dans la string enregistrée
+            localStorage.setItem('image' + index, m.join('|'));
+            console.log('image ' + index + ' enregistrée');
+          }
+          catch(e){
+            if (e == QUOTA_EXCEEDED_ERR){
+              alert(
+              'Plus de place pour stocker vos images! ' +
+              'Vos ' + (index + 1) + ' images les plus récentes ont toutefois été enregistrées'
+              );
+            }
+            console.log('impossible d\'enregistrer l\'image ' + index);
+          }
+        });
       });
     }
   });
@@ -434,46 +462,44 @@ $(window).load(function(){
       alert('Votre navigateur ne supporte pas l\'objet localStorage, du coup pas de chargement de session!');
     }
     else{
+      //var data = new Array();
       console.log('localStorage ok');
-      var data = new Array();
       var t = new Array();
-      for(var i = 0 ; i < localStorage.length ; i++){
+      for(var i = localStorage.length - 1 ; i >= 0 ; i--){
         // on transforme la string enregistrée en tableau, sachant que le séparateur est |
         t = localStorage.getItem(localStorage.key(i)).split('|');
-        console.log(t);
         var m = new msg('texte', 0, '');
-        var d = new Array();
-        switch(t[0]){
-          // si c'est l'identité de l'utilisateur courant
-          case 'id':
-            moi.prenom = t[1];
-            moi.nom = t[2];
-            console.log('id chargé');
-            break;
-          // si c'est un des messages reçus par l'utilisateur courant
-          case 'texte':
-            m.type = t[0];
-            m.id = t[1];
-            m.contenu = t[2];
-            d.push(m);
-            d.push(t[3]);
-            data.push(d);
-            console.log('message ' + i + ' chargé');
-            break;            
+        // si c'est l'identité de l'utilisateur courant
+        if(t[0] == 'id'){
+          moi.prenom = t[1];
+          moi.nom = t[2];
+          console.log('id chargé');
+        }
+        // si c'est un des messages reçus par l'utilisateur courant
+        else if(t[0] == 'texte'){
+          m.type = t[0];
+          m.id = t[1];
+          m.contenu = t[2];
+          console.log('message ' + i + ' chargé');
+          ajouterMessage(m, t[3]);
+        }
+        else{
+          // t[2] = data et t[4] = extension ('image/jpg' par exemple)
+          console.log('l\'extension du fichier est : ' + t[4]);
+          socket.emit('data decode request', t);
         }
       }
+      
+      socket.on('data decode response', function(m, id_emetteur){
+        console.log('le chemin retrouvé est ' + m.contenu);
+        ajouterMessage(m, id_emetteur);
+      });
+      
       // on change les infos en haut de la page
       remplirId();
             
       // on informe le serveur du changement d'identité
-      socket.emit('changement id', moi);
-      
-      // enfin on écrit les messages
-      data.reverse();
-      for(var j in data){
-        console.log(data[j]);
-        ajouterMessage(data[j][0], data[j][1]);
-      } 
+      socket.emit('changement id', moi); 
     }
   });
   

@@ -246,6 +246,28 @@ io.sockets.on('connection', function (socket) {
     );
   });
   
+  // data correspond au string en base 64 de l'image (et rien d'autre)
+  function enregistrerImage(data, type){
+    var extValide = true;
+    console.log('l\'extension est ' + type);
+    if (!allowedTypes[type]) {
+      console.log('type invalide');
+      extValide = false;
+    }
+    
+    // Decode the base64 data to binary.
+    binaryData = new Buffer(data, 'base64').toString('binary');    
+    
+    console.log('l\'extension du fichier ' + ((extValide) ? 'est' : 'n\'est pas') + ' valide');
+    if(extValide){
+      var files = fs.readdirSync(__dirname + '/uploads');
+      var chemin = '/uploads/' + files.length + '.' + allowedTypes[type];
+      var nom = __dirname + chemin;
+      fs.writeFileSync(nom, binaryData, 'binary')
+        return chemin;
+    }    
+  }
+  
   socket.on('upload', function(data){
     // data is an URL data scheme with base64 encoding (http://tools.ietf.org/html/rfc2397).
     console.log('image reçue : ' + data.substr(0,40));
@@ -254,31 +276,21 @@ io.sockets.on('connection', function (socket) {
     
     var type = data[0].substr(5); // strip the data:
     
-    if (!allowedTypes[type]) {
-      console.log('type invalide');
-      socket.emit('upload echoue');
-      return;
-    }
-
-    // Decode the base64 data to binary.
-    data = new Buffer(data[1], 'base64').toString('binary');    
+    // On enregistre l'image dans le dossier upload
+    var chemin = enregistrerImage(data[1], type);
+    console.log('resultat de l\'upload : ' + chemin);
     
-    // Get the number of files in the upload dir.
-    fs.readdir(__dirname + '/uploads', function(err, files){
-      if(err) throw err;
-      // Create a new file with a number as name that is one higher then the current amount of files in the uploads directory.
-      var nom = __dirname + '/uploads/' + files.length + '.' + allowedTypes[type];
-	    var chemin = 'uploads/' + files.length + '.' + allowedTypes[type];
-      fs.writeFile(nom, data, 'binary', function(err){
-        if(err) throw err;
-        console.log(nom + ' uploade');
-
-        // Send the filename to the client.
-        socket.emit('upload reussi', chemin, files.length);
-      });
-    });
+    if(chemin == null){
+      socket.emit('upload echoue');
+    }
+    else{
+      // Send the filename to the client.
+      socket.emit('upload reussi', chemin);
+    }
   });
   
+  // lorsqu'on charge une 'session' on change le prénom/nom de l'utilisateur courant
+  // de plus on informe les autres du changement
   socket.on('changement id', function(participant){
     console.log('changement id participant');
     console.log('ancien id ' + participants[maCle].prenom + ' ' + participants[maCle].nom);
@@ -286,6 +298,43 @@ io.sockets.on('connection', function (socket) {
     participants[maCle].prenom = participant.prenom;
     participants[maCle].nom = participant.nom;
     socket.broadcast.emit('changement id participant', participant, maCle);
+  });
+  
+  // url de la forme '/uploads/3.jpg'
+  function getExt(url){
+    var ext = '',
+        debut = url.length - 1,
+        fin = url.length - 1;
+    
+    while(url.charAt(debut) != '.' && debut >= 0){
+      debut--;
+    }
+    ext = url.substr(debut + 1, fin - debut);
+    if(ext = 'jpg'){
+      ext = 'jpeg';
+    }
+    return ext;
+  }
+  
+  // lorsqu'on sauve une session le serveur encode à la volée les images en base64 pour qu'elles soient sauvées comme string
+  socket.on('data encode request', function(url){
+    // url est de la forme '/uploads/3.jpg'
+    var ext = 'image/' + getExt(url);
+    console.log(url);
+    console.log(ext);
+    fs.readFile(__dirname + url, 'base64', function (err, data) {
+      if (err) throw err;
+      console.log(data.substr(0,40));
+      socket.emit('data encode response', data, ext);
+    });
+  });
+  
+  // lorsqu'on charge une session le serveur décode et enregistre à la volée les images à partir du string (base 64)
+  socket.on('data decode request', function(t){
+    // la fonction d'enregistrement renvoie le chemin
+    console.log('data decode request');
+    var m = new msg(t[0], t[1], enregistrerImage(t[2], t[4]));
+    socket.emit('data decode response', m, t[3]);
   });
   
   socket.on('disconnect',function(){
