@@ -85,7 +85,7 @@ console.log("webkit : "+has("webkit"));
 				NON_ANIMATEURS = -3;
 			var maCle = -1;
 			var moi = new participant('', '', false, 0); 
-			var socket = io.connect('http://localhost');
+			var socket = io.connect(location.href);
 			console.log(socket);
 			var participants = new Array();
 			participants[TOUS] = new participant('tous', '', undefined, undefined);
