@@ -5,11 +5,12 @@ require({"dojo/declare","dojo/dom-construct","dojo/_base/window"}, function(decl
 {	
 	return declare("ether.manager",null,
 	{
-		constructor: function(){
-		this.DZList=new array();
-		this.PIList=new array();
-		this.groupId=0;
-	},
+		constructor: function()
+		{
+			this.DZList=new array();
+			this.PIList=new array();
+			this.groupId=0;
+		},
 		
 		createDropZone: function(clientKeyList)
 		{		var clientArray;
@@ -39,14 +40,11 @@ require({"dojo/declare","dojo/dom-construct","dojo/_base/window"}, function(decl
 				}
 				}
 				
-				var inner=='<img src="'+imgpath+'"/><br/>'; 
-				if (count>1){count=count+1; inner=inner+"<p>Groupe "+count+"</p>">;}else{inner=inner+"<p>"+participants[clientArray[0]].prenom+" "+clientArray[0]].nom};
+				var inner='<img src="'+imgpath+'"/><br/>'; 
+				if (count>1){count=count+1; inner=inner+"<p>Groupe "+count+"</p>";}else{inner=inner+"<p>"+participants[clientArray[0]].prenom+" "+participants[clientArray[0]].nom+"</p>"};
 				
 				node=dojo.create(div,{class:"DZ",innerHTML: inner, style:{float:'left'}},dojo.byId("applicationBottom"));
 				return new cibleEnvoi(node,clientArray);
 		}
-	
-	}
-
-
-}
+	});
+});

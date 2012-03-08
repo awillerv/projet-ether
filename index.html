@@ -62,12 +62,12 @@
 	<script type="text/javascript" src="/socket.io/socket.io.js"></script>
 	<script src="dojo-release-1.7.1/dojo/dojo.js" data-dojo-config="parseOnLoad: false, isDebug: true"></script>
 	<script>
-		require(["dojo/parser", "dojo/on", "dojox/validate/web", "dojo/dom-construct", "dojo/_base/sniff",
+		require(["dojo/parser", "dojo/on", "dojox/validate/web", "dojo/dom-construct", "dojo/_base/unload", "dojo/_base/sniff",
 		"dijit/ProgressBar", "dijit/form/ValidationTextBox", "dijit/form/RadioButton", "dijit/form/Form", 
 		"dijit/MenuBar", "dijit/PopupMenuBarItem", "dijit/DropDownMenu", "dijit/MenuItem", "ether/MenuItem", "dijit/MenuSeparator", "dijit/PopupMenuItem", "dijit/CheckedMenuItem",
 		"dojox/form/Uploader", "dijit/form/Textarea", "dijit/form/FilteringSelect", "dojo/data/ItemFileReadStore",
 		"dijit/layout/BorderContainer", "dijit/layout/ContentPane",
-		"dojo/keys","ether/postIt","ether/cibleEnvoi","ether/manager" "dojo/domReady!"], function(parser, on, validate, domConstruct, has) {
+		"dojo/keys","ether/postIt","ether/cibleEnvoi","ether/manager", "dojo/domReady!"], function(parser, on, validate, domConstruct, has) {
 		
 console.log("mozilla : "+has("mozilla"));
 console.log("firefox : "+has("ff"));
@@ -79,7 +79,8 @@ console.log("safari : "+has("safari"));
 console.log("ios : "+has("ios"));
 console.log("android : "+has("android"));
 console.log("webkit : "+has("webkit"));
-		
+console.log("   test test   ");
+
 			var TOUS = -1,
 				ANIMATEURS = -2,
 				NON_ANIMATEURS = -3;
@@ -316,9 +317,11 @@ console.log("webkit : "+has("webkit"));
 				if(confirm("Etes-vous sûr de vouloir vous déconnecter ?\n(Attention : toutes les données non sauvegardées seront perdues)")) {
 					socket.disconnect();
 					changementPage("application", "chargement");
-					setTimeout("location.reload()", 1000);
+					setTimeout("location.reload()", 2000);
 				}
 			}
+			
+			unload.addOnUnload(window, function(){ socket.disconnect(); });
 			
 			dijit.byId("menuAjouterPostit").onClick = function() {
 				var texte = dijit.byId("menuEcrirePostit").get('value').replace(/\n/g,'<br />\n');
