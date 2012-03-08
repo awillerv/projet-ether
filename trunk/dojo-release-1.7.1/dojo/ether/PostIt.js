@@ -49,9 +49,11 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/moveable','dojo/dom-construc
 																			{
 																				return false;
 																			}
+													
 																		}
 											,this);
 									},
+									
 		destroy: function(){
 							dojo.destroy(this.node);
 							}
