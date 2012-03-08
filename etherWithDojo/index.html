@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+    <title>ETHER</title>
+	<link rel="shortcut icon" type="image/x-icon" href="images/favicon.ico"/>
+	<!-- on charge les fichiers css : le thème "claro" de Dojo, et notre propre style -->
+	<link rel="stylesheet" href="dojo-release-1.7.1/dijit/themes/claro/claro.css">
+	<link rel="stylesheet" href="css/style.css">
+	<!-- on charge les fichiers javascript : socket.io pour la communication avec le serveur, le framework Dojo, puis notre propre script -->
+	<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+	<script type="text/javascript" src="dojo-release-1.7.1/dojo/dojo.js" data-dojo-config="parseOnLoad: false, isDebug: true"></script>
+	<script type="text/javascript" src="javascript/script.js"></script>
+</head>
+
+<body class="claro">
+	<!-- à afficher si le navigateur ne supporte pas javascript ou que javascript a été désactivé -->
+	<noscript>
+		<p class="rouge">Impossible de charger la page de connexion à ETHER</p>
+		<p>Les deux raisons possibles sont :
+			<ol>
+			<li>Votre navigateur ne supporte pas JavaScript :<br />Dans ce cas vous pouvez télécharger un navigateur compatible tel que <a href="http://www.mozilla.org/fr/firefox/">Mozilla Firefox</a> ou <a href="http://www.google.fr/chrome?hl=fr">Google Chrome</a> par exemple.</li>
+			<br />
+			<li>Vous avez désactivé JavaScript dans votre navigateur :<br />Il faut donc le réactiver (si vous ne savez pas comment faire, le site <a href="http://www.maboite.qc.ca/activation_js.php" target="_blank">"ma boite"</a> vous l'expliquera très bien).</li>
+			</ol>
+		</p>
+	</noscript> 
+	
+	<!-- page de chargement qu'on affiche par défaut pour faire patienter l'utilisateur -->
+	<div id="chargement">
+		<div id="progressbar" data-dojo-type="dijit.ProgressBar" indeterminate="true"></div>
+		<p>Veuillez patienter, chargement en cours...</p>
+	</div>
+	
+	<!-- page de connexion à ETHER : contient le logo et le formulaire de connexion (avec les champs "prenom", "nom", "estAnimateur" et "motDePasse") -->
+	<div id="connexion" style="display: none;">
+		<img src="images/logo_ether.png" alt="logo Ether"/>
+		<h1>Connexion à ETHER</h1>
+		<form id="formulaireConnexion" data-dojo-type="dijit.form.Form">
+			<table id="tableauConnexion" cellspacing="4">
+				<tr>
+					<td colspan="2"><input type="text" required="true" name="prenom" id="prenom" placeholder="Votre prénom" data-dojo-type="dijit.form.ValidationTextBox" missingMessage="Ce champ est obligatoire" /></td>
+				</tr>
+				<tr>
+					<td colspan="2"><input type="text" required="true" name="nom" id="nom" placeholder="Votre nom" data-dojo-type="dijit.form.ValidationTextBox" missingMessage="Ce champ est obligatoire" /></td>
+				</tr>
+				<tr>
+					<td>
+						<input type="radio" id="participant" name="estAnimateur" value="false" checked="checked" data-dojo-type="dijit.form.RadioButton" onclick="hide('champCache');" /> 
+						<label for="participant">Participant</label>
+					</td>
+					<td>
+						<input type="radio" id="animateur" name="estAnimateur" value="true" data-dojo-type="dijit.form.RadioButton" onclick="show('champCache');" />
+						<label for="animateur">Animateur</label>
+					</td>
+				</tr>
+				<tr id="champCache" style="display:none;">
+					<td colspan="2"><input type="password" name="motDePasse" id="motDePasse" placeholder="Mot de passe" data-dojo-type="dijit.form.ValidationTextBox" invalidMessage="Le mot de passe est obligatoire pour les animateurs"/></td>
+				</tr>
+			</table>
+			<input type="button" value="Se connecter" label="Se connecter" id="boutonConnexion" data-dojo-type="dijit.form.Button" />
+		</form>
+	</div>
+	
+	<!-- page de l'application ETHER proprement dite : contient une barre de menu et le corps (container) de l'application-->
+	<div id="application" style="display: none;">
+		<!-- début de la déclaration de la barre de menu, de ses onglets et des sous-menus associés -->
+		<div data-dojo-type="dijit.MenuBar" id="navMenu">
+			<div data-dojo-type="dijit.PopupMenuBarItem">
+				<span>ETHER</span>
+				<div data-dojo-type="dijit.DropDownMenu">
+					<div data-dojo-type="ether.MenuItem">Connecté(e) en tant que :<br /><span id="moi"></span></div>
+					<div data-dojo-type="dijit.MenuSeparator"></div>
+					<div id="menuChargement" data-dojo-type="dijit.MenuItem" data-dojo-props="iconClass:'iconLoad', disabled:true">Charger une session</div>
+					<div id="menuSauvegarde" data-dojo-type="dijit.MenuItem" data-dojo-props="iconClass:'iconSave', disabled:true">Sauvegarder la session</div>
+					<div data-dojo-type="dijit.MenuSeparator"></div>
+					<div id="menuDeconnexion" data-dojo-type="dijit.MenuItem" data-dojo-props="iconClass:'iconLogout'">Se déconnecter</div>
+				</div>
+			</div>
+			<div data-dojo-type="dijit.PopupMenuBarItem">
+				<span>Taper un texte</span>
+				<div data-dojo-type="dijit.DropDownMenu">
+					<div data-dojo-type="ether.MenuItem"><textarea id="menuEcrirePostit"></textarea></div>
+					<div id="menuAjouterPostit" data-dojo-type="dijit.MenuItem">Ajouter à l'écran</div>
+				</div>
+			</div>
+			<input id="uploadPhotos" name="uploadPhotos" multiple="true" type="file" data-dojo-type="dojox.form.Uploader" data-dojo-props="label:'Uploader une photo',uploadOnSelect:true" />
+			<div data-dojo-type="dijit.Tooltip" data-dojo-props="connectId:'uploadPhotos',position:['below']"></div>
+			<select id="selectionParticipants" name="selectionParticipants" data-dojo-type="dijit.form.FilteringSelect" data-dojo-props="store:listeParticipants,searchAttr:'name',required:false,value:'',placeHolder:'Ajouter un participant'"></select>
+			<div data-dojo-type="dijit.PopupMenuBarItem">
+				<span>Paramètres</span>
+				<div data-dojo-type="dijit.DropDownMenu">
+					<div data-dojo-type="dijit.PopupMenuItem">
+						<span>Affichage</span>
+						<div data-dojo-type="dijit.DropDownMenu">
+							<div id="menuParametresCorbeille" data-dojo-type="dijit.CheckedMenuItem" data-dojo-props="checked:true">Afficher la corbeille</div>
+							<div id="menuParametresATous" data-dojo-type="dijit.CheckedMenuItem" data-dojo-props="checked:true, disabled:true">Afficher l'envoi à tous</div>
+							<div id="menuParametresAuxAnimateurs" data-dojo-type="dijit.CheckedMenuItem" data-dojo-props="checked:true, disabled:true">Afficher l'envoi aux animateurs</div>
+							<div id="menuParametresAuxParticipants" data-dojo-type="dijit.CheckedMenuItem" data-dojo-props="checked:true, disabled:true">Afficher l'envoi aux participants</div>
+						</div>
+					</div>
+					<div data-dojo-type="dijit.MenuItem" data-dojo-props="disabled:true">2ème paramètre</div>
+					<div data-dojo-type="dijit.MenuItem" data-dojo-props="disabled:true">3ème paramètre</div>
+				</div>
+			</div>
+		</div>
+		<!-- fin du menu et début du corps de l'application (divisé en deux : le centre pour les post-it et le bas pour les zones de drop) -->
+		<div id="applicationContainer" data-dojo-type="dijit.layout.BorderContainer">
+			<div id="applicationCenter" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'center'"></div>
+			<div id="applicationBottom" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'bottom'"></div>
+		</div>
+	</div>
+</body>
+</html>
