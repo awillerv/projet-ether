@@ -4,7 +4,7 @@ var fs = require('fs'),
     app = express.createServer(),
     io = require('socket.io').listen(app);
 
-	io.configure('production', function(){
+	io.configure(function() {
 		io.enable('browser client minification');
 		io.set('transports', [
 		  'websocket'
@@ -13,10 +13,6 @@ var fs = require('fs'),
 		, 'xhr-polling'
 		, 'jsonp-polling'
 		]);
-	});
-
-	io.configure('development', function(){
-		io.set('transports', ['xhr-polling']);
 	});
 	
 var MDP = "ether";
@@ -70,7 +66,9 @@ var testType = new RegExp('(\/uploads\/[0-9]+\.('+allowedExtensions.join('|')+')
 var nomValide = /^[a-zA-Z0-9]+$/;
 var extValide = new RegExp('('+allowedExtensions.join('|')+')$');
 
-app.use("/dojo-release-1.7.1", express.static(__dirname + '/dojo-release-1.7.1'));
+app.use("/dojo-release-1.7.1", express.static(__dirname.replace('\\etherWithDojo','') + '/dojo-release-1.7.1'));
+app.use("/css", express.static(__dirname + '/css'));
+app.use("/javascript", express.static(__dirname + '/javascript'));
 app.use("/images", express.static(__dirname + '/images'));
 app.use("/uploads", express.static(__dirname + '/uploads'));
 app.listen(490);
@@ -304,7 +302,8 @@ io.sockets.on('connection', function (socket) {
       socket.emit('upload reussi', nomOriginal, chemin);
     }
   });
-   // lorsqu'on charge une 'session' on change le prénom/nom de l'utilisateur courant
+  
+  // lorsqu'on charge une 'session' on change le prénom/nom de l'utilisateur courant
   // de plus on informe les autres du changement
   socket.on('changement id', function(participant){
     console.log('changement id participant');
@@ -312,7 +311,8 @@ io.sockets.on('connection', function (socket) {
     console.log('nouvel id ' + participant.prenom + ' ' + participant.nom);
     participants[maCle].prenom = participant.prenom;
     participants[maCle].nom = participant.nom;
-    socket.broadcast.emit('changement id participant', participant, maCle);
+	socket.broadcast.emit('deconnexion participant', maCle);
+    socket.broadcast.emit('connexion nouveau participant', participant, maCle);
   });
   
   // url de la forme '/uploads/3.jpg'
