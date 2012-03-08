@@ -44,7 +44,7 @@ $(window).load(function(){
   var moi = new participant('','',false,0);
   var maCle = 0;
   
-  var socket = io.connect('http://localhost');
+  var socket = io.connect(location.href);
   
   $('#estAnimateur').on('click',function(){
       $('#mdp').show();
