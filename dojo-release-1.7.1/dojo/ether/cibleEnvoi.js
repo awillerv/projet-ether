@@ -2,15 +2,15 @@ require(['dojo/_base/declare', 'dojo/dom-geometry','dojo/ETHER/cible'], function
 {
 	return declare("ether.CibleEnvoi", ether.cible,
 	{
-		constructor: function(node,clientList)
+		constructor: function(node,clientkeyList)
 		{
 			if(clientList instanceof Array)
 			{
-				this.clientList=clientList;
+				this.clientList=clientkeyList;
 			}
 			else
 			{
-				this.clientList=new Array(clientList);
+				this.clientList=new Array(clientkeyList);
 			}
 		}
 		
