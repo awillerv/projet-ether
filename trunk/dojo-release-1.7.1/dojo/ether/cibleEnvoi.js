@@ -1,19 +1,21 @@
-require(['dojo/_base/declare', 'dojo/dom-geometry','dojo/ETHER/cible'], function(declare)
+require(['dojo/_base/declare','dojo/dom-geometry','dojo/ETHER/cible'], function(declare)
 {
 	return declare("ether.CibleEnvoi", ether.cible,
 	{
-		constructor: function(node,clientkeyList)
+		constructor: function(node,clientKeyList)
 		{
-			if(clientList instanceof Array)
+			if(clientKeyList instanceof Array)
 			{
-				this.clientList=clientkeyList;
+				this.clientKeyList=clientKeyList;
 			}
 			else
 			{
-				this.clientList=new Array(clientkeyList);
+				this.clientKeyList=new Array(clientKeyList);
 			}
+		},
+		onDrop: function(postIts)
+		{
+			socket.emit('envoi', postIts, this.clientKeyList);
 		}
-		
-	
-	}
+	});
 });
