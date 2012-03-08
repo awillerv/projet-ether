@@ -67,7 +67,7 @@
 		"dijit/MenuBar", "dijit/PopupMenuBarItem", "dijit/DropDownMenu", "dijit/MenuItem", "ether/MenuItem", "dijit/MenuSeparator", "dijit/PopupMenuItem", "dijit/CheckedMenuItem",
 		"dojox/form/Uploader", "dijit/form/Textarea", "dijit/form/FilteringSelect", "dojo/data/ItemFileReadStore",
 		"dijit/layout/BorderContainer", "dijit/layout/ContentPane",
-		"dojo/keys","ether/postIt","ether/cibleEnvoi","ether/manager", "dojo/domReady!"], function(parser, on, validate, domConstruct, has) {
+		"dojo/keys", "dojo/domReady!"], function(parser, on, validate, domConstruct, unload, has) {
 		
 console.log("mozilla : "+has("mozilla"));
 console.log("firefox : "+has("ff"));
@@ -187,10 +187,6 @@ console.log("   test test   ");
 				majParticipants();
 				changementPage("connexion", "application");
 				dijit.byId("applicationContainer").resize();
-				
-				manager=new ether.manager();
-				manager.createDropZone(-1);
-				
 			});
 			
 			function ajouterMessage(message, id_emetteur) {

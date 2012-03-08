@@ -1,0 +1,21 @@
+évènements envoyés par le serveur :
+
+1) envoyé à tous sauf à la personne qui s'est connectée : "connexion nouvel utilisateur", paramètres : "prenom", "nom", "estAnimateur"
+2) envoyé à la personne qui a essayé de se connecter : "resultat connexion", paramètres : "succes", "message"
+3) envoyé à la personne qui s'est connecté avec succès : "envoi liste participants", paramètres : "listeParticipants"
+4) envoyé à tous sauf à la personne qui s'est déconnectée : "deconnexion utilisateur", paramètres : "prenom", "nom"
+5) envoyé au destinataire : "reception", paramètres :  tableau avec les colonnes suivantes : "type", "id", "texte/url", "prenom", "nom" (!!! prenom et nom de l'émetteur !!!)
+6) envoyé aux animateurs : "reception animateurs", paramètres :  tableau avec les colonnes suivantes : "type", "id", "texte/url", "prenom", "nom" (!!! prenom et nom de l'émetteur !!!)
+7) envoyé à tous sauf à l'émetteur : "reception tous", paramètres :  tableau avec les colonnes suivantes : "type", "id", "texte/url", "prenom", "nom" (!!! prenom et nom de l'émetteur !!!)
+8) envoyé à l'émetteur : "reception serveur", paramètres : "id", "succes"
+
+
+évènements envoyés par le participant :
+
+1) "demande connexion", paramètres : "prenom", "nom", "estAnimateur", "motDePasse"
+2) "demande liste participants"
+3) "envoi", paramètres : tableau avec les colonnes suivantes : "type", "id", "texte/url", "prenom", "nom" (!!! prenom et nom du destinataire !!!)
+4) "envoi animateurs", paramètres : tableau avec les colonnes suivantes : "type", "id", "texte/url"
+5) "envoi tous", paramètres : tableau avec les colonnes suivantes : "id", "texte"
+6) "upload photo", paramètres ?
+7) "reception client", paramètres : "id", "succes", "prenom", "nom"
