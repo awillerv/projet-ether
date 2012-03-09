@@ -32,10 +32,17 @@
 		<p>Veuillez patienter, chargement en cours...</p>
 	</div>
 	
-	<!-- page de connexion à ETHER : contient le logo et le formulaire de connexion (avec les champs "prenom", "nom", "estAnimateur" et "motDePasse") -->
+	<!-- page de connexion à ETHER : contient deux widget "Dialog", le logo et le formulaire de connexion (avec les champs "prenom", "nom", "estAnimateur" et "motDePasse") -->
 	<div id="connexion" style="display: none;">
+		<!-- le 1er widget Dialog est destiné aux utilisateurs de Internet Explorer : on les prévient que leur navigateur n'est pas complétement compatible -->
+		<div id="alerteIE" data-dojo-type="dijit.Dialog" title="Attention"><div class="alerte">
+			Vous utilisez actuellement le navigateur Internet Explorer<span id="versionIE"></span>.<br/><br />
+			Ce navigateur n'est pas compatible avec toutes les fonctionnalités d'ETHER<br />
+			(notamment l'upload de photos).<br /><br/>
+			Pour une expérience plus complète, essayez <a href="http://www.mozilla.org/fr/firefox/">Mozilla Firefox</a> ou <a href="http://www.google.fr/chrome?hl=fr">Google Chrome</a> par exemple.
+		</div></div>
 		<img src="images/logo_ether.png" alt="logo Ether"/>
-		<h1>Connexion à ETHER</h1>
+		<h1 id="titre">Connexion à ETHER</h1>
 		<form id="formulaireConnexion" data-dojo-type="dijit.form.Form">
 			<table id="tableauConnexion" cellspacing="4">
 				<tr>
@@ -60,20 +67,26 @@
 			</table>
 			<input type="button" value="Se connecter" label="Se connecter" id="boutonConnexion" data-dojo-type="dijit.form.Button" />
 		</form>
+		<!-- le 2nd widget Dialog est destiné aux navigateurs qui ne supportent pas socket.io -->
+		<div id="alerteConnexion" data-dojo-type="dijit.Dialog" title="ERREUR"><div class="alerte">
+			Désolé mais il est impossible de connecter votre navigateur à ETHER.<br/><br />
+			Si votre connection internet est bien active, c'est que votre navigateur n'est pas compatible avec Socket.io.<br /><br />
+			<a href="http://www.mozilla.org/fr/firefox/">Mozilla Firefox</a> ou <a href="http://www.google.fr/chrome?hl=fr">Google Chrome</a> sont par exemple deux navigateurs compatibles.
+		</div></div>
 	</div>
 	
 	<!-- page de l'application ETHER proprement dite : contient une barre de menu et le corps (container) de l'application-->
 	<div id="application" style="display: none;">
 		<!-- début de la déclaration de la barre de menu, de ses onglets et des sous-menus associés -->
 		<div data-dojo-type="dijit.MenuBar" id="navMenu">
-			<div data-dojo-type="dijit.PopupMenuBarItem">
+			<div id="menuETHER" data-dojo-type="dijit.PopupMenuBarItem">
 				<span>ETHER</span>
 				<div data-dojo-type="dijit.DropDownMenu">
 					<div data-dojo-type="ether.MenuItem">Connecté(e) en tant que :<br /><span id="moi"></span></div>
 					<div data-dojo-type="dijit.MenuSeparator"></div>
 					<div id="menuChargement" data-dojo-type="dijit.MenuItem" data-dojo-props="iconClass:'iconLoad', disabled:true">Charger une session</div>
-					<div id="menuSauvegarde" data-dojo-type="dijit.MenuItem" data-dojo-props="iconClass:'iconSave', disabled:true">Sauvegarder la session</div>
-					<div data-dojo-type="dijit.MenuSeparator"></div>
+					<div id="menuSauvegarde" data-dojo-type="dijit.MenuItem" data-dojo-props="iconClass:'iconSave'">Sauvegarder la session</div>
+					<div id="menuSeparateur" data-dojo-type="dijit.MenuSeparator"></div>
 					<div id="menuDeconnexion" data-dojo-type="dijit.MenuItem" data-dojo-props="iconClass:'iconLogout'">Se déconnecter</div>
 				</div>
 			</div>
@@ -85,7 +98,6 @@
 				</div>
 			</div>
 			<input id="uploadPhotos" name="uploadPhotos" multiple="true" type="file" data-dojo-type="dojox.form.Uploader" data-dojo-props="label:'Uploader une photo',uploadOnSelect:true" />
-			<div data-dojo-type="dijit.Tooltip" data-dojo-props="connectId:'uploadPhotos',position:['below']"></div>
 			<select id="selectionParticipants" name="selectionParticipants" data-dojo-type="dijit.form.FilteringSelect" data-dojo-props="store:listeParticipants,searchAttr:'name',required:false,value:'',placeHolder:'Ajouter un participant'"></select>
 			<div data-dojo-type="dijit.PopupMenuBarItem">
 				<span>Paramètres</span>

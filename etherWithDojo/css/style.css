@@ -42,6 +42,14 @@ noscript ol {
 	text-align: center;
 }
 
+.alerte {
+	text-align: center;
+}
+
+.alerte a {
+	color: black;
+}
+
 #connexion #tableauConnexion {
 	margin: auto;
 }
