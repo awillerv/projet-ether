@@ -3,7 +3,7 @@
    --------------------------------------------------------------------------------------------------------------------------- */
 
 require(["dojo/parser", "dojo/on", "dojox/validate/web", "dojo/dom-construct", "dojo/_base/unload", "dojo/_base/sniff",
-"dijit/ProgressBar", "dijit/form/ValidationTextBox", "dijit/form/RadioButton", "dijit/form/Form", 
+"dijit/Dialog", "dijit/ProgressBar", "dijit/form/ValidationTextBox", "dijit/form/RadioButton", "dijit/form/Form", 
 "dijit/MenuBar", "dijit/PopupMenuBarItem", "dijit/DropDownMenu", "dijit/MenuItem", "ether/MenuItem", "dijit/MenuSeparator", "dijit/PopupMenuItem", "dijit/CheckedMenuItem",
 "dojox/form/Uploader", "dijit/form/Textarea", "dijit/form/FilteringSelect", "dojo/data/ItemFileReadStore",
 "dijit/layout/BorderContainer", "dijit/layout/ContentPane",
@@ -14,7 +14,6 @@ require(["dojo/parser", "dojo/on", "dojox/validate/web", "dojo/dom-construct", "
 console.log("mozilla : "+has("mozilla"));
 console.log("firefox : "+has("ff"));
 console.log("opera : "+has("opera"));
-console.log("ie : "+has("ie"));
 console.log("mac : "+has("mac"));
 console.log("chrome : "+has("chrome"));
 console.log("safari : "+has("safari"));
@@ -46,6 +45,9 @@ console.log("webkit : "+has("webkit"));
 	var maCle = undefined;
 	var moi = new participant('', '', false, 0);
 	
+	//la date (inconnue pour l'instant) d'une éventuelle sauvegarde de session en local
+	var dateSauvegarde = undefined;
+	
 	
 	
 	/* ----------------------------------------------------------
@@ -76,7 +78,7 @@ console.log("webkit : "+has("webkit"));
 	function hide(id) {
 		dojo.setStyle(dojo.byId(id), { display: "none" });
 	}
-
+	
 	//cette fonction effectue une transition entre le div "anciennePage" (qu'elle masque progressivement) et le div "nouvellePage" (qu'elle affiche à l'écran)
 	function changementPage(anciennePage, nouvellePage) {
 		dojo.fadeOut({
@@ -92,11 +94,11 @@ console.log("webkit : "+has("webkit"));
 		}).play();
 	}
 	
-	//cette fonction actualise la liste
+	//cette fonction actualise la liste des participants du widget FilteringSelect
 	function majParticipants() {
 		var itemsParticipants = new Array();
 		for(var i=0; i<participants.length; i++) {
-			if(i!=maCle) {
+			if(i!=maCle && participants[i]!=null) {
 				itemsParticipants.push({ value: 'participant_'+i, name: participants[i].prenom+' '+participants[i].nom });
 			}
 		}
@@ -127,6 +129,24 @@ console.log("webkit : "+has("webkit"));
 	
 	//et enfin on quitte la page "chargement" pour afficher à l'écran la page de connexion à ETHER
 	changementPage("chargement", "connexion");
+	
+	//petit + : si le navigateur utilisé est Internet Explorer, on dit à l'utilisateur que c'est de la merde
+	if(has("ie")) {
+		dojo.byId("versionIE").innerHTML = ' '+has("ie");
+		setTimeout("dijit.byId('alerteIE').show()", 1000);
+	}
+	
+	//on teste la compatibilité du navigateur avec l'API localStorage pour savoir si on doit enlever (ou pas) le menu "chargement" et "sauvegarde"
+	if(typeof(localStorage) == 'undefined' ) {
+		dijit.byId('menuChargement').destroyRendering();
+		dijit.byId('menuSauvegarde').destroyRendering();
+		dijit.byId('menuSeparateur').destroyRendering();
+	} else {
+		if(localStorage.getItem('sauvegardeETHER')) {
+			dijit.byId("menuChargement").disabled = false;
+			dateSauvegarde = new Date(localStorage.getItem('sauvegardeETHER'));
+		}
+	}
 
 	
 	
@@ -159,7 +179,7 @@ console.log("webkit : "+has("webkit"));
 				}
 			}
 		} else {
-			alert('Nous sommes désolés mais votre navigateur n\'est pas compatible avec ETHER.\nVous ne pouvez donc pas vous connecter.');
+			dijit.byId('alerteConnexion').show();
 		}
 	});
 	
@@ -198,11 +218,14 @@ console.log("webkit : "+has("webkit"));
 	
 	//si l'identification a réussi :
 	socket.on('identification reussie', function(liste_participants, key){
-		//on affiche le nom du participant dans le menu "ETHER" de l'application
-		if(moi.estAnimateur)
+		//on affiche le nom du participant dans le menu "ETHER" de l'application et on enlève du menu "Paramètres / Affichage" l'option qui ne lui correspond pas
+		if(moi.estAnimateur) {
 			dojo.byId("moi").innerHTML = moi.prenom+" "+moi.nom+"<br />(animateur)";
-		else
+			dijit.byId('menuParametresAuxAnimateurs').destroyRendering();
+		} else {
 			dojo.byId("moi").innerHTML = moi.prenom+" "+moi.nom;
+			dijit.byId('menuParametresAuxParticipants').destroyRendering();
+		}
 		//on met à jour sa clé
 		maCle = key;
 		//on met à jour la liste des participants (la variable javascript)
@@ -213,6 +236,13 @@ console.log("webkit : "+has("webkit"));
 		changementPage("connexion", "application");
 		//et on effectue un "resize" pour être sûr qu'elle prenne bien toute la page
 		dijit.byId("applicationContainer").resize();
+		//petit + : si une sauvegarde existe, on en informe le participant (avec la date de la sauvegarde)
+		if(dateSauvegarde!=undefined) {
+			var message = 'Une sauvegarde datant du '+dateSauvegarde.toLocaleDateString()+' (à '+dateSauvegarde.toLocaleTimeString()+') a été identifée.<br />Vous pouvez la charger depuis le menu \"ETHER\" si vous le souhaitez.';
+			console.log(message)
+			dijit.showTooltip('message', 'menuETHER', ['below']);
+			setTimeout("dijit.hideTooltip('menuETHER')", 4000);
+		}
 	});
 	
 	
@@ -223,40 +253,35 @@ console.log("webkit : "+has("webkit"));
 	
 	//lors du click sur "chargement", on va charger depuis le localStorage tous les post-it sauvegardés et les afficher à l'écran
 	dijit.byId("menuChargement").onClick = function() {
-		// on vérifie que le localStorage est supporté
-		if(typeof(localStorage) == 'undefined' ) {
-			alert('Impossible de charger la session car votre navigateur n\'est pas compatible.');
-		} else {
-			var t = new Array();
-			for(var i = localStorage.length - 1 ; i >= 0 ; i--) {
-				// on transforme la string enregistrée en tableau, sachant que le séparateur est |
-				t = localStorage.getItem(localStorage.key(i)).split('|');
-				var m = new msg('texte', 0, '');
-				// si c'est l'identité de l'utilisateur courant
-				if(t[0] == 'id') {
-					if(t[1]!=moi.prenom || t[2]!=moi.nom || t[3]!=moi.estAnimateur) {
-						//si la session chargée ne correspond pas au login actuel, on remplace la variable "moi"
-						moi.prenom = t[1];
-						moi.nom = t[2];
-						moi.estAnimateur = t[3];
-						//on actualise l'affichage
-						if(moi.estAnimateur)
-							dojo.byId("moi").innerHTML = moi.prenom+" "+moi.nom+"<br />(animateur)";
-						else
-							dojo.byId("moi").innerHTML = moi.prenom+" "+moi.nom;
-						//et on informe le serveur du changement d'identité
-						socket.emit('changement id', moi);
-					}
-				} else if(t[0] == 'texte') {
-					//si c'est simplement un texte, on l'ajoute directement à l'interface utilisateur
-					m.type = t[0];
-					m.id = t[1];
-					m.contenu = t[2];
-					ajouterMessage(m, t[3]);
-				} else {
-					//si il s'agit d'une image (enregistrée en base 64), on l'envoie au serveur pour qu'il la stocke et la décode
-					socket.emit('data decode request', t);
+		var t = new Array();
+		for(var i = localStorage.length - 1 ; i >= 0 ; i--) {
+			// on transforme la string enregistrée en tableau, sachant que le séparateur est |
+			t = localStorage.getItem(localStorage.key(i)).split('|');
+			var m = new msg('texte', 0, '');
+			// si c'est l'identité de l'utilisateur courant
+			if(t[0] == 'id') {
+				if(t[1]!=moi.prenom || t[2]!=moi.nom || t[3]!=moi.estAnimateur) {
+					//si la session chargée ne correspond pas au login actuel, on remplace la variable "moi"
+					moi.prenom = t[1];
+					moi.nom = t[2];
+					moi.estAnimateur = t[3];
+					//on actualise l'affichage
+					if(moi.estAnimateur)
+						dojo.byId("moi").innerHTML = moi.prenom+" "+moi.nom+"<br />(animateur)";
+					else
+						dojo.byId("moi").innerHTML = moi.prenom+" "+moi.nom;
+					//et on informe le serveur du changement d'identité
+					socket.emit('changement id', moi);
 				}
+			} else if(t[0] == 'texte') {
+				//si c'est simplement un texte, on l'ajoute directement à l'interface utilisateur
+				m.type = t[0];
+				m.id = t[1];
+				m.contenu = t[2];
+				ajouterMessage(m, t[3]);
+			} else {
+				//si il s'agit d'une image (enregistrée en base 64), on l'envoie au serveur pour qu'il la stocke et la décode
+				socket.emit('data decode request', t);
 			}
 		}
 	};
@@ -268,56 +293,53 @@ console.log("webkit : "+has("webkit"));
 	
 	//lors du click sur "sauvegarde", on va stocker dans le localStorage tous les post-it présents à l'écran
 	dijit.byId("menuSauvegarde").onClick = function() {
-		// on vérifie que le localStorage est supporté
-		if(typeof(localStorage) == 'undefined' ) {
-			alert('Impossible de sauvegarder la session car votre navigateur n\'est pas compatible.');
-		} else {
-			// on commence par vider la base de données
-			localStorage.clear();
-			// on enregistre l'identité de l'utilisateur
-			var p = new Array('id', moi.prenom, moi.nom, moi.estAnimateur);
+		// on commence par vider la base de données
+		localStorage.clear();
+		var d = new Date();
+		localStorage.setItem('sauvegardeETHER', d.toString());
+		// on enregistre l'identité de l'utilisateur
+		var p = new Array('id', moi.prenom, moi.nom, moi.estAnimateur);
+		// on utilise un try/catch au cas où on aurait plus de place
+		try {
+			localStorage.setItem('id', p.join('|'));
+		} catch(e) {
+			if(e == QUOTA_EXCEEDED_ERR) {
+				alert("Impossible d'enregistrer la session car l'espace de sauvegarde est plein.");
+			}
+			console.log('erreur lors de l\'enregistrement de l\'ID');
+		}
+		/*
+		// on enregistre ensuite les messages texte du plus récent au plus ancien
+		var m = new Array();
+		//
+		//il faut ici remplacer la boucle par une itération sur le tableau de David
+		//
+		$($('.texte').get().reverse()).each(function(index){
+			m = ['texte', $(this).attr('id'), $(this).text(), $(this).children('span').text(), 'txt'];
 			// on utilise un try/catch au cas où on aurait plus de place
 			try {
-				localStorage.setItem('id', p.join('|'));
+				// les infos pertinentes seront séparées par un | dans la string enregistrée
+				localStorage.setItem('texte' + index, m.join('|'));
 			} catch(e) {
-				if(e == QUOTA_EXCEEDED_ERR) {
-					alert("Impossible d'enregistrer la session car l'espace de sauvegarde est plein.");
+				if (e == QUOTA_EXCEEDED_ERR){
+					//
+					//si possible remplacer par un message du style les Nième photos les plus anciennes ne seront pas sauvegardées
+					//
+					alert(
+					'L\'espace de sauvegarde est plein. ' +
+					'Vos ' + (index + 1) + ' textes les plus récents ont toutefois été enregistrés'
+					);
 				}
-				console.log('erreur lors de l\'enregistrement de l\'ID');
+				console.log('erreur lors de l\'enregistrement du texte ' + index);
 			}
-			/*
-			// on enregistre ensuite les messages texte du plus récent au plus ancien
-			var m = new Array();
-			//
-			//il faut ici remplacer la boucle par une itération sur le tableau de David
-			//
-			$($('.texte').get().reverse()).each(function(index){
-				m = ['texte', $(this).attr('id'), $(this).text(), $(this).children('span').text(), 'txt'];
-				// on utilise un try/catch au cas où on aurait plus de place
-				try {
-					// les infos pertinentes seront séparées par un | dans la string enregistrée
-					localStorage.setItem('texte' + index, m.join('|'));
-				} catch(e) {
-					if (e == QUOTA_EXCEEDED_ERR){
-						//
-						//si possible remplacer par un message du style les Nième photos les plus anciennes ne seront pas sauvegardées
-						//
-						alert(
-						'L\'espace de sauvegarde est plein. ' +
-						'Vos ' + (index + 1) + ' textes les plus récents ont toutefois été enregistrés'
-						);
-					}
-					console.log('erreur lors de l\'enregistrement du texte ' + index);
-				}
-			});
-			  
-			// on enregistre ensuite les messages image du plus récent au plus ancien
-			$($('.image').get().reverse()).each(function(index, el) {
-				//pour stocker l'image dans la base de données sous forme de string, on demande au serveur de l'encoder en base 64
-				socket.emit('data encode request', $(this).children('a').attr('href'));
-			});
-			*/
-		}
+		});
+		  
+		// on enregistre ensuite les messages image du plus récent au plus ancien
+		$($('.image').get().reverse()).each(function(index, el) {
+			//pour stocker l'image dans la base de données sous forme de string, on demande au serveur de l'encoder en base 64
+			socket.emit('data encode request', $(this).children('a').attr('href'));
+		});
+		*/
 	};
 	
 	//lorsque l'on reçoit une image encodée en base 64 par le serveur, on la sauvegarde en local
@@ -437,6 +459,45 @@ console.log("webkit : "+has("webkit"));
 	
 	
 	
+	/* ---------------------------------------------------------------------------------------------------------------------------------
+	   --  on associe une fonction à tous les évènements qui se produisent sur l'onglet "Ajouter un participant" de la barre de menu  --	
+	   --------------------------------------------------------------------------------------------------------------------------------- */
+	
+	//lors de la sélection d'un participant dans le FilteringSelect, on crée la dropzone qui lui correspond et on l'ajoute à l'application
+	dijit.byId("selectionParticipants").onChange = function(value) {
+		if(value!='') {
+			//à compléter avec la fonction de david
+		}
+	}
+	
+	
+	
+	/* ---------------------------------------------------------------------------------------------------------------------
+	   --  on associe une fonction à tous les évènements qui se produisent sur l'onglet "Paramètres" de la barre de menu  --	
+	   --------------------------------------------------------------------------------------------------------------------- */
+	
+	//lors du click sur "Afficher la corbeille" :
+	dijit.byId("menuParametresCorbeille").onClick = function() {
+		//à faire : on affiche/masque la dropzone associée
+	}
+	
+	//lors du click sur "Afficher l'envoi à tous" :
+	dijit.byId("menuParametresATous").onClick = function() {
+		//à faire : on affiche/masque la dropzone associée
+	}
+	
+	//lors du click sur "Afficher l'envoi aux animateurs" :
+	dijit.byId("menuParametresAuxAnimateurs").onClick = function() {
+		//à faire : on affiche/masque la dropzone associée
+	}
+	
+	//lors du click sur "Afficher l'envoi aux participants" :
+	dijit.byId("menuParametresAuxParticipants").onClick = function() {
+		//à faire : on affiche/masque la dropzone associée
+	}
+	
+	
+	
 	/* --------------------------------------------------------------------------------------------
 	   --  on associe une fonction à tous les évènements qui concernent les autres participants  --	
 	   -------------------------------------------------------------------------------------------- */
@@ -472,4 +533,4 @@ console.log("webkit : "+has("webkit"));
    ----------------------------------------------------------------------------------------------------------------- */
    
 var dataParticipants = { identifier:'value', label:'name', items: [] };
-var listeParticipants = new dojo.data.ItemFileReadStore({ data: dataParticipants });	
+var listeParticipants = new dojo.data.ItemFileReadStore({ data: dataParticipants });
