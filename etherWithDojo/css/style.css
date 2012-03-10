@@ -54,6 +54,21 @@ noscript ol {
 	margin: auto;
 }
 
+#divBienvenue {
+	width: 400px;
+	margin: 200px auto;
+	padding: 0px;
+	border: none;
+}
+
+#divBienvenue h3 {
+	text-align: center;
+}
+
+#divBienvenue p {
+	text-align: justify;
+}
+
 #applicationCenter {
 	margin: 0px;
 	padding: 0px;

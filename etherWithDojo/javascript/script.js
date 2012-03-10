@@ -22,7 +22,6 @@ console.log("android : "+has("android"));
 console.log("webkit : "+has("webkit"));
 */
 
-
 	/* ------------------------------------------------------------
 	   --  on initialise les varibles globales de l'application  --	
 	   ------------------------------------------------------------ */
@@ -112,6 +111,71 @@ console.log("webkit : "+has("webkit"));
 		//à remplacer par la fonction de David
 	}
 	
+	//cette fonction prend en charge le "drag" d'objets depuis le bureau vers le navigateur
+	function handleDragOver(evt) {
+		if(evt.preventDefault) evt.preventDefault();
+		if(evt.stopPropagation) evt.stopPropagation();
+		//on précise ici qu'on veux "copier" l'objet dans le navigateur
+		evt.dataTransfer.dropEffect = 'copy';
+		return false;
+	}
+	
+	//cette fonction prend en charge le "drop" d'objets depuis le bureau vers le navigateur
+	function handleFileSelect(evt) {
+		if(evt.preventDefault) evt.preventDefault();
+		if(evt.stopPropagation) evt.stopPropagation();
+		//une fois le(s) objet(s) lachés dans le navigateur, on regarde si il s'agit de fichier
+		if(evt.dataTransfer.files) {
+			//si c'est le cas, on les upload
+			handleUploadFiles(evt.dataTransfer.files);
+		}
+		//une fois le(s) objet(s) lachés dans le navigateur, on regarde si il s'agit simplement d'un bout de texte
+		if(evt.dataTransfer.types) {
+			var types = evt.dataTransfer.types;
+			//si c'est le cas, on crée les crée des post-its avec le texte dedans
+			for(var i=0; i<types.length; i++) {
+				if(evt.dataTransfer.types[i]=='text/plain') {
+					//à compléter avec la fonction de david : il faut ici créer un post it avec le contenu : evt.dataTransfer.getData('text/plain')
+				}
+			}
+		}
+		return false;
+	}
+	
+	function handleUploadFiles(files) {
+		//pour chaque photo sélectionnées, on lui attribut un FileReader
+		for (var i = 0; i < files.length; i++) {
+			var reader = new FileReader();
+			var nomUpload = files[i].name;
+			var tailleUpload = files[i].size;
+			//lorsque le FileReader commence à lire le fichier, on l'affiche dans une pop-up à l'écran
+			reader.onloadstart = function() {
+				dijit.showTooltip('Lecture du fichier ' + nomUpload, 'uploadPhotos', ['below']);
+			};
+			//lorsque le FileReader a fini de lire le fichier, on l'affiche dans une pop-up à l'écran
+			reader.onloadend = function() {
+				dijit.showTooltip('<img src="images/upload.gif" /> Upload du fichier...', 'uploadPhotos', ['below']);
+			};
+			//si une erreur s'est produite lors de la lecture, on l'affiche dans une pop-up à l'écran
+			reader.onerror = function() {
+				dijit.showTooltip('Erreur lors de la lecture du fichier ' + nomUpload, 'uploadPhotos', ['below']);
+			};
+			//si la lecture du fichier s'est correctement réalisée, on envoie le fichier encodé au serveur
+			reader.onload = function(d) {
+				dijit.showTooltip('Lecture de ' + nomUpload + 'réussie', 'uploadPhotos', ['below']);
+				socket.emit('upload', nomUpload, d.target.result);
+			};
+			//si la taille du fichier est inférieure à la taille max, on démarre la lecture
+			if(files[i].size < tailleMaxUpload) {
+				reader.readAsDataURL(files[i]);
+			//sinon on affiche une pop-up (pendant 2 secondes) pour prévenir l'utilisateur qu'il y a une taille max à ne pas dépasser
+			} else {
+				dijit.showTooltip('<img src="images/erreur.png" /> Impossible d\'uploader le fichier ' + nomUpload + ' qui est trop volumineux (taille maximale acceptée : 1Mo)', 'uploadPhotos', ['below']);
+				setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
+			}
+		}
+	}
+	
 	
 	
 	/* --------------------------------------------------------------------------------
@@ -144,9 +208,14 @@ console.log("webkit : "+has("webkit"));
 	} else {
 		if(localStorage.getItem('sauvegardeETHER')) {
 			dijit.byId("menuChargement").disabled = false;
+			dijit.byId("menuChargement")._applyAttributes();
 			dateSauvegarde = new Date(localStorage.getItem('sauvegardeETHER'));
 		}
 	}
+	
+	//on teste l'incompatibilité du navigateur avec le drag and drop de HTML5
+	if(has('ie') || !('ondrop' in dojo.byId("applicationContainer")))
+		hide('infoDND');
 
 	
 	
@@ -234,14 +303,15 @@ console.log("webkit : "+has("webkit"));
 		majParticipants();
 		//on masque le formulaire de connexion pour afficher l'application à l'écran
 		changementPage("connexion", "application");
-		//et on effectue un "resize" pour être sûr qu'elle prenne bien toute la page
+		//on effectue un "resize" pour être sûr qu'elle prenne bien toute la page
 		dijit.byId("applicationContainer").resize();
+		//et on prévoit d'effacer le message d'accueil
+		setTimeout("dojo.fadeOut({ node: 'divBienvenue', duration: 1000, onEnd: function() { dojo.destroy('divBienvenue'); } }).play()", 6000);
 		//petit + : si une sauvegarde existe, on en informe le participant (avec la date de la sauvegarde)
 		if(dateSauvegarde!=undefined) {
 			var message = 'Une sauvegarde datant du '+dateSauvegarde.toLocaleDateString()+' (à '+dateSauvegarde.toLocaleTimeString()+') a été identifée.<br />Vous pouvez la charger depuis le menu \"ETHER\" si vous le souhaitez.';
-			console.log(message)
-			dijit.showTooltip('message', 'menuETHER', ['below']);
-			setTimeout("dijit.hideTooltip('menuETHER')", 4000);
+			setTimeout("dijit.showTooltip('"+message+"', 'menuETHER', ['below'])", 2500);
+			setTimeout("dijit.hideTooltip('menuETHER')", 6500);
 		}
 	});
 	
@@ -288,6 +358,7 @@ console.log("webkit : "+has("webkit"));
 	
 	//lorsque le serveur a décodé une image, on l'affiche à l'écran dans un post-it
 	socket.on('data decode response', function(message, id_emetteur){
+		//fonction de david
 		ajouterMessage(message, id_emetteur);
 	});
 	
@@ -404,40 +475,9 @@ console.log("webkit : "+has("webkit"));
 	
 	//lorsqu'une (ou plusieurs) photos sont sélectionnées dans la fenêtre d'upload, on essaie de les encoder avec le FileReader et de les envoyer au serveur
 	dijit.byId("uploadPhotos").onChange = function() {
-		var files = dijit.byId("uploadPhotos")._files;
 		//on vérifie la compatibilité du navigateur avec l'upload multiple (en gros on élimine Internet Explorer)
-		if(files) {
-			//pour chaque photo sélectionnées, on lui attribut un FileReader
-			for (var i = 0; i < files.length; i++) {
-				var reader = new FileReader();
-				var nomUpload = files[i].name;
-				var tailleUpload = files[i].size;
-				//lorsque le FileReader commence à lire le fichier, on l'affiche dans une pop-up à l'écran
-				reader.onloadstart = function() {
-					dijit.showTooltip('Lecture du fichier ' + nomUpload, 'uploadPhotos', ['below']);
-				};
-				//lorsque le FileReader a fini de lire le fichier, on l'affiche dans une pop-up à l'écran
-				reader.onloadend = function() {
-					dijit.showTooltip('<img src="images/upload.gif" /> Upload du fichier...', 'uploadPhotos', ['below']);
-				};
-				//si une erreur s'est produite lors de la lecture, on l'affiche dans une pop-up à l'écran
-				reader.onerror = function() {
-					dijit.showTooltip('Erreur lors de la lecture du fichier ' + nomUpload, 'uploadPhotos', ['below']);
-				};
-				//si la lecture du fichier s'est correctement réalisée, on envoie le fichier encodé au serveur
-				reader.onload = function(d) {
-					dijit.showTooltip('Lecture de ' + nomUpload + 'réussie', 'uploadPhotos', ['below']);
-					socket.emit('upload', nomUpload, d.target.result);
-				};
-				//si la taille du fichier est inférieure à la taille max, on démarre la lecture
-				if(files[i].size < tailleMaxUpload) {
-					reader.readAsDataURL(files[i]);
-				//sinon on affiche une pop-up (pendant 2 secondes) pour prévenir l'utilisateur qu'il y a une taille max à ne pas dépasser
-				} else {
-					dijit.showTooltip('<img src="images/erreur.png" /> Impossible d\'uploader le fichier ' + nomUpload + ' qui est trop volumineux (taille maximale acceptée : 1Mo)', 'uploadPhotos', ['below']);
-					setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
-				}
-			}
+		if(dijit.byId("uploadPhotos")._files) {
+			handleUploadFiles(dijit.byId("uploadPhotos")._files);
 		} else {
 			dijit.showTooltip('<img src="images/erreur.png" /> Impossible d\'uploader des photos car votre navigateur n\'est pas compatible', 'uploadPhotos', ['below']);
 		}
@@ -524,6 +564,17 @@ console.log("webkit : "+has("webkit"));
 	socket.on('reception', function(message, cle_emmeteur) {
 		//à completer avec la fonction de David
 	});
+	
+	
+	
+	/* ----------------------------------------------------------------------------------------
+	   --  on prend en compte le drag and drop d'objets depuis le bureau vers le navigateur  --	
+	   ---------------------------------------------------------------------------------------- */
+	
+	//on prend en compte le "drag" des objets depuis le bureau partout au-dessus de l'application
+	dojo.byId("applicationContainer").addEventListener('dragover', handleDragOver, false);
+	//on prend en compte le "drop" des objets depuis le bureau partout au-dessus de l'application
+	dojo.byId("applicationContainer").addEventListener('drop', handleFileSelect, false);
 });
 
 
