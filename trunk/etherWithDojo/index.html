@@ -118,7 +118,13 @@
 		</div>
 		<!-- fin du menu et début du corps de l'application (divisé en deux : le centre pour les post-it et le bas pour les zones de drop) -->
 		<div id="applicationContainer" data-dojo-type="dijit.layout.BorderContainer">
-			<div id="applicationCenter" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'center'"></div>
+			<div id="applicationCenter" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'center'">
+				<!-- on affiche au chargement un message de bienvenue, et si le navigateur est compatible, on explique au participant qu'il peut faire du drag and drop -->
+				<div id="divBienvenue">
+					<h3>Bienvenue dans ETHER !</h3>
+					<p id="infoDND">Vous pouvez directement ajouter des photos ou du texte dans ETHER par simple drag and drop depuis votre bureau ou d'autres onglets de votre navigateur !</p>
+				</div>
+			</div>
 			<div id="applicationBottom" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'bottom'"></div>
 		</div>
 	</div>
