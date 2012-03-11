@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+    <title>Test Dojo</title>
+	<script src="dojo-release-1.7.1/dojo/dojo.js" data-dojo-config="parseOnLoad: true"></script>
+
+	<script>
+		dojo.require("dojo.touch");
+		dojo.require("dojox.gesture.tap");
+		dojo.require("ether.PostIt");
+		dojo.require("ether.cible");
+		dojo.require("ether.cibleEnvoi");
+		dojo.require("dijit.Tooltip")
+
+	</script>	
+
+	<script>
+     dojo.ready(function() {
+		var cible = ether.cibleEnvoi("dropzone", [1,2]);
+participants=new Array({nom:'Test',prenom:'Truc'},{nom:'Touffy',prenom:'super'},{nom:'Willerval',prenom:'Alexandre'},{nom:'Martin',prenom:'Dorian'});
+
+
+//**********************************************************************************************************************************
+
+
+	ether.manager.initialize("total");
+});
+	
+
+
+//************************************************************************************************************************************************
+			
+    </script>
+</head>
+<body>
+<div id="total" style="height:80% display:block">
+		<div></div>
+</div>		
+<div id="applicationBottom"style="top:80%"></div>
+</body>
+</html>

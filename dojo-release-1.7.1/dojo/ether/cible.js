@@ -1,6 +1,6 @@
 
 
-require(['dojo/_base/declare', 'dojo/dom-geometry'], function(declare)
+require(['dojo/_base/declare', 'dojo/dom-geometry','dojo/dnd/Moveable'], function(declare)
 {
 	return declare("ether.cible", null, 
 	{
@@ -25,7 +25,7 @@ require(['dojo/_base/declare', 'dojo/dom-geometry'], function(declare)
 		
 		onDrop : function(postit)		//le comportement en cas de drop d'un objet acceptable. Cette fonction a l'heur d'avoir accès à l'objet ainsi déposé, comme il se doit. Aucun comportement par défaut.
 		{
-			
+			alert('drop détecté');
 		},
 		
 		contient : function(posX, posY)		//teste si la position donnée est contenue dans la surface de l'objet (pour détecter le hover, par exemple)
