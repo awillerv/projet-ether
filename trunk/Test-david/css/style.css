@@ -1,0 +1,86 @@
+html, body, #application, #applicationContainer {
+	margin: 0px;
+	padding: 0px;
+	border: 0px;
+	font-family: arial;
+	overflow: hidden;
+	width: 100%;
+	height: 100%;
+}
+
+noscript p {
+	margin-left: 20px;
+}
+
+noscript p.rouge {
+	color: red;
+	font-weight: bold;
+}
+
+noscript a {
+	color: black;
+}
+
+noscript ol {
+	margin-left: 20px;
+}
+
+#chargement {
+	margin: 100px auto;
+	padding: 10px 30px;
+	text-align: center;
+	width: 100%;
+	position: absolute;
+}
+
+#chargement #progressbar {
+	width: 250px;
+	margin: auto;
+}
+
+#connexion {
+	text-align: center;
+}
+
+.alerte {
+	text-align: center;
+}
+
+.alerte a {
+	color: black;
+}
+
+#connexion #tableauConnexion {
+	margin: auto;
+}
+
+#applicationCenter {
+	margin: 0px;
+	padding: 0px;
+	border: 0px;
+}
+
+#applicationBottom {
+	height: 20%;
+	width: 100%;
+	margin: 0px;
+	padding: 0px;
+}
+
+img.iconLoad {
+	background-image: url("../images/load.png");
+	width: 24px;
+	height: 24px;
+}
+
+img.iconSave {
+	background-image: url("../images/save.png");
+	width: 24px;
+	height: 24px;
+}
+
+img.iconLogout {
+	background-image: url("../images/logout.png");
+	width: 24px;
+	height: 24px;
+}

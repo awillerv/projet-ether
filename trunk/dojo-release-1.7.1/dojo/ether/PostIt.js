@@ -1,30 +1,39 @@
 
 // classe PostIt dérivée de Moveable avec la valeur ajoutée qui va bien
 
-define(['dojo/_base/declare','dojo/query','dojo/dnd/moveable','dojo/dom-construct',"dojo/NodeList-dom"], function(declare){
-	return declare("ether.PostIt",dojo.dnd.Moveable, 
+define(['dojo/_base/declare','dojo/query','dojo/dnd/moveable','dojo/dom-construct',"dojo/NodeList-dom","dojo/NodeList-html","ether/tap"], function(declare){
+
+	return declare("ether.postIt",dojo.dnd.Moveable, 
 	{
-		constructor: function(node, params, targetList)
+		isPostIt:true,		//artefact pour un test
+		constructor: function(node, params,editable)
 		{
 			
-			if(targetList instanceof Array)
+			
+
+			dojo.connect(this.node, dojox.gesture.tap.doubletap, this, function(e)
 			{
-				this.targetList=targetList;
-			}
-			else
-			{
-				this.targetList= new Array(targetList);
-			}
+				e.stopPropagation();
+				if(editable)
+				{
+				if(!this.edition)		
+				{
+				if(!ether.manager.EditionEnCours)
+				{
+				this.startEdit();
+				}
+				}
+				else
+				{
+				this.stopEdit();
+				}
+			}});
 		
 		},
 		
-		addCible: function(cible)
-		{
-			this.targetList=this.targetList.push(cible);
-		},
-		
+
 		onMoved: function(mover){
-								dojo.forEach(this.targetList, function(item){
+								dojo.forEach(ether.manager.DZList.concat([ether.manager.DZCorbeille,ether.manager.DZTous,ether.manager.DZAnim,ether.manager.DZNonAnim]), function(item){
 																			if(item.contient(dojo.marginBox(this.node).l-mover.marginBox.l,dojo.marginBox(this.node).t-mover.marginBox.t))
 																			{	
 																				item.onHover(this);
@@ -40,7 +49,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/moveable','dojo/dom-construc
 								},
 		
 		onMoveStop: function(mover){
-									dojo.some(this.targetList, function(item){
+									dojo.some(ether.manager.DZList.concat([ether.manager.DZCorbeille,ether.manager.DZTous,ether.manager.DZAnim,ether.manager.DZNonAnim]), function(item){
 																			if(item.contient(dojo.marginBox(this.node).l-mover.marginBox.l,dojo.marginBox(this.node).t-mover.marginBox.t))
 																			{	
 																				item.onDrop(this);
@@ -57,7 +66,41 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/moveable','dojo/dom-construc
 									
 		destroy: function(){
 							dojo.destroy(this.node);
-							}
+							},
+		
+		startEdit:function()
+		{	this.edition=true;
+			ether.manager.EditionEnCours=true;
+			ether.manager.PIEdite=this;
+			var text=dojo.attr(dojo.query('> *', this.node)[0],"innerHTML");
+			console.log(text);
+			dojo.attr(this.node,"innerHTML",'<textarea id="ZoneEditionPI">'+text+'</textarea>');
+			textarea= document.getElementById("ZoneEditionPI");
+			textarea.focus();
+			if(textarea.setSelectionRange) {
+				var len = textarea.value.length * 2;
+				textarea.setSelectionRange(len, len);
+											}
+				else
+				{
+				textarea.value = textarea.value;
+				}
+
+		},
+		
+		stopEdit:function()
+		{
+			var text=dojo.attr(dojo.query('> *', this.node)[0],"value");
+			dojo.attr(this.node,"innerHTML",'<span>'+text+'</span>');
+			this.edition=false;
+			ether.manager.EditionEnCours=false;
+			ether.manager.PIEdite=null;
+			
+		},
+		getContent:function()
+		{
+		return dojo.attr(this.node,"innerHTML");
+		}
 	}
 		
 		)
