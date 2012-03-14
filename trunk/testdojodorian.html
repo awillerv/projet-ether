@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+    <title>Test Dojo</title>
+	<script src="dojo-release-1.7.1/dojo/dojo.js" data-dojo-config="parseOnLoad: true, isDebug: true"></script>
+	<script>
+		dojo.require("ether.editeur");
+        dojo.ready(function() {
+          var editeur = ether.editeur(dojo.byId('test'), 100, 100, 100, 100);
+        });
+    </script>
+</head>
+<body>
+  <div id="test"></div>
+</body>
+</html>
