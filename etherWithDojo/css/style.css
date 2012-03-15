@@ -56,7 +56,7 @@ noscript ol {
 
 #divBienvenue {
 	width: 400px;
-	margin: 200px auto;
+	margin: 100px auto;
 	padding: 0px;
 	border: none;
 }
@@ -67,6 +67,19 @@ noscript ol {
 
 #divBienvenue p {
 	text-align: justify;
+}
+
+div.carreCouleur {
+	height: 20px;
+	width: 20px;
+	float: left;
+	margin: 5px;
+	border: 1px rgb(181,188,199) solid;
+}
+
+div.carreCouleur:hover {
+	border: 1px rgb(117,157,192) solid;
+	cursor: pointer;
 }
 
 #applicationCenter {

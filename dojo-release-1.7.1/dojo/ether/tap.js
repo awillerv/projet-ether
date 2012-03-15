@@ -1,6 +1,6 @@
 //>>built
-define("dojox/gesture/tap",["dojo/_base/kernel","dojo/_base/declare","dojo/_base/lang","./Base","../main"],function(_1,_2,_3,_4,_5){
-_1.experimental("dojox.gesture.tap");
+define("ether/tap",["dojo/_base/kernel","dojo/_base/declare","dojo/_base/lang","dojox/gesture/Base","dojox/main"],function(_1,_2,_3,_4,_5){
+_1.experimental("ether.tap");
 var _6=_2(_4,{defaultEvent:"tap",subEvents:["hold","doubletap"],holdThreshold:500,doubleTapTimeout:250,tapRadius:10,press:function(_7,e){
 if(e.touches&&e.touches.length>=2){
 delete _7.context;
@@ -10,7 +10,7 @@ var _8=e.target;
 this._initTap(_7,e);
 _7.tapTimeOut=setTimeout(_3.hitch(this,function(){
 if(this._isTap(_7,e)){
-this.fire(_8,{type:"tap.hold"});
+this.fire(_8,{type:"tap.hold",position:{x:e.clientX,y:e.clientY}});
 }
 delete _7.context;
 }),this.holdThreshold);

@@ -90,11 +90,10 @@
 					<div id="menuDeconnexion" data-dojo-type="dijit.MenuItem" data-dojo-props="iconClass:'iconLogout'">Se déconnecter</div>
 				</div>
 			</div>
-			<div data-dojo-type="dijit.PopupMenuBarItem">
+			<div id="menuTaperTexte" data-dojo-type="dijit.PopupMenuBarItem">
 				<span>Taper un texte</span>
 				<div data-dojo-type="dijit.DropDownMenu">
-					<div data-dojo-type="ether.MenuItem"><textarea id="menuEcrirePostit"></textarea></div>
-					<div id="menuAjouterPostit" data-dojo-type="dijit.MenuItem">Ajouter à l'écran</div>
+					<div data-dojo-type="ether.MenuItem" id="menuEcrirePostit"></div>
 				</div>
 			</div>
 			<input id="uploadPhotos" name="uploadPhotos" multiple="true" type="file" data-dojo-type="dojox.form.Uploader" data-dojo-props="label:'Uploader une photo',uploadOnSelect:true" />
@@ -119,6 +118,9 @@
 		<!-- fin du menu et début du corps de l'application (divisé en deux : le centre pour les post-it et le bas pour les zones de drop) -->
 		<div id="applicationContainer" data-dojo-type="dijit.layout.BorderContainer">
 			<div id="applicationCenter" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'center'">
+			<img id="corbeille" src="images/corbeille.png" alt="corbeille" />
+			<!--<div id="postit_1" style="background-color:red;">post it 1</div>
+			<div id="postit_2" style="background-color:red;">post it 2</div>-->
 				<!-- on affiche au chargement un message de bienvenue, et si le navigateur est compatible, on explique au participant qu'il peut faire du drag and drop -->
 				<div id="divBienvenue">
 					<h3>Bienvenue dans ETHER !</h3>

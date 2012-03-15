@@ -4,8 +4,8 @@ var fs = require('fs'),
     app = express.createServer(),
     io = require('socket.io').listen(app);
 
-// on configure l'environnement de production
-	io.configure('production', function(){
+// on configure socket.io
+	io.configure(function(){
 		io.enable('browser client minification');
 		io.set('transports', [
 		  'websocket'
@@ -14,11 +14,6 @@ var fs = require('fs'),
 		, 'xhr-polling'
 		, 'jsonp-polling'
 		]);
-	});
-
-// on configure l'environnement de développement
-	io.configure('development', function(){
-		io.set('transports', ['xhr-polling']);
 	});
 
 // mot de passe pour être animateur
@@ -85,7 +80,9 @@ var nomValide = /^[a-zA-Z0-9]+$/;
 var extValide = new RegExp('('+allowedExtensions.join('|')+')$');
 
 // on précise les dossiers qu'on va utiliser
-app.use("/dojo-release-1.7.1", express.static(__dirname + '/dojo-release-1.7.1'));
+app.use("/dojo-release-1.7.1", express.static(__dirname.replace('\\etherWithDojo','') + '/dojo-release-1.7.1'));
+app.use("/css", express.static(__dirname + '/css'));
+app.use("/javascript", express.static(__dirname + '/javascript'));
 app.use("/images", express.static(__dirname + '/images'));
 app.use("/uploads", express.static(__dirname + '/uploads'));
 // le serveur écoute le port 490
