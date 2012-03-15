@@ -2,12 +2,12 @@
    --  on charge toutes les bibliothèques de Dojo nécessaires à ETHER, puis on exécute le callback lorsque tout est chargé  --	
    --------------------------------------------------------------------------------------------------------------------------- */
 
-require(["dojo/parser", "dojo/on", "dojox/validate/web", "dojo/dom-construct", "dojo/_base/unload", "dojo/_base/sniff",
+require(["dojo/parser", "dojo/on", "dojox/validate/web", "dojo/dom-construct", "dojo/dom-attr", "dojo/dom-class", "dojo/dom-style", "dojo/_base/unload", "dojo/_base/sniff", "ether/tap",
 "dijit/Dialog", "dijit/ProgressBar", "dijit/form/ValidationTextBox", "dijit/form/RadioButton", "dijit/form/Form", 
 "dijit/MenuBar", "dijit/PopupMenuBarItem", "dijit/DropDownMenu", "dijit/MenuItem", "ether/MenuItem", "dijit/MenuSeparator", "dijit/PopupMenuItem", "dijit/CheckedMenuItem",
 "dojox/form/Uploader", "dijit/form/Textarea", "dijit/form/FilteringSelect", "dojo/data/ItemFileReadStore",
-"dijit/layout/BorderContainer", "dijit/layout/ContentPane",
-"dojo/keys", "dojo/domReady!"], function(parser, on, validate, domConstruct, unload, has) {
+"dijit/layout/BorderContainer", "dijit/layout/ContentPane", 
+"ether/editeur", "dojo/keys", "dojo/domReady!"], function(parser, on, validate, domConstruct, domAttr, domClass, domStyle, unload, has, tap) {
 
 /*
 //test pour la détection du navigateur		
@@ -20,6 +20,15 @@ console.log("safari : "+has("safari"));
 console.log("ios : "+has("ios"));
 console.log("android : "+has("android"));
 console.log("webkit : "+has("webkit"));
+
+var corbeille = new ether.Corbeille({ id: 'corbeille'});
+corbeille.onDrop = function(droppable) {
+	this.dernierSupprime = "droppable";
+	dojo.destroy(droppable.node);
+	this.onStopHover();
+}
+var postit1 = new ether.PostIt("postit_1",{}, corbeille);
+var postit2 = new ether.PostIt("postit_2",{}, corbeille);
 */
 
 	/* ------------------------------------------------------------
@@ -188,8 +197,13 @@ console.log("webkit : "+has("webkit"));
 	//on parse le HTML de la page afin de transformer toutes les balises HTML en widget Dijit
 	parser.parse();
 	
-	//on transforme à la main la balise "menuEcrirePostIt" en widget Textarea car le parser ne le fait malheureusement pas tout seul...
-	new dijit.form.Textarea({ name: "menuEcrirePostit" }, "menuEcrirePostit");
+	//on ajoute notre super editeur de post-it au menu "Taper un texte" pour permettre à l'utilisateur d'écrire des post-its
+	new ether.editeur(dojo.byId("menuEcrirePostit"));
+	//on surchage tout de suite sa fonction "Annuler" pour qu'on ne puisse pas le détruire
+	dijit.byId("editeurAnnuler_0").onClick = function() { 
+		domAttr.set(dojo.byId("editeurTextarea_0"),"value","");
+		dijit.byId("menuTaperTexte")._onClick({ type:"custom", preventDefault:function(){}, stopPropagation:function(){} });
+	};
 	
 	//et enfin on quitte la page "chargement" pour afficher à l'écran la page de connexion à ETHER
 	changementPage("chargement", "connexion");
@@ -451,24 +465,6 @@ console.log("webkit : "+has("webkit"));
 	
 	
 	
-	/* -------------------------------------------------------------------------------------------------------------------------
-	   --  on associe une fonction à tous les évènements qui se produisent sur l'onglet "Taper un texte" de la barre de menu  --	
-	   ------------------------------------------------------------------------------------------------------------------------- */
-	
-	//lors du click sur "Ajouter à l'écran" :
-	dijit.byId("menuAjouterPostit").onClick = function() {
-		//on récupère le contenu du textaréa et on transforme les sauts de ligne en balise HTML
-		var texte = dijit.byId("menuEcrirePostit").get('value').replace(/\n/g,'<br />\n');
-		//on vérifie que le contenu n'est pas vide
-		if(texte!='') {
-			//on génère un post-it et on l'affiche à l'écran (à remplacer par la fonction de David)
-			dijit.byId("menuEcrirePostit").set('value', '');
-			domConstruct.create("div", { innerHTML: texte }, dojo.byId("applicationCenter"));
-		}
-	}
-	
-	
-	
 	/* -----------------------------------------------------------------------------------------------------------------------------
 	   --  on associe une fonction à tous les évènements qui se produisent sur l'onglet "Uploader une photo" de la barre de menu  --	
 	   ----------------------------------------------------------------------------------------------------------------------------- */
@@ -563,6 +559,17 @@ console.log("webkit : "+has("webkit"));
 	//lors de la connexion d'un nouveau participant, on l'ajoute à la variable javascript et au widget FilteringSelect
 	socket.on('reception', function(message, cle_emmeteur) {
 		//à completer avec la fonction de David
+	});
+	
+	
+	
+	/* ----------------------------------------------------------------------
+	   --  on prend en compte le "double-tap" pour la création de post-it  --	
+	   ---------------------------------------------------------------------- */
+	
+	//on prend en compte le "drag" des objets depuis le bureau partout au-dessus de l'application
+	on(dojo.byId("applicationCenter"), tap.doubletap, function(event) {
+		new ether.editeur(dojo.byId("applicationCenter"), event.target.tapX, event.target.tapY);
 	});
 	
 	
