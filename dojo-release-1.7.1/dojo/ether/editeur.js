@@ -8,17 +8,12 @@ require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo
 	  
 	  // couleur du post it à éditer
 	  couleurFond: 'rgb(255,255,255)',
-	  couleur1: 'rgb(255,255,255)',
-	  couleur2: 'rgb(255,255,128)',
-	  couleur3: 'rgb(166,238,187)',
-	  couleur4: 'rgb(255,128,128)',
-	  couleur5: 'rgb(153,217,234)',
 	  // texte du post it à éditer
 	  texte: '',
 	  
 	  /* ---------------------------- création d'un nouveau post it ---------------------------- */
-	  constructor: function(node, x, y, h, w, couleurs){
-
+	  constructor: function(couleurs, node, x, y, h, w){
+			
 		if(x==undefined)
 			x=5;
 		if(y==undefined)
@@ -27,13 +22,6 @@ require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo
 			h=53;
 		if(w==undefined)
 			w=160;
-	    if(couleurs!=undefined) {
-			this.couleur1 = couleurs.couleur1;
-			this.couleur2 = couleurs.couleur2;
-			this.couleur3 = couleurs.couleur3;
-			this.couleur4 = couleurs.couleur4;
-			this.couleur5 = couleurs.couleur5;
-		}
 		
 		var positionParent = domGeom.position(node);
 		var leftCorner = x-positionParent.x-w/2;
@@ -60,11 +48,11 @@ require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo
 	    var divBoutons = domConstruct.create('div', { style: { textAlign: 'center' } }, div);
 	    
 	    /* ------- on peuple divCouleurs ------- */
-	    var carre1 = domConstruct.create('div', { style: { backgroundColor: this.couleur1}, class: 'carreCouleur' }, divCouleurs);
-	    var carre2 = domConstruct.create('div', { style: { backgroundColor: this.couleur2}, class: 'carreCouleur' }, divCouleurs);
-	    var carre3 = domConstruct.create('div', { style: { backgroundColor: this.couleur3}, class: 'carreCouleur' }, divCouleurs);
-	    var carre4 = domConstruct.create('div', { style: { backgroundColor: this.couleur4}, class: 'carreCouleur' }, divCouleurs);
-		var carre5 = domConstruct.create('div', { style: { backgroundColor: this.couleur5}, class: 'carreCouleur' }, divCouleurs);
+		var carre1 = domConstruct.create('div', { style: { backgroundColor: couleurs.couleur1}, class: 'carreCouleur couleur1' }, divCouleurs);
+	    var carre2 = domConstruct.create('div', { style: { backgroundColor: couleurs.couleur2}, class: 'carreCouleur couleur2' }, divCouleurs);
+	    var carre3 = domConstruct.create('div', { style: { backgroundColor: couleurs.couleur3}, class: 'carreCouleur couleur3' }, divCouleurs);
+	    var carre4 = domConstruct.create('div', { style: { backgroundColor: couleurs.couleur4}, class: 'carreCouleur couleur4' }, divCouleurs);
+		var carre5 = domConstruct.create('div', { style: { backgroundColor: couleurs.couleur5}, class: 'carreCouleur couleur5' }, divCouleurs);
 	    
 	    /* ------- on peuple divTextarea ------- */
 	    domConstruct.create('textarea', { id: 'editeurTextarea_'+this.statics.counter }, divTextarea);
@@ -89,23 +77,23 @@ require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo
 	    
 	    /* ------- on ajoute les événements/actions à divCouleurs------- */
 	    connect.connect(carre1, tap, this, function(e){
-	      this.couleurFond = this.couleur1;
+	      this.couleurFond = domStyle.get(carre1, 'backgroundColor');
 		  domStyle.set(textarea, 'backgroundColor', this.couleurFond);
 	    });
 	    connect.connect(carre2, tap, this, function(e){
-	      this.couleurFond = this.couleur2;
+	      this.couleurFond = domStyle.get(carre2, 'backgroundColor');
 		  domStyle.set(textarea, 'backgroundColor', this.couleurFond);
 	    });
 	    connect.connect(carre3, tap, this, function(e){
-	      this.couleurFond = this.couleur3;
+	      this.couleurFond = domStyle.get(carre3, 'backgroundColor');
 		  domStyle.set(textarea, 'backgroundColor', this.couleurFond);
 	    });
 	    connect.connect(carre4, tap, this, function(e){
-	      this.couleurFond = this.couleur4;
+	      this.couleurFond = domStyle.get(carre4, 'backgroundColor');
 		  domStyle.set(textarea, 'backgroundColor', this.couleurFond);
 	    });
 		connect.connect(carre5, tap, this, function(e){
-	      this.couleurFond = this.couleur5;
+	      this.couleurFond = domStyle.get(carre5, 'backgroundColor');
 		  domStyle.set(textarea, 'backgroundColor', this.couleurFond);
 	    });
 		

@@ -1,6 +1,6 @@
 //>>built
 require({cache:{
-'url:dijit/templates/MenuItem.html':"<tr class=\"dijitReset dijitMenuItem\" data-dojo-attach-point=\"focusNode\" role=\"menuitem\" tabIndex=\"-1\">\n\t<td class=\"dijitReset dijitMenuItemLabel\" colspan=\"5\" data-dojo-attach-point=\"containerNode\"></td>\n</tr>\n"}});
+'url:dijit/templates/MenuItem.html':"<tr class=\"dijitReset dijitMenuItem\" data-dojo-attach-point=\"focusNode\" role=\"menuitem\" tabIndex=\"-1\" data-dojo-attach-event=\"onmouseenter:_onHover,onmouseleave:_onUnhover\">\n\t<td class=\"dijitReset dijitMenuItemLabel\" colspan=\"5\" data-dojo-attach-point=\"containerNode\"></td>\n</tr>\n"}});
 define("ether/MenuItem", [
 	"dojo/_base/declare", // declare
 	"dojo/dom", // dom.setSelectable
@@ -119,9 +119,12 @@ define("ether/MenuItem", [
 					this.containerNode.focus();
 				}
 				this.focusNode.focus();
+
 			}catch(e){
 				// this throws on IE (at least) in some scenarios
 			}
+			if(this.id=="menuEcrirePostit")
+				dojo.byId("editeurTextarea_0").focus();
 		},
 
 		_onFocus: function(){
@@ -152,7 +155,7 @@ define("ether/MenuItem", [
 			 * _onBlur()
 			 */
 
-			domClass.toggle(this.domNode, "dijitMenuItemSelected", selected);
+			//domClass.toggle(this.domNode, "dijitMenuItemSelected", selected);
 		},
 
 		setLabel: function(/*String*/ content){
