@@ -53,15 +53,15 @@
 				</tr>
 				<tr>
 					<td>
-						<input type="radio" id="participant" name="estAnimateur" value="false" checked="checked" data-dojo-type="dijit.form.RadioButton" onclick="hide('champCache');" /> 
+						<input type="radio" id="participant" name="estAnimateur" value="false" checked="checked" data-dojo-type="dijit.form.RadioButton" /> 
 						<label for="participant">Participant</label>
 					</td>
 					<td>
-						<input type="radio" id="animateur" name="estAnimateur" value="true" data-dojo-type="dijit.form.RadioButton" onclick="show('champCache');" />
+						<input type="radio" id="animateur" name="estAnimateur" value="true" data-dojo-type="dijit.form.RadioButton" />
 						<label for="animateur">Animateur</label>
 					</td>
 				</tr>
-				<tr id="champCache" style="display:none;">
+				<tr id="champMotDePasse" style="display:none;">
 					<td colspan="2"><input type="password" name="motDePasse" id="motDePasse" placeholder="Mot de passe" data-dojo-type="dijit.form.ValidationTextBox" invalidMessage="Le mot de passe est obligatoire pour les animateurs"/></td>
 				</tr>
 			</table>
@@ -75,10 +75,10 @@
 		</div></div>
 	</div>
 	
-	<!-- page de l'application ETHER proprement dite : contient une barre de menu et le corps (container) de l'application-->
-	<div id="application" style="display: none;">
-		<!-- début de la déclaration de la barre de menu, de ses onglets et des sous-menus associés -->
-		<div data-dojo-type="dijit.MenuBar" id="navMenu">
+	<!-- page de l'application ETHER proprement dite : contient une barre de menu, le corps de l'application, et la barre contenant les cibles (en bas) -->
+	<div id="application" style="display: none;" data-dojo-type="dijit.layout.BorderContainer">
+		<!-- début de la déclaration de la barre de menu, de ses onglets et des sous-menus associés, situé en haut de l'application (bien sur) -->
+		<div data-dojo-type="dijit.MenuBar" data-dojo-props="region:'top'">
 			<div id="menuETHER" data-dojo-type="dijit.PopupMenuBarItem">
 				<span>ETHER</span>
 				<div data-dojo-type="dijit.DropDownMenu">
@@ -107,28 +107,71 @@
 							<div id="menuParametresCorbeille" data-dojo-type="dijit.CheckedMenuItem" data-dojo-props="checked:true">Afficher la corbeille</div>
 							<div id="menuParametresATous" data-dojo-type="dijit.CheckedMenuItem" data-dojo-props="checked:true, disabled:true">Afficher l'envoi à tous</div>
 							<div id="menuParametresAuxAnimateurs" data-dojo-type="dijit.CheckedMenuItem" data-dojo-props="checked:true, disabled:true">Afficher l'envoi aux animateurs</div>
-							<div id="menuParametresAuxParticipants" data-dojo-type="dijit.CheckedMenuItem" data-dojo-props="checked:true, disabled:true">Afficher l'envoi aux participants</div>
+							<div id="menuParametresAuxNonAnimateurs" data-dojo-type="dijit.CheckedMenuItem" data-dojo-props="checked:true, disabled:true">Afficher l'envoi aux participants</div>
 						</div>
 					</div>
-					<div data-dojo-type="dijit.MenuItem" data-dojo-props="disabled:true">2ème paramètre</div>
-					<div data-dojo-type="dijit.MenuItem" data-dojo-props="disabled:true">3ème paramètre</div>
+					<div data-dojo-type="dijit.PopupMenuItem">
+						<span>Notification</span>
+						<div data-dojo-type="dijit.DropDownMenu">
+							<div id="menuParametresPopup" data-dojo-type="dijit.CheckedMenuItem" data-dojo-props="checked:true">Autoriser les pop-up d'information</div>
+						</div>
+					</div>
+					<div data-dojo-type="dijit.PopupMenuItem">
+						<span>Couleurs des post-it</span>
+						<div data-dojo-type="dijit.DropDownMenu">
+							<div data-dojo-type="dijit.PopupMenuItem" data-dojo-props="iconClass:'couleur1'">
+								<span> 1ère couleur </span>
+								<div data-dojo-type="dijit.DropDownMenu">
+									<div data-dojo-type="ether.MenuItem"><div id="palette1"></div></div>
+								</div>
+							</div>
+							<div data-dojo-type="dijit.PopupMenuItem" data-dojo-props="iconClass:'couleur2'">
+								<span> 2ème couleur </span>
+								<div data-dojo-type="dijit.DropDownMenu">
+									<div data-dojo-type="ether.MenuItem"><div id="palette2"></div></div>
+								</div>
+							</div>
+							<div data-dojo-type="dijit.PopupMenuItem" data-dojo-props="iconClass:'couleur3'">
+								<span> 3ème couleur </span>
+								<div data-dojo-type="dijit.DropDownMenu">
+									<div data-dojo-type="ether.MenuItem"><div id="palette3"></div></div>
+								</div>
+							</div>
+							<div data-dojo-type="dijit.PopupMenuItem" data-dojo-props="iconClass:'couleur4'">
+								<span> 4ème couleur </span>
+								<div data-dojo-type="dijit.DropDownMenu">
+									<div data-dojo-type="ether.MenuItem"><div id="palette4"></div></div>
+								</div>
+							</div>
+							<div data-dojo-type="dijit.PopupMenuItem" data-dojo-props="iconClass:'couleur5'">
+								<span> 5ème couleur </span>
+								<div data-dojo-type="dijit.DropDownMenu">
+									<div data-dojo-type="ether.MenuItem"><div id="palette5"></div></div>
+								</div>
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
-		<!-- fin du menu et début du corps de l'application (divisé en deux : le centre pour les post-it et le bas pour les zones de drop) -->
-		<div id="applicationContainer" data-dojo-type="dijit.layout.BorderContainer">
-			<div id="applicationCenter" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'center'">
-			<img id="corbeille" src="images/corbeille.png" alt="corbeille" />
+		
+		<!--fin du menu et début du corps de l'application -->
+		<div id="applicationCenter" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'center'">
+			<img id="corbeille" src="images/corbeille.png" alt="corbeille" data-dojo-type="dojo.dnd.Source"/>
+			<img id="envoiAuxAnimateurs" src="images/envoiAuxAnimateurs.png" alt="envoiAuxAnimateurs" />
+			<img id="envoiAuxNonAnimateurs" src="images/envoiAuxNonAnimateurs.png" alt="envoiAuxNonAnimateurs" />
+			<img id="envoiATous" src="images/envoiATous.png" alt="envoiATous" />
 			<!--<div id="postit_1" style="background-color:red;">post it 1</div>
 			<div id="postit_2" style="background-color:red;">post it 2</div>-->
-				<!-- on affiche au chargement un message de bienvenue, et si le navigateur est compatible, on explique au participant qu'il peut faire du drag and drop -->
-				<div id="divBienvenue">
-					<h3>Bienvenue dans ETHER !</h3>
-					<p id="infoDND">Vous pouvez directement ajouter des photos ou du texte dans ETHER par simple drag and drop depuis votre bureau ou d'autres onglets de votre navigateur !</p>
-				</div>
+			<!-- on affiche au chargement un message de bienvenue, et si le navigateur est compatible, on explique au participant qu'il peut faire du drag and drop -->
+			<div id="divBienvenue">
+				<h3>Bienvenue dans ETHER !</h3>
+				<p id="infoDND">Vous pouvez directement ajouter des photos ou du texte dans ETHER par simple drag and drop depuis votre bureau ou d'autres onglets de votre navigateur !</p>
 			</div>
-			<div id="applicationBottom" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'bottom'"></div>
 		</div>
+		
+		<!-- fin du corps et début de la barre des cibles (située en bas de l'application) -->
+		<div id="applicationBottom" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'bottom'"></div>
 	</div>
 </body>
 </html>

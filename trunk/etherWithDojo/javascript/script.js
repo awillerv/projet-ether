@@ -2,12 +2,12 @@
    --  on charge toutes les bibliothèques de Dojo nécessaires à ETHER, puis on exécute le callback lorsque tout est chargé  --	
    --------------------------------------------------------------------------------------------------------------------------- */
 
-require(["dojo/parser", "dojo/on", "dojox/validate/web", "dojo/dom-construct", "dojo/dom-attr", "dojo/dom-class", "dojo/dom-style", "dojo/_base/unload", "dojo/_base/sniff", "ether/tap",
+require(["dojo/parser", "dojo/on", "dojox/validate/web", "dojo/dom-construct", "dojo/dom-attr", "dojo/dom-class", "dojo/dom-style", "dojo/query", "dojo/_base/unload", "dojo/_base/sniff", "ether/tap",
 "dijit/Dialog", "dijit/ProgressBar", "dijit/form/ValidationTextBox", "dijit/form/RadioButton", "dijit/form/Form", 
 "dijit/MenuBar", "dijit/PopupMenuBarItem", "dijit/DropDownMenu", "dijit/MenuItem", "ether/MenuItem", "dijit/MenuSeparator", "dijit/PopupMenuItem", "dijit/CheckedMenuItem",
-"dojox/form/Uploader", "dijit/form/Textarea", "dijit/form/FilteringSelect", "dojo/data/ItemFileReadStore",
-"dijit/layout/BorderContainer", "dijit/layout/ContentPane", 
-"ether/editeur", "dojo/keys", "dojo/domReady!"], function(parser, on, validate, domConstruct, domAttr, domClass, domStyle, unload, has, tap) {
+"dojox/form/Uploader", "dijit/form/Textarea", "dijit/form/FilteringSelect", "dojo/data/ItemFileReadStore", "dijit/ColorPalette",
+"dijit/layout/BorderContainer", "dijit/layout/ContentPane", "dojo/dnd/Source",
+"ether/editeur", "dojo/keys", "dojo/domReady!"], function(parser, on, validate, domConstruct, domAttr, domClass, domStyle, query, unload, has, tap) {
 
 /*
 //test pour la détection du navigateur		
@@ -30,6 +30,12 @@ corbeille.onDrop = function(droppable) {
 var postit1 = new ether.PostIt("postit_1",{}, corbeille);
 var postit2 = new ether.PostIt("postit_2",{}, corbeille);
 */
+var listeCibles = new dojo.dnd.Source("applicationBottom");
+var dernierNoeud = listeCibles.insertNodes(false, ["test1"]).node.lastChild;
+domClass.add(dernierNoeud, "groupe1");
+new dojo.dnd.Source(dernierNoeud);
+listeCibles.insertNodes(false, ["test2"]);
+
 
 	/* ------------------------------------------------------------
 	   --  on initialise les varibles globales de l'application  --	
@@ -56,6 +62,12 @@ var postit2 = new ether.PostIt("postit_2",{}, corbeille);
 	//la date (inconnue pour l'instant) d'une éventuelle sauvegarde de session en local
 	var dateSauvegarde = undefined;
 	
+	//le paramètre d'affichage des pop-up
+	var popup = true;
+	
+	//les différentes couleurs par défaut de l'éditeur
+	var editeurCouleurs = { couleur1: 'rgb(255,255,255)', couleur2: 'rgb(255,255,128)', couleur3: 'rgb(166,238,187)', couleur4: 'rgb(255,128,128)', couleur5: 'rgb(153,217,234)'};
+	
 	
 	
 	/* ----------------------------------------------------------
@@ -76,16 +88,6 @@ var postit2 = new ether.PostIt("postit_2",{}, corbeille);
 		this.id = id;
 		this.contenu = contenu;
 	}
-
-	//cette fonction permet d'afficher un noeud du DOM dont la propriété css display vaut "none"
-	function show(id) {
-		dojo.setStyle(dojo.byId(id), { display: "" });
-	}
-
-	//cette fonction permet de masquer un noeud du DOM
-	function hide(id) {
-		dojo.setStyle(dojo.byId(id), { display: "none" });
-	}
 	
 	//cette fonction effectue une transition entre le div "anciennePage" (qu'elle masque progressivement) et le div "nouvellePage" (qu'elle affiche à l'écran)
 	function changementPage(anciennePage, nouvellePage) {
@@ -102,12 +104,56 @@ var postit2 = new ether.PostIt("postit_2",{}, corbeille);
 		}).play();
 	}
 	
-	//cette fonction actualise la liste des participants du widget FilteringSelect
+	//cette fonction actualise la liste des participants du widget FilteringSelect, et masque/affiche les dropzones globales
 	function majParticipants() {
+		var contientAnimateurs = false;
+		var contientNonAnimateurs = false;
+		var contientParticipants = false;
 		var itemsParticipants = new Array();
 		for(var i=0; i<participants.length; i++) {
 			if(i!=maCle && participants[i]!=null) {
+				contientParticipants = true;
+				if(participants[i].estAnimateur)
+					contientAnimateurs = true;
+				else
+					contientNonAnimateurs = true;
 				itemsParticipants.push({ value: 'participant_'+i, name: participants[i].prenom+' '+participants[i].nom });
+			}
+		}
+		if(contientParticipants) {
+			dijit.byId("menuParametresATous").disabled = false;
+			dijit.byId("menuParametresATous")._applyAttributes();
+			if(dijit.byId("menuParametresATous").checked) {
+				domStyle.set(dojo.byId('envoiATous'), "display", "block");
+			}
+		} else {
+			domStyle.set(dojo.byId('envoiATous'), "display", "none");
+			dijit.byId("menuParametresATous").disabled = true;
+			dijit.byId("menuParametresATous")._applyAttributes();
+		}
+		if(moi.estAnimateur) {
+			if(contientNonAnimateurs) {
+				dijit.byId("menuParametresAuxNonAnimateurs").disabled = false;
+				dijit.byId("menuParametresAuxNonAnimateurs")._applyAttributes();
+				if(dijit.byId("menuParametresAuxNonAnimateurs").checked) {
+					domStyle.set(dojo.byId('envoiAuxNonAnimateurs'), "display", "block");
+				}
+			} else {
+				domStyle.set(dojo.byId('envoiAuxNonAnimateurs'), "display", "none");
+				dijit.byId("menuParametresAuxNonAnimateurs").disabled = true;
+				dijit.byId("menuParametresAuxNonAnimateurs")._applyAttributes();
+			}
+		} else {
+			if(contientAnimateurs) {
+				dijit.byId("menuParametresAuxAnimateurs").disabled = false;
+				dijit.byId("menuParametresAuxAnimateurs")._applyAttributes();
+				if(dijit.byId("menuParametresAuxAnimateurs").checked) {
+					domStyle.set(dojo.byId('envoiAuxAnimateurs'), "display", "block");
+				}
+			} else {
+				domStyle.set(dojo.byId('envoiAuxAnimateurs'), "display", "none");
+				dijit.byId("menuParametresAuxAnimateurs").disabled = true;
+				dijit.byId("menuParametresAuxAnimateurs")._applyAttributes();
 			}
 		}
 		listeParticipants.clearOnClose = true;
@@ -159,19 +205,23 @@ var postit2 = new ether.PostIt("postit_2",{}, corbeille);
 			var tailleUpload = files[i].size;
 			//lorsque le FileReader commence à lire le fichier, on l'affiche dans une pop-up à l'écran
 			reader.onloadstart = function() {
-				dijit.showTooltip('Lecture du fichier ' + nomUpload, 'uploadPhotos', ['below']);
+				if(popup)
+					dijit.showTooltip('Lecture du fichier ' + nomUpload, 'uploadPhotos', ['below']);
 			};
 			//lorsque le FileReader a fini de lire le fichier, on l'affiche dans une pop-up à l'écran
 			reader.onloadend = function() {
-				dijit.showTooltip('<img src="images/upload.gif" /> Upload du fichier...', 'uploadPhotos', ['below']);
+				if(popup)
+					dijit.showTooltip('<img src="images/upload.gif" /> Upload du fichier...', 'uploadPhotos', ['below']);
 			};
 			//si une erreur s'est produite lors de la lecture, on l'affiche dans une pop-up à l'écran
 			reader.onerror = function() {
-				dijit.showTooltip('Erreur lors de la lecture du fichier ' + nomUpload, 'uploadPhotos', ['below']);
+				if(popup)
+					dijit.showTooltip('Erreur lors de la lecture du fichier ' + nomUpload, 'uploadPhotos', ['below']);
 			};
 			//si la lecture du fichier s'est correctement réalisée, on envoie le fichier encodé au serveur
 			reader.onload = function(d) {
-				dijit.showTooltip('Lecture de ' + nomUpload + 'réussie', 'uploadPhotos', ['below']);
+				if(popup)
+					dijit.showTooltip('Lecture de ' + nomUpload + 'réussie', 'uploadPhotos', ['below']);
 				socket.emit('upload', nomUpload, d.target.result);
 			};
 			//si la taille du fichier est inférieure à la taille max, on démarre la lecture
@@ -179,8 +229,10 @@ var postit2 = new ether.PostIt("postit_2",{}, corbeille);
 				reader.readAsDataURL(files[i]);
 			//sinon on affiche une pop-up (pendant 2 secondes) pour prévenir l'utilisateur qu'il y a une taille max à ne pas dépasser
 			} else {
-				dijit.showTooltip('<img src="images/erreur.png" /> Impossible d\'uploader le fichier ' + nomUpload + ' qui est trop volumineux (taille maximale acceptée : 1Mo)', 'uploadPhotos', ['below']);
-				setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
+				if(popup) {
+					dijit.showTooltip('<img src="images/erreur.png" /> Impossible d\'uploader le fichier ' + nomUpload + ' qui est trop volumineux (taille maximale acceptée : 1Mo)', 'uploadPhotos', ['below']);
+					setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
+				}
 			}
 		}
 	}
@@ -198,12 +250,21 @@ var postit2 = new ether.PostIt("postit_2",{}, corbeille);
 	parser.parse();
 	
 	//on ajoute notre super editeur de post-it au menu "Taper un texte" pour permettre à l'utilisateur d'écrire des post-its
-	new ether.editeur(dojo.byId("menuEcrirePostit"));
-	//on surchage tout de suite sa fonction "Annuler" pour qu'on ne puisse pas le détruire
-	dijit.byId("editeurAnnuler_0").onClick = function() { 
-		domAttr.set(dojo.byId("editeurTextarea_0"),"value","");
-		dijit.byId("menuTaperTexte")._onClick({ type:"custom", preventDefault:function(){}, stopPropagation:function(){} });
-	};
+	new ether.editeur(editeurCouleurs, dojo.byId("menuEcrirePostit"));
+	
+	//on affiche les couleurs par défaut de l'éditeur dans le menu "Paramètres / Couleurs des post-it"
+	query(".couleur1").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", editeurCouleurs.couleur1); });
+	query(".couleur2").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", editeurCouleurs.couleur2); });
+	query(".couleur3").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", editeurCouleurs.couleur3); });
+	query(".couleur4").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", editeurCouleurs.couleur4); });
+	query(".couleur5").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", editeurCouleurs.couleur5); });
+	
+	//on ajoute les palettes de couleur pour pouvoir changer les couleurs de l'éditeur de post-it
+	new dijit.ColorPalette({id: "palette1", onChange: function(color){ editeurCouleurs.couleur1 = color; query(".couleur1").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", color); }); } }, dojo.byId("palette1"));
+	new dijit.ColorPalette({id: "palette2", onChange: function(color){ editeurCouleurs.couleur2 = color; query(".couleur2").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", color); }); } }, dojo.byId("palette2"));
+	new dijit.ColorPalette({id: "palette3", onChange: function(color){ editeurCouleurs.couleur3 = color; query(".couleur3").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", color); }); } }, dojo.byId("palette3"));
+	new dijit.ColorPalette({id: "palette4", onChange: function(color){ editeurCouleurs.couleur4 = color; query(".couleur4").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", color); }); } }, dojo.byId("palette4"));
+	new dijit.ColorPalette({id: "palette5", onChange: function(color){ editeurCouleurs.couleur5 = color; query(".couleur5").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", color); }); } }, dojo.byId("palette5"));
 	
 	//et enfin on quitte la page "chargement" pour afficher à l'écran la page de connexion à ETHER
 	changementPage("chargement", "connexion");
@@ -228,7 +289,7 @@ var postit2 = new ether.PostIt("postit_2",{}, corbeille);
 	}
 	
 	//on teste l'incompatibilité du navigateur avec le drag and drop de HTML5
-	if(has('ie') || !('ondrop' in dojo.byId("applicationContainer")))
+	if(has('ie') || !('ondrop' in dojo.byId("application")))
 		hide('infoDND');
 
 	
@@ -236,6 +297,16 @@ var postit2 = new ether.PostIt("postit_2",{}, corbeille);
 	/* ------------------------------------------------------------------------------------------------
 	   --  on associe une fonction à tous les évènements qui se produisent sur la page de connexion  --	
 	   ------------------------------------------------------------------------------------------------ */
+	   
+	//lorsque l'utilisateur sélectionne "animateur", on lui affiche le champ "mot de passe"
+	on(dijit.byId("animateur"), "click", function(event) {
+		dojo.setStyle(dojo.byId("champMotDePasse"), { display: "" });
+	});
+
+	//lorsque l'utilisateur sélectionne "participant", on lui masque le champ "mot de passe"
+	on(dijit.byId("participant"), "click", function(event) {
+		dojo.setStyle(dojo.byId("champMotDePasse"), { display: "none" });
+	});
 	
 	//lors de la validation du formulaire, on vérifie que le champ "motDePasse" a bien été rempli si le participant est un administrateur
 	dijit.byId("motDePasse").validator = function() {
@@ -307,7 +378,7 @@ var postit2 = new ether.PostIt("postit_2",{}, corbeille);
 			dijit.byId('menuParametresAuxAnimateurs').destroyRendering();
 		} else {
 			dojo.byId("moi").innerHTML = moi.prenom+" "+moi.nom;
-			dijit.byId('menuParametresAuxParticipants').destroyRendering();
+			dijit.byId('menuParametresAuxNonAnimateurs').destroyRendering();
 		}
 		//on met à jour sa clé
 		maCle = key;
@@ -318,11 +389,11 @@ var postit2 = new ether.PostIt("postit_2",{}, corbeille);
 		//on masque le formulaire de connexion pour afficher l'application à l'écran
 		changementPage("connexion", "application");
 		//on effectue un "resize" pour être sûr qu'elle prenne bien toute la page
-		dijit.byId("applicationContainer").resize();
+		dijit.byId("application").resize();
 		//et on prévoit d'effacer le message d'accueil
 		setTimeout("dojo.fadeOut({ node: 'divBienvenue', duration: 1000, onEnd: function() { dojo.destroy('divBienvenue'); } }).play()", 6000);
 		//petit + : si une sauvegarde existe, on en informe le participant (avec la date de la sauvegarde)
-		if(dateSauvegarde!=undefined) {
+		if(dateSauvegarde!=undefined && popup) {
 			var message = 'Une sauvegarde datant du '+dateSauvegarde.toLocaleDateString()+' (à '+dateSauvegarde.toLocaleTimeString()+') a été identifée.<br />Vous pouvez la charger depuis le menu \"ETHER\" si vous le souhaitez.';
 			setTimeout("dijit.showTooltip('"+message+"', 'menuETHER', ['below'])", 2500);
 			setTimeout("dijit.hideTooltip('menuETHER')", 6500);
@@ -465,6 +536,24 @@ var postit2 = new ether.PostIt("postit_2",{}, corbeille);
 	
 	
 	
+	/* -------------------------------------------------------------------------------------------------------------------------
+	   --  on associe une fonction à tous les évènements qui se produisent sur l'onglet "Taper un texte" de la barre de menu  --	
+	   ------------------------------------------------------------------------------------------------------------------------- */
+	
+		//on surchage la fonction "OK" de l'éditeur de post-it présent dans le menu
+		dijit.byId("editeurOK_0").onClick = function() { 
+			domAttr.set(dojo.byId("editeurTextarea_0"),"value","");
+			dijit.byId("menuTaperTexte")._onClick({ type:"custom", preventDefault:function(){}, stopPropagation:function(){} });
+		};
+		
+		//on surchage la fonction "Annuler" de l'éditeur de post-it présent dans le menu pour qu'on ne puisse pas le détruire
+		dijit.byId("editeurAnnuler_0").onClick = function() { 
+			domAttr.set(dojo.byId("editeurTextarea_0"),"value","");
+			dijit.byId("menuTaperTexte")._onClick({ type:"custom", preventDefault:function(){}, stopPropagation:function(){} });
+		};
+	
+	
+	
 	/* -----------------------------------------------------------------------------------------------------------------------------
 	   --  on associe une fonction à tous les évènements qui se produisent sur l'onglet "Uploader une photo" de la barre de menu  --	
 	   ----------------------------------------------------------------------------------------------------------------------------- */
@@ -475,20 +564,27 @@ var postit2 = new ether.PostIt("postit_2",{}, corbeille);
 		if(dijit.byId("uploadPhotos")._files) {
 			handleUploadFiles(dijit.byId("uploadPhotos")._files);
 		} else {
-			dijit.showTooltip('<img src="images/erreur.png" /> Impossible d\'uploader des photos car votre navigateur n\'est pas compatible', 'uploadPhotos', ['below']);
+			if(popup) {
+				dijit.showTooltip('<img src="images/erreur.png" /> Impossible d\'uploader des photos car votre navigateur n\'est pas compatible', 'uploadPhotos', ['below']);
+				setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
+			}
 		}
 	};
 	
 	//si l'upload a échoué (parce que le fichier n'était pas une photo), on affiche une pop-up (pendant 2 secondes) pour en informer le participant
 	socket.on('upload echoue', function() {
-		dijit.showTooltip('<img src="images/erreur.png" /> Echec de l\'upload : le fichier n\'est pas une image ! (les extensions acceptées sont .png, .jpg et .gif)', 'uploadPhotos', ['below']);
-		setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
+		if(popup) {
+			dijit.showTooltip('<img src="images/erreur.png" /> Echec de l\'upload : le fichier n\'est pas une image ! (les extensions acceptées sont .png, .jpg et .gif)', 'uploadPhotos', ['below']);
+			setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
+		}
 	});	
 	
 	//si l'upload a réussi, on ajoute la photo (dans un post-it) à l'application et on affiche (pendant 2 secondes) une pop-up de confirmation
 	socket.on('upload reussi', function(nom, chemin) {
-		dijit.showTooltip('<img src="images/ok.png" /> Upload de l\'image réussi !', 'uploadPhotos', ['below']);
-		setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
+		if(popup) {
+			dijit.showTooltip('<img src="images/ok.png" /> Upload de l\'image réussi !', 'uploadPhotos', ['below']);
+			setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
+		}
 		//à remplacer par la fonction de david
 		domConstruct.create("img", { src: chemin, alt: nom }, dojo.byId("applicationCenter"));
 	});
@@ -513,23 +609,40 @@ var postit2 = new ether.PostIt("postit_2",{}, corbeille);
 	   --------------------------------------------------------------------------------------------------------------------- */
 	
 	//lors du click sur "Afficher la corbeille" :
-	dijit.byId("menuParametresCorbeille").onClick = function() {
-		//à faire : on affiche/masque la dropzone associée
+	dijit.byId("menuParametresCorbeille").onChange = function(checked) {
+		var display = "block";
+		if(!checked)
+			display = "none";
+		domStyle.set(dojo.byId("corbeille"), "display", display);
 	}
 	
 	//lors du click sur "Afficher l'envoi à tous" :
-	dijit.byId("menuParametresATous").onClick = function() {
-		//à faire : on affiche/masque la dropzone associée
+	dijit.byId("menuParametresATous").onChange = function(checked) {
+		var display = "block";
+		if(!checked)
+			display = "none";
+		domStyle.set(dojo.byId("envoiATous"), "display", display);
 	}
 	
 	//lors du click sur "Afficher l'envoi aux animateurs" :
-	dijit.byId("menuParametresAuxAnimateurs").onClick = function() {
-		//à faire : on affiche/masque la dropzone associée
+	dijit.byId("menuParametresAuxAnimateurs").onChange = function(checked) {
+		var display = "block";
+		if(!checked)
+			display = "none";
+		domStyle.set(dojo.byId("envoiAuxAnimateurs"), "display", display);
 	}
 	
 	//lors du click sur "Afficher l'envoi aux participants" :
-	dijit.byId("menuParametresAuxParticipants").onClick = function() {
-		//à faire : on affiche/masque la dropzone associée
+	dijit.byId("menuParametresAuxNonAnimateurs").onChange = function(checked) {
+		var display = "block";
+		if(!checked)
+			display = "none";
+		domStyle.set(dojo.byId("envoiAuxNonAnimateurs"), "display", display);
+	}
+	
+	//lors du click sur "Autoriser les pop-up d'information" :
+	dijit.byId("menuParametresPopup").onChange = function(checked) {
+		popup = checked;
 	}
 	
 	
@@ -542,10 +655,18 @@ var postit2 = new ether.PostIt("postit_2",{}, corbeille);
 	socket.on('connexion nouveau participant', function(participant, key) {
 		participants[key] = participant;
 		majParticipants();
+		if(popup) {
+			dijit.showTooltip('Connexion de ' + participants[key].prenom + ' ' + participants[key].nom, 'selectionParticipants', ['below']);
+			setTimeout("dijit.hideTooltip('selectionParticipants')", 2000);
+		}
 	});
 	
 	//lors de la déconnexion d'un nouveau participant, on le retire de la variable javascript et du widget FilteringSelect
 	socket.on('deconnexion participant', function(key) {
+		if(popup) {
+			dijit.showTooltip('Déconnexion de ' + participants[key].prenom + ' ' + participants[key].nom, 'selectionParticipants', ['below']);
+			setTimeout("dijit.hideTooltip('selectionParticipants')", 2000);
+		}
 		participants[key] = null;
 		majParticipants();
 	});
@@ -569,7 +690,7 @@ var postit2 = new ether.PostIt("postit_2",{}, corbeille);
 	
 	//on prend en compte le "drag" des objets depuis le bureau partout au-dessus de l'application
 	on(dojo.byId("applicationCenter"), tap.doubletap, function(event) {
-		new ether.editeur(dojo.byId("applicationCenter"), event.target.tapX, event.target.tapY);
+		new ether.editeur(editeurCouleurs, dojo.byId("applicationCenter"), event.target.tapX, event.target.tapY);
 	});
 	
 	
@@ -579,9 +700,9 @@ var postit2 = new ether.PostIt("postit_2",{}, corbeille);
 	   ---------------------------------------------------------------------------------------- */
 	
 	//on prend en compte le "drag" des objets depuis le bureau partout au-dessus de l'application
-	dojo.byId("applicationContainer").addEventListener('dragover', handleDragOver, false);
+	dojo.byId("application").addEventListener('dragover', handleDragOver, false);
 	//on prend en compte le "drop" des objets depuis le bureau partout au-dessus de l'application
-	dojo.byId("applicationContainer").addEventListener('drop', handleFileSelect, false);
+	dojo.byId("application").addEventListener('drop', handleFileSelect, false);
 });
 
 
