@@ -84,3 +84,18 @@ img.iconLogout {
 	width: 24px;
 	height: 24px;
 }
+
+div.resizeHandle {
+ position: absolute;
+ width: 5px;
+ height: 5px;
+ font-size: 1px;
+ background: #EEE;
+ border: 1px solid #333;
+ cursor: se-resize;
+}
+div.resizeHandle.hidden
+{
+	display:none;
+}
+

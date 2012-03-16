@@ -142,7 +142,7 @@ ether.manager={
 			if((dojo.attr(textarea,"value"))!="")
 				{
 					var pos=dojo.position(textarea);		
-					var node=dojo.create("div",{id:"PI"+this.PICount,innerHTML:'<span>'+ dojo.attr(textarea,"value") + '</span>'},postItArea);	//on crée un noeud de texte (avec l'id qui va bien PI0,PI1, etc...)
+					var node=dojo.create("div",{id:"PI"+this.PICount,innerHTML:'<div style="overflow:hidden; width:100%; height:100%">'+ dojo.attr(textarea,"value") + '</div>'},postItArea);	//on crée un noeud de texte (avec l'id qui va bien PI0,PI1, etc...)
 					dojo.style(node,{		//en particulier, on précise la position ici
 					position:"absolute",
 					left: pos.x + "px",
@@ -180,7 +180,7 @@ ether.manager={
 		marginBox=dojo.position(this.PISpawnZone);
 		topx=(marginBox.x+marginBox.w)/2;
 		topy=(marginBox.y+marginBox.h)/2;
-		var node=dojo.create("div",{id:"PI"+this.PICount,innerHTML:'<img src="'+ imgpath + '"/>'},this.PISpawnZone);
+		var node=dojo.create("div",{id:"PI"+this.PICount,innerHTML:'<img width:"100%; height:100%" src="'+ imgpath + '"/>'},this.PISpawnZone);
 		dojo.style(node,{		//en particulier, on précise la position ici
 				position:"absolute",
 				left: topx+ "px",
@@ -188,7 +188,7 @@ ether.manager={
 				border:"solid",
 				borderWidth:"1px"
 					});
-		PI= new ether.PostIt("PI"+this.PICount,{},cible);	//on transforme notre noeud en post-it
+		PI= ether.postIt("PI"+this.PICount,{});	//on transforme notre noeud en post-it
 				this.PICount++;
 				this.PIList.push(PI);
 	},
