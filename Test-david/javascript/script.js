@@ -153,7 +153,7 @@ ether.manager={
 				
 					dojo.destroy(dojo.byId("zonesaisie"));		//on détruit la textarea maintenant qu'on a récupéré toutes les infos nécessaires
 				
-					PI= ether.postIt("PI"+this.PICount,null,true);	//on transforme notre noeud en post-it Le dernier argument précise que le post-it est EDITABLE
+					PI= ether.postIt("PI"+this.PICount,null,this,true);	//on transforme notre noeud en post-it Le dernier argument précise que le post-it est EDITABLE
 		
 					this.PICount++;
 					this.PIList.push(PI);
@@ -188,7 +188,7 @@ ether.manager={
 				border:"solid",
 				borderWidth:"1px"
 					});
-		PI= ether.postIt("PI"+this.PICount,{});	//on transforme notre noeud en post-it
+		PI= ether.postIt("PI"+this.PICount,{},this);	//on transforme notre noeud en post-it
 				this.PICount++;
 				this.PIList.push(PI);
 	},
@@ -205,7 +205,7 @@ ether.manager={
 		trouve=(dojo.attr(this.PIList[i].node,"id")==id);
 		
 		}
-			this.PIList[i].destroy();
+			this.PIList[i].supprimer();
 			this.PIList.splice(i-1,1);
 		
 	
@@ -414,7 +414,67 @@ ether.manager={
 			
 			
 			
-	}
+	},
+	
+	fusionPI:function(PI1,PI2)		//fusionne deux postIt, repérés par leurs ID (ouPostItGroup). le premier est l'objet qui recoit le drop (au dessous)
+	{
+		var i=-1;						
+		var j=-1;
+		var k=-1;
+		var trouve1=false;
+		var trouve2=false;
+		while((k<this.PIList.length-1))		//on recherche les deux éléments dans le tableau : &&!(trouve1&&trouve2)
+		{
+			k++;
+			console.log(k);
+		trouve1=(dojo.attr(this.PIList[k].node,"id")==PI1);
+		trouve2=(dojo.attr(this.PIList[k].node,"id")==PI2);
+		
+			if(trouve1)
+			{
+				i=k;
+			}
+			if(trouve2)
+			{
+				j=k;
+			}
+		}
+		console.log(i);
+		console.log(j);
+		if(this.PIList[i].isPostIt)		//l'element du dessous est un postItSimple : on crée un groupePostIt à la place, et on y ajoute l'objet droppe
+		{
+			
+			this.PIList[i]=this.PIList[i].promote();
+			this.PIList[i].addPostIt(this.PIList[j]);
+			dojo.destroy(this.PIList[j].node);
+			this.PIList[j].supprimer();
+		
+			this.PIList.splice(j,1);
+		}
+		else					//l'element du dessous est un postItGroup
+		{
+			this.PIList[i].addPostIt(this.PIList[j]);
+			
+			dojo.destroy(this.PIList[j].node);
+			//this.PIList[j].supprimer();
+		
+			this.PIList.splice(j,1);
+		}
+	},
+	
+	createPI: function(objet)		//creation de postIt à partir d'un JSON renvoyé par l'éditeur
+{
+	var innerHTML = dojo.create("div",{class:"contenuPI", innerHTML:objet.texte,style:{backgroundColor: objet.couleur, width:objet.largeur,height:objet.hauteur,position:"absolute"}});
+	
+	var node=dojo.create("div",{id:"PI"+this.PICount,innerHTML:innerHTML },postItArea);	//on crée un noeud de texte (avec l'id qui va bien PI0,PI1, etc...)
+					dojo.style(node,{		//en particulier, on précise la position ici
+					position:"absolute",
+					left: objet.left + "px",
+					top: objet.top + "px",
+
+									});
+}
+	
 }
 //**************
 
