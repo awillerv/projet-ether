@@ -107,6 +107,26 @@ div.carreCouleur:hover {
 	cursor: pointer;
 }
 
+div.contenuPI {
+	border: 1px rgb(181,188,199) solid;
+	text-align: center;
+	overflow: hidden;
+}
+
+div.resizeHandle {
+	height: 11px;
+	width: 11px;
+	background-image : url("../images/resize.png");
+	background-repeat: no-repeat;
+	cursor: se-resize;
+	border: 1px solid black;
+}
+
+div.contenuPI:hover {
+	border: 1px rgb(117,157,192) solid;
+	cursor: move;
+}
+
 #applicationBottom {
 	height: 50px;
 	padding: 0px;
