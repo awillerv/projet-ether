@@ -1,9 +1,9 @@
 
 // classe PostIt dérivée de Moveable avec la valeur ajoutée qui va bien
+//remplacer ether.manager.PIList par la liste privée de soi-même
+define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover','dojo/dnd/Moveable','dojo/dom-construct',"dojo/NodeList-dom","dojo/NodeList-html","ether/tap","ether/postItGroup"], function(declare){
 
-define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover','dojo/dnd/Moveable','dojo/dom-construct',"dojo/NodeList-dom","dojo/NodeList-html","ether/tap"], function(declare){
-console.log(dojo);
-	var a= declare("ether.ResizeHandleMover",dojo.dnd.Mover,
+	declare("ether.ResizeHandleMover",dojo.dnd.Mover,
 	{	
 		constructor:function()
 		{
@@ -28,7 +28,7 @@ console.log(dojo);
 	{
 		
 		constructor : function(node,params)
-		{
+		{	
 			this.parentPostItNode=params.parentPostItNode;
 		},
 		
@@ -52,11 +52,11 @@ console.log(dojo);
 	{
 	
 		isPostIt:true,		//artefact pour un test
-		constructor: function(node, params,editable)
-		{
-			this.resizeHandleNode=dojo.place('<div class="resizeHandle" style="visibility:visible"></div>', ether.manager.PISpawnZone, "last");
+		constructor: function(node, params,manager,editable)
+		{	this.manager=manager;
+			this.resizeHandleNode=dojo.place('<div class="resizeHandle" style="visibility:visible"></div>', this.manager.PISpawnZone, "last");
 			var PostItMB=dojo.marginBox(this.node)
-			dojo.style(this.resizeHandleNode,{top:PostItMB.t+PostItMB.h+5+"px",left:PostItMB.l+PostItMB.w+5+"px",overflow:"hidden"});
+			dojo.style(this.resizeHandleNode,{top:PostItMB.t+PostItMB.h+"px",left:PostItMB.l+PostItMB.w+"px",overflow:"hidden"});
 			this.resizeHandle=new ether.ResizeHandle(this.resizeHandleNode,{mover:ether.ResizeHandleMover,parentPostItNode:this.node});
 			
 			dojo.connect(this.node, dojox.gesture.tap.doubletap, this, function(e)
@@ -66,7 +66,7 @@ console.log(dojo);
 				{
 				if(!this.edition)		
 				{
-				if(!ether.manager.EditionEnCours)
+				if(!this.manager.EditionEnCours)
 				{
 				this.startEdit();
 				}
@@ -81,8 +81,19 @@ console.log(dojo);
 		
 
 		onMoved: function(mover){
-								dojo.forEach(ether.manager.DZList.concat([ether.manager.DZCorbeille,ether.manager.DZTous,ether.manager.DZAnim,ether.manager.DZNonAnim]), function(item){
-																			if(item.contient(dojo.marginBox(this.node).l-mover.marginBox.l,dojo.marginBox(this.node).t-mover.marginBox.t))
+								var MB=dojo.marginBox(this.node);
+								
+								var PIList=new Array();
+								for(var i=0; i<this.manager.PIList.length;i++)
+								{
+									if(this.manager.PIList[i]==this)
+									{
+										PIList.push(this.manager.PIList[i]);
+									}
+								}
+								
+								dojo.forEach(this.manager.DZList.concat([this.manager.DZCorbeille,this.manager.DZTous,this.manager.DZAnim,this.manager.DZNonAnim]).concat(PIList), function(item){
+																			if(item.contient(MB.l-mover.marginBox.l,MB.t-mover.marginBox.t))
 																			{	
 																				item.onHover(this);
 
@@ -93,13 +104,25 @@ console.log(dojo);
 																			}
 																		}
 											,this);
+								
+								dojo.style(this.resizeHandleNode, {top:MB.t+MB.h+"px",left:MB.l+MB.w+"px"});
 		
 								},
 		
 		onMoveStop: function(mover){
-									dojo.some(ether.manager.DZList.concat([ether.manager.DZCorbeille,ether.manager.DZTous,ether.manager.DZAnim,ether.manager.DZNonAnim]), function(item){
-																			if(item.contient(dojo.marginBox(this.node).l-mover.marginBox.l,dojo.marginBox(this.node).t-mover.marginBox.t))
-																			{	
+									var MB=dojo.marginBox(this.node);
+									var PIList=new Array();
+									for(var i=0; i<this.manager.PIList.length;i++)
+									{
+									if(!(this.manager.PIList[i]==this))
+									{
+										PIList.push(this.manager.PIList[i]);
+									}
+									}
+								//	console.log(PIList);
+									dojo.some(this.manager.DZList.concat([this.manager.DZCorbeille,this.manager.DZTous,this.manager.DZAnim,this.manager.DZNonAnim]).concat(PIList), function(item){
+																			if(item.contient(MB.l-mover.marginBox.l,MB.t-mover.marginBox.t))
+																			{
 																				item.onDrop(this);
 																				return true;
 																			}
@@ -112,7 +135,10 @@ console.log(dojo);
 											,this);
 									},
 									
-		destroy: function(){
+		supprimer: function(){
+							this.destroy();
+							
+							dojo.destroy(this.resizeHandleNode);
 							dojo.destroy(this.node);
 							},
 		
@@ -120,8 +146,8 @@ console.log(dojo);
 		{	this.edition=true;
 			this.toggleResize();
 			dojo.toggleClass(this.node,"no-border");
-			ether.manager.EditionEnCours=true;
-			ether.manager.PIEdite=this;
+			this.manager.EditionEnCours=true;
+			this.manager.PIEdite=this;
 			var text=dojo.attr(dojo.query('> *', this.node)[0],"innerHTML");
 			console.log(text);
 			dojo.attr(this.node,"innerHTML",'<textarea id="ZoneEditionPI">'+text+'</textarea>');
@@ -141,21 +167,59 @@ console.log(dojo);
 		stopEdit:function()
 		{
 			var text=dojo.attr(dojo.query('> *', this.node)[0],"value");
-			dojo.attr(this.node,"innerHTML",'<span>'+text+'</span>');
+			dojo.attr(this.node,"innerHTML",'<div style="overflow:hidden">'+text+'</div>');
 			this.edition=false;
-			ether.manager.EditionEnCours=false;
-			ether.manager.PIEdite=null;
+			this.manager.EditionEnCours=false;
+			this.manager.PIEdite=null;
 			this.toggleResize();
 			
 		},
 		getContent:function()
-		{
-		return dojo.attr(this.node,"innerHTML");
+		{	
+			var objet= {
+				type:"postIt",
+				child:(this.node.innerHTML),
+				style:dojo.attr(this.node,"style"),
+				class:dojo.attr(this.node,"class")
+				};
+				
+			return JSON.stringify(objet);
 		},
 		toggleResize :function()
 		{	
 			dojo.toggleClass(this.resizeHandleNode,"hidden");
+		},
+		
+		contient : function(posX, posY)		//teste si la position donnée est contenue dans la surface de l'objet (pour détecter le hover, par exemple)
+		{	var position= dojo.position(this.node);
+			return (posX>=position.x&&posX<=(position.x+position.w)&&posY>=position.y&&posY<=(position.y+position.h));
+			
+		},
+		
+		onDrop: function(objet)
+		{	console.log(objet);
+			if(objet.isPostIt||objet.isPostItGroup)
+			{	
+				this.manager.fusionPI(dojo.attr(this.node,"id"),dojo.attr(objet.node,"id"));
+			}
+		},
+		onHover:function()
+		{
+		
+		},
+		
+		promote: function()		//promeut un post-it en postItGroup : création d'un postItGroup avec le même node puis autodestruction.
+		{	this.resizeHandle.destroy();
+			dojo.destroy(this.resizeHandleNode);
+			
+			var group=ether.postItGroup(this.node,{},this.manager);
+			
+			this.destroy();
+			return group;
+			
+			
 		}
+		
 	}
 		
 		);});
