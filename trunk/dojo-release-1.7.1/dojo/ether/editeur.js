@@ -1,6 +1,6 @@
 
 
-require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo/dom-geometry', 'dojo/dom-style', 'dojo/dom-attr', 'dojox/gesture/tap', 'dijit/form/Textarea', 'dijit/form/Button'], function(declare, connect, domConstruct, domGeom, domStyle, domAttr, tap, Textarea, Button)
+require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo/dom-geometry', 'dojo/dom-style', 'dojo/dom-attr', 'ether/tap', 'dijit/form/Textarea', 'dijit/form/Button'], function(declare, connect, domConstruct, domGeom, domStyle, domAttr, tap, Textarea, Button)
 {
 	return declare("ether.editeur", null,
 	{
@@ -8,8 +8,6 @@ require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo
 	  
 	  // couleur du post it à éditer
 	  couleurFond: 'rgb(255,255,255)',
-	  // texte du post it à éditer
-	  texte: '',
 	  
 	  /* ---------------------------- création d'un nouveau post it ---------------------------- */
 	  constructor: function(couleurs, node, x, y, h, w){
@@ -56,7 +54,7 @@ require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo
 	    
 	    /* ------- on peuple divTextarea ------- */
 	    domConstruct.create('textarea', { id: 'editeurTextarea_'+this.statics.counter }, divTextarea);
-		new Textarea({ name: 'editeurTextarea_'+this.statics.counter }, 'editeurTextarea_'+this.statics.counter);
+		new Textarea({ name: 'editeurTextarea_'+this.statics.counter, style: { fontFamily: 'arial', textAlign: 'center' } }, 'editeurTextarea_'+this.statics.counter);
 		var textarea = dojo.byId('editeurTextarea_'+this.statics.counter);
 		domStyle.set(textarea, { height: h+"px", width: w+"px", backgroundColor: this.couleurFond});
 		textarea.focus();
@@ -66,16 +64,19 @@ require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo
 		var boutonOK = new Button({ label: "OK", onClick: function() { 
 			var texte = domAttr.get(textarea, 'value');
 			if(texte!='') {
-				//créer un post-it (en attendant, écriture en console des paramètres)
-				console.log('texte :'+texte);
-				console.log('couleur :'+domStyle.get(textarea, 'backgroundColor'));
-				console.log('hauteur : '+domGeom.position(textarea).h);
+				//créer un post-it
+				var postitJSON = { texte: texte, couleur: domStyle.get(textarea, 'backgroundColor'), top: domGeom.position(textarea).y, left: domGeom.position(textarea).x, hauteur: domGeom.position(textarea).h, largeur: domGeom.position(textarea).w };
+				ether.manager.createPI(postitJSON);
+				domConstruct.destroy(div);
 			}
 		} }, 'editeurOK_'+this.statics.counter);
 	    domConstruct.create('input', { type: 'button', value: 'Annuler', id: 'editeurAnnuler_'+this.statics.counter }, divBoutons);
 		var boutonAnnuler = new Button({ label: "Annuler", onClick: function(){ domConstruct.destroy(div); } }, 'editeurAnnuler_'+this.statics.counter);
 	    
 	    /* ------- on ajoute les événements/actions à divCouleurs------- */
+		connect.connect(div, tap.doubletap, this, function(e){
+	      e.stopPropagation();
+	    });
 	    connect.connect(carre1, tap, this, function(e){
 	      this.couleurFond = domStyle.get(carre1, 'backgroundColor');
 		  domStyle.set(textarea, 'backgroundColor', this.couleurFond);

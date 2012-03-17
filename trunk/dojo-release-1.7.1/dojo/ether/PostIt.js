@@ -1,7 +1,7 @@
 
 // classe PostIt dérivée de Moveable avec la valeur ajoutée qui va bien
 //remplacer ether.manager.PIList par la liste privée de soi-même
-define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover','dojo/dnd/Moveable','dojo/dom-construct',"dojo/NodeList-dom","dojo/NodeList-html","ether/tap","ether/postItGroup"], function(declare){
+define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover','dojo/dnd/Moveable','dojo/dom-construct',"dojo/NodeList-dom","dojo/NodeList-html","ether/tap","ether/PostItGroup"], function(declare){
 
 	declare("ether.ResizeHandleMover",dojo.dnd.Mover,
 	{	
@@ -15,7 +15,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 			 var m = this.marginBox;
 			 var pimb=dojo.marginBox(this.host.parentPostItNode);
 
-			 this.host.onMove(this, {l: Math.max(m.l + e.pageX,pimb.l), t:Math.max( m.t + e.pageY,pimb.t)}, e);
+			 this.host.onMove(this, {l: Math.max(m.l + e.pageX,pimb.l+20), t:Math.max( m.t + e.pageY,pimb.t+20)}, e);
 			
 			
 		     //this.host.onMove(this, {l: Math.max(m.l,e.pageX-positionOffset.l), t: Math.max(m.t,e.pageY-positionOffset.t)});
@@ -37,12 +37,13 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 			var newPosition=dojo.marginBox(this.node);
 			//console.log(newPosition);
 			var postItMB=dojo.marginBox(this.parentPostItNode);
-			dojo.style(this.parentPostItNode,{width: newPosition.l-postItMB.l+"px",height: (newPosition.t-postItMB.t)+"px"});
+			//dojo.style(this.parentPostItNode,{width: newPosition.l-postItMB.l+"px",height: newPosition.t-postItMB.t+"px"});
 			
 			for (var  i  = 0;  i<this.parentPostItNode.children.length;  i++)  {
 				var child = this.parentPostItNode.children[i];
-				dojo.style(child,{width: newPosition.l-postItMB.l+"px",height: (newPosition.t-postItMB.t)+"px"});
-  }
+				var childMB=dojo.marginBox(child);
+				dojo.style(child,{width: newPosition.l+newPosition.w-postItMB.l-childMB.l+"px",height: newPosition.t-postItMB.t+newPosition.h-childMB.t+"px"});
+			}
 		}
 	
 	
@@ -55,8 +56,10 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 		constructor: function(node, params,manager,editable)
 		{	this.manager=manager;
 			this.resizeHandleNode=dojo.place('<div class="resizeHandle" style="visibility:visible"></div>', this.manager.PISpawnZone, "last");
-			var PostItMB=dojo.marginBox(this.node)
-			dojo.style(this.resizeHandleNode,{top:PostItMB.t+PostItMB.h+"px",left:PostItMB.l+PostItMB.w+"px",overflow:"hidden"});
+			var PostItMB=dojo.marginBox(this.node);
+			var childMB=dojo.marginBox(this.node.children[0]);
+			console.log(PostItMB);
+			dojo.style(this.resizeHandleNode,{position:"absolute",top:PostItMB.t+childMB.t+childMB.h-13+"px",left:PostItMB.l+childMB.w+childMB.l-13+"px"});
 			this.resizeHandle=new ether.ResizeHandle(this.resizeHandleNode,{mover:ether.ResizeHandleMover,parentPostItNode:this.node});
 			
 			dojo.connect(this.node, dojox.gesture.tap.doubletap, this, function(e)
@@ -82,6 +85,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 
 		onMoved: function(mover){
 								var MB=dojo.marginBox(this.node);
+								var childMB=dojo.marginBox(this.node.children[0]);
 								
 								var PIList=new Array();
 								for(var i=0; i<this.manager.PIList.length;i++)
@@ -105,7 +109,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 																		}
 											,this);
 								
-								dojo.style(this.resizeHandleNode, {top:MB.t+MB.h+"px",left:MB.l+MB.w+"px"});
+								dojo.style(this.resizeHandleNode, {top:MB.t+childMB.h+childMB.t-13+"px",left:MB.l+childMB.w+childMB.l-13+"px"});
 		
 								},
 		
@@ -207,12 +211,16 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 		{
 		
 		},
+		onStopHover:function()
+		{
+		
+		},
 		
 		promote: function()		//promeut un post-it en postItGroup : création d'un postItGroup avec le même node puis autodestruction.
 		{	this.resizeHandle.destroy();
 			dojo.destroy(this.resizeHandleNode);
 			
-			var group=ether.postItGroup(this.node,{},this.manager);
+			var group=ether.PostItGroup(this.node,{},this.manager);
 			
 			this.destroy();
 			return group;
