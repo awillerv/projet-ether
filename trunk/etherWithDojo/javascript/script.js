@@ -2,7 +2,7 @@
    --  on charge toutes les bibliothèques de Dojo nécessaires à ETHER, puis on exécute le callback lorsque tout est chargé  --	
    --------------------------------------------------------------------------------------------------------------------------- */
 
-require(["dojo/parser", "dojo/on", "dojox/validate/web", "dojo/dom-construct", "dojo/dom-attr", "dojo/dom-class", "dojo/dom-style", "dojo/query", "dojo/_base/unload", "dojo/_base/sniff", "ether/tap",
+require(["dojo/parser", "dojo/on", "dojox/validate/web", "dojo/dom-construct", "dojo/dom-attr", "dojo/dom-class", "dojo/dom-style", "dojo/query", "dojo/_base/array", "dojo/_base/unload", "dojo/_base/sniff", "ether/tap",
 "dijit/Dialog", "dijit/ProgressBar", "dijit/form/ValidationTextBox", "dijit/form/RadioButton", "dijit/form/Form", 
 "dijit/MenuBar", "dijit/PopupMenuBarItem", "dijit/DropDownMenu", "dijit/MenuItem", "ether/MenuItem", "dijit/MenuSeparator", "dijit/PopupMenuItem", "dijit/CheckedMenuItem",
 "dojox/form/Uploader", "dijit/form/Textarea", "dijit/form/FilteringSelect", "dojo/data/ItemFileReadStore", "dijit/ColorPalette",
@@ -374,7 +374,7 @@ ether.manager={
 		}
 	},
 		
-	receptionPostIt:function(idEmetteur, objectString)		//creation de postIt à la réception. Problème du positionnement, il faudra regarder
+	receptionPostIt:function(objectString)		//creation de postIt à la réception. Problème du positionnement, il faudra regarder
 	{		
 			var objet=eval("(" + objectString + ")" );
 			var ProtoPI=dojo.create('div',{innerHTML:objet.innerHTML, 
@@ -900,6 +900,29 @@ ether.manager={
 	
 	//lors du click sur "chargement", on va charger depuis le localStorage tous les post-it sauvegardés et les afficher à l'écran
 	dijit.byId("menuChargement").onClick = function() {
+	  // on commence par récupérer les identifiants du participant
+	  var p = localStorage.getItem('id').split('|');
+	  // on met à jour notre client
+	  moi.prenom = p[0];
+		moi.nom = p[1];
+		moi.estAnimateur = p[2];
+		dojo.byId("moi").innerHTML = moi.prenom+" "+moi.nom+((moi.estAnimateur) ? "<br />(animateur)" : '');
+		// on indique aux autres clients de se mettre à jour
+		socket.emit('changement id', moi);
+	  // on va recréer les post its enregistrés et les ajouter dans la PIList
+	  // on commence par vider la PIList actuelle
+	  ether.manager.PIList.splice(0, ether.manager.PIList.length);
+	  // on ajoute les post-its à la volée
+	  var content = null;
+	  for(var i = localStorage.length-1 ; i >= 2 ; i--){
+	    // on récupère le string
+	    content = localStorage.getItem(localStorage.key(i));
+	    // on le transforme en JSON
+	    content = JSON.parse(content);
+	    // on recrée le post-it
+	    ether.manager.receptionPostIt(content);
+	  }
+	  /*
 		var t = new Array();
 		for(var i = localStorage.length - 1 ; i >= 0 ; i--) {
 			// on transforme la string enregistrée en tableau, sachant que le séparateur est |
@@ -931,6 +954,7 @@ ether.manager={
 				socket.emit('data decode request', t);
 			}
 		}
+		*/
 	};
 	
 	//lorsque le serveur a décodé une image, on l'affiche à l'écran dans un post-it
@@ -946,7 +970,7 @@ ether.manager={
 		var d = new Date();
 		localStorage.setItem('sauvegardeETHER', d.toString());
 		// on enregistre l'identité de l'utilisateur
-		var p = new Array('id', moi.prenom, moi.nom, moi.estAnimateur);
+		var p = new Array(moi.prenom, moi.nom, moi.estAnimateur);
 		// on utilise un try/catch au cas où on aurait plus de place
 		try {
 			localStorage.setItem('id', p.join('|'));
@@ -956,38 +980,30 @@ ether.manager={
 			}
 			console.log('erreur lors de l\'enregistrement de l\'ID');
 		}
-		/*
-		// on enregistre ensuite les messages texte du plus récent au plus ancien
-		var m = new Array();
-		//
-		//il faut ici remplacer la boucle par une itération sur le tableau de David
-		//
-		$($('.texte').get().reverse()).each(function(index){
-			m = ['texte', $(this).attr('id'), $(this).text(), $(this).children('span').text(), 'txt'];
-			// on utilise un try/catch au cas où on aurait plus de place
-			try {
-				// les infos pertinentes seront séparées par un | dans la string enregistrée
-				localStorage.setItem('texte' + index, m.join('|'));
-			} catch(e) {
-				if (e == QUOTA_EXCEEDED_ERR){
-					//
-					//si possible remplacer par un message du style les Nième photos les plus anciennes ne seront pas sauvegardées
-					//
+		// on va enregistrer les post it à la volée
+		var content = null;
+		// on parcoure le tableau à l'envers pour sauver d'abord les post-its les plus récents
+		var reversePIList = ether.manager.PIList.reverse();
+		dojo.forEach(reversePIList, function(pi, i){
+		  // contenu du post it sous forme de JSON
+		  content = pi.getContent();
+		  // on transforme le JSON en string
+		  content = JSON.stringify(content);
+		  // on utilise un try/catch au cas où on aurait plus de place
+		  try{
+		    // on essaie d'enregistrer le post-it
+		    localStorage.setItem('PI' + i, content);
+		  } catch(e) {
+		    // si on a plus de place on informe l'utilisateur
+			  if (e == QUOTA_EXCEEDED_ERR){
 					alert(
-					'L\'espace de sauvegarde est plein. ' +
-					'Vos ' + (index + 1) + ' textes les plus récents ont toutefois été enregistrés'
+					  'L\'espace de sauvegarde est plein. ' +
+					  'Vos ' + (i + 1) + ' post-its les plus récents ont toutefois été enregistrés'
 					);
 				}
-				console.log('erreur lors de l\'enregistrement du texte ' + index);
-			}
+				console.log('erreur lors de l\'enregistrement du post-it ' + i);
+		  }
 		});
-		  
-		// on enregistre ensuite les messages image du plus récent au plus ancien
-		$($('.image').get().reverse()).each(function(index, el) {
-			//pour stocker l'image dans la base de données sous forme de string, on demande au serveur de l'encoder en base 64
-			socket.emit('data encode request', $(this).children('a').attr('href'));
-		});
-		*/
 	};
 	
 	//lorsque l'on reçoit une image encodée en base 64 par le serveur, on la sauvegarde en local
