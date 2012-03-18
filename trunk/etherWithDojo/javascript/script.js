@@ -6,8 +6,9 @@ require(["dojo/parser", "dojo/on", "dojox/validate/web", "dojo/dom-construct", "
 "dijit/Dialog", "dijit/ProgressBar", "dijit/form/ValidationTextBox", "dijit/form/RadioButton", "dijit/form/Form", 
 "dijit/MenuBar", "dijit/PopupMenuBarItem", "dijit/DropDownMenu", "dijit/MenuItem", "ether/MenuItem", "dijit/MenuSeparator", "dijit/PopupMenuItem", "dijit/CheckedMenuItem",
 "dojox/form/Uploader", "dijit/form/Textarea", "dijit/form/FilteringSelect", "dojo/data/ItemFileReadStore", "dijit/ColorPalette",
-"dijit/layout/BorderContainer", "dijit/layout/ContentPane", "dojo/dnd/Source", "dojo/_base/array",
-"ether/PostIt", "ether/Cible", "ether/editeur", "dojo/keys", "dojo/domReady!"], function(parser, on, validate, domConstruct, domAttr, domClass, domStyle, query, unload, has, tap) {
+"dijit/layout/BorderContainer", "dijit/layout/ContentPane", "dojo/dnd/Source", "dojo/_base/array"
+"ether/PostIt", "ether/Cible","ether/CibleEnvoi", "ether/editeur","ether/DZContainer", "dojo/keys", "dojo/domReady!"], function(parser, on, validate, domConstruct, domAttr, domClass, domStyle, query, unload, has, tap) {
+
 
 
 /*
@@ -65,18 +66,20 @@ ether.manager={
 	PICount:0,
 	EditionEnCours :false,		//une seule zone d'édition de texte à la fois
 	PIEdite :null, //le PI en cours d'édition, le cas échéant
-	DZDefaultParentId :"applicationBottom",	
+	DZSpawnZone :"DZRow",	
 	PISpawnZone : "",
 	DZCorbeille:null,
 	DZTous:null,
 	DZAnim:null,
 	DZNonAnim:null,
+	DZContainerList:null,
+	participants:new Array(),
 	
 	
 	initialize:function(postItArea,DZDefaultArea)		//initialisation: on passe en argument l'id de la zone où l'on peut spawner les conteneurs.
 	{	
-		this.PISpawnZone=postItArea;	
-		this.DZDefaultParentId=DZDefaultArea;
+		this.PISpawnZone=dojo.byId(postItArea);	
+		this.DZSpawnZone=dojo.byId(DZDefaultArea);
 		var AreaPosition=dojo.position(this.PISpawnZone);
 		this.DZCorbeille=new ether.cible(dojo.byId("corbeille"));
 		this.DZCorbeille.onDrop=function(objet)
@@ -111,79 +114,21 @@ ether.manager={
 				}
 			}
 		
-		//console.log(this.PISpawnZone);
+		
 		
 		var i=0;
-		while(i<=participants.length)		//initialisation de l'usermap pour les participants présents au départ
+		while(i<=this.participants.length)		//initialisation de l'usermap pour les participants présents au départ
 		{
 		
 			this.userMap[i]=new Array();
 				i++;
 		}
-		// dojo.connect(this.PISpawnZone,dojox.gesture.tap.doubletap,this, function(e)
-		// {	if(!this.EditionEnCours)
-		// {	this.EditionEnCours=true;
-			// var AreaPosition=dojo.position(dojo.byId(this.PISpawnZone));
-			// posX=e.target.tapX-AreaPosition.x;
-			// posY=e.target.tapY-AreaPosition.y;
-			// var ZoneSaisie=dojo.create("div",{innerHTML:'<textarea id="zonesaisie" data-dojo-type="dijit.form.Textarea"></textarea>'},postItArea);
-			// dojo.style(ZoneSaisie,{
-			// position:"absolute",
-				// left: posX + "px",
-				// top: posY + "px"
-					// });
-		
-			// document.getElementById("zonesaisie").focus();	
-			// dojo.connect(ZoneSaisie, dojox.gesture.tap, function(e)		//pour éviter la fermeture de la textarea si je reclique dessus, on intercepte l'event 
-			// {
-				// e.stopPropagation();
-			// });
-			
-			// dojo.connect(ZoneSaisie, dojox.gesture.tap.doubletap, function(e)	//idem
-			// {
-				// e.stopPropagation();
-			// });
-			
-		// }});
-		//ici, on définit ce qui se passe quand on tap sur la zone libre: on supprime la textarea pour créer à la place le post-it adapté
-		// dojo.connect(this.PISpawnZone,dojox.gesture.tap, this,function(e)
-		// {
-			// var textarea=dojo.byId("zonesaisie");		//il n'y en a jamais qu'une normalement
-			//rien à faire si le noeud n'existe pas encore ou qu'il est vide de texte
-			// if(textarea)
-			// {
-			// if((dojo.attr(textarea,"value"))!="")
-				// {
-					// var pos=dojo.position(textarea);		
-					// var node=dojo.create("div",{id:"PI"+this.PICount,innerHTML:'<div style="overflow:hidden; width:100%; height:100%">'+ dojo.attr(textarea,"value") + '</div>'},postItArea);	//on crée un noeud de texte (avec l'id qui va bien PI0,PI1, etc...)
-					// dojo.style(node,{		//en particulier, on précise la position ici
-					// position:"absolute",
-					// left: pos.x + "px",
-					// top: pos.y + "px",
-					// border:"solid",
-					// borderWidth:"1px"
-									// });
-				
-					// dojo.destroy(dojo.byId("zonesaisie"));		//on détruit la textarea maintenant qu'on a récupéré toutes les infos nécessaires
-				
-					// PI= ether.postIt("PI"+this.PICount,null,this,true);	//on transforme notre noeud en post-it Le dernier argument précise que le post-it est EDITABLE
-		
-					// this.PICount++;
-					// this.PIList.push(PI);
-					// this.EditionEnCours=false;
-				// }
-			// else
-				// {
-					// dojo.destroy(dojo.byId("zonesaisie"));	
-					// this.EditionEnCours=false;
-				// }
-			// }
-			// if(this.PIEdite)
-			// {
-				// this.PIEdite.stopEdit();
-			// }
-		
-		// });
+		this.DZContainerList=new Array();
+		//creation d'une liste de DZContainer...
+		dojo.forEach(this.DZSpawnZone.children, function(item)
+				{
+					this.DZContainerList.push(ether.DZContainer(item,this));
+				},this);
 		
 	},
 	
@@ -193,7 +138,7 @@ ether.manager={
 		marginBox=dojo.position(this.PISpawnZone);
 		topx=(marginBox.x+marginBox.w)/2;
 		topy=(marginBox.y+marginBox.h)/2;
-		var node=dojo.create("div",{id:"PI"+this.PICount,innerHTML:'<img width:"100%; height:100%" src="'+ imgpath + '"/>'},this.PISpawnZone);
+		var node=dojo.create("div",{id:"PI"+this.PICount,innerHTML:'<img src="'+ imgpath + '"/>'},this.PISpawnZone);
 		dojo.style(node,{		//en particulier, on précise la position ici
 				position:"absolute",
 				left: topx+ "px",
@@ -224,7 +169,9 @@ ether.manager={
 	
 	},
 	createDZ:function (clientList)
-	{	var clientArray;
+	{	
+	
+		var clientArray;
 		if(clientList instanceof Array)
 		{
 		clientArray=clientList;
@@ -233,52 +180,27 @@ ether.manager={
 		{
 		clientArray=[clientList];
 		}
-		var imagepath;
-		var descText;
-		var TooltipText = null;
-		if(clientArray.length==1){imagepath='images/participant.png'; descText = participants[clientArray[0]].prenom+' '+participants[clientArray[0]].nom}
-		else { var i=0;
-				descText=participants[clientArray[i]].prenom+' '+participants[clientArray[i]].nom;
-				i++;
-				while (descText.length<=25&&i<=clientArray.length)
-				{
-					descText=descText +', '+participants[clientArray[i]].prenom+' '+participants[clientArray[i]].nom;
-					i++;
-				}
-				if(i<clientArray.length)
-				{
-					descText=descText+',...';
-					var j=0;
-					TooltipText=participants[clientArray[j]].prenom+' '+participants[clientArray[j]].nom;
-					j++;
-					while(j<clientArray.length)
-					{
-					TooltipText=TooltipText +','+participants[clientArray[j]].prenom+' '+participants[clientArray[j]].nom;
-					j++;
-					}
-				}
-		if(clientArray.length==2)
-		{imagepath='images/groupe2.png';}
-		else{imagepath='images/groupe3.png';}}
 		
-		var node=dojo.create("div",{innerHTML:'<img src="'+imagepath+'"/>'+'<br/> <span>'+descText+'</span>', 
-		class: "DropZone",id: 'DZ'+this.DZId, style:{float:"left",textAlign:"center",border:"solid", borderWidth:"1px",width:"100px"}}, dojo.byId(this.DZDefaultParentId));
-		if(TooltipText)
+		//on récupere le premier container libre.
+		var i=0;
+		while(!this.DZContainerList[i].isFree())
 		{
-		//new Tooltip({connectId:['DZ'+this.DZId], label : TooltipText}); voir comment faire marcher dijit.tooltip
+		i++;
 		}
-		var DZ=new ether.cibleEnvoi(node, clientArray);
+		console.log(clientArray);
+		dojo.create('div',{id:"DZ"+this.DZId,class:"DropZone"},this.DZContainerList[i].node)
+		var DZ=ether.cibleEnvoi(this.DZContainerList[i].node.children[0],{},this.DZContainerList[i], clientArray,this);
 		var k=0;
 		
 		while(k<clientArray.length)
 		{
 		if(this.userMap[clientArray[k]])
 		{
-		this.userMap[clientArray[k]].push(this.DZId);
+		this.userMap[clientArray[k]].push("DZ"+this.DZId);
 		}
 		else
 		{
-		this.userMap[clientArray[k]]=new Array(this.DZId);
+		this.userMap[clientArray[k]]=new Array("DZ"+this.DZId);
 		}
 		k++;
 		}
@@ -287,11 +209,50 @@ ether.manager={
 		this.DZId++;
 	},
 	
-	deleteDZ:function(id) //suppression de la DZ n°X. id est de la forme "DZn" à priori
+	fusionDZ:function(DZ1,DZ2)		//toujours dans l'ordre dessus/dessous
+	{
+		if(DZ1.isCibleEnvoi&&DZ2.isCibleEnvoi)
+		{
+			var i=-1;						
+			var j=-1;
+			var k=-1;
+			var trouve1=false;
+			var trouve2=false;
+			while((k<this.DZList.length-1))		//on recherche les deux éléments dans le tableau : &&!(trouve1&&trouve2)
+			{
+				k++;
+			
+			trouve1=(dojo.attr(this.DZList[k].node,"id")==DZ1);
+			trouve2=(dojo.attr(this.DZList[k].node,"id")==DZ2);
+		
+			if(trouve1)
+			{
+				i=k;
+			}
+			if(trouve2)
+			{
+				j=k;
+			}
+			}
+			
+			while(DZ1.clientKeyList.length>0)
+			{
+				var n=DZ1.clientKeyList[0];
+				DZ1.removeClient(n);
+				DZ2.addClient(n);
+				this.userMap[n].push(dojo.attr(DZ2.node,"id"));
+			}
+			DZ2.refreshNode();
+			DZ1.container.DZ=null;
+			this.deleteDZ(DZ1);
+		
+		}
+	},
+	
+	deleteDZ:function(DZ) //suppression de la DZ n°X. id est de la forme "DZn" à priori
 	{	
 	//vérification : est-ce bien une DZ existante
-	node=dojo.byId(id);
-	if(dojo.hasClass(node, "DropZone"))
+	var id=dojo.attr(DZ.node,"id");
 	{
 	//étape 1 : mettre à jour le tableau userMap. Un parcours complet est requis
 		var i=0;
@@ -329,43 +290,11 @@ ether.manager={
 			this.DZList[this.userMap[idParticipant][j]].removeClient(idParticipant);
 			if(this.DZList[this.userMap[idParticipant][j]].clientKeyList.length<=0)
 			{
-				this.deleteDZ(dojo.attr(this.DZList[this.userMap[idParticipant][j]].node,"id"));
+				this.deleteDZ(this.DZList[this.userMap[idParticipant][j]]);
 			}
 			else
 			{
-			var clientArray= this.DZList[this.userMap[idParticipant][j]].clientKeyList;
-			
-			var imagepath;
-			var descText;
-			var TooltipText = null;
-			if(clientArray.length==1){imagepath='images/participant.png'; descText = participants[clientArray[0]].prenom+' '+participants[clientArray[0]].nom}
-			else { var i=0;
-				descText=participants[clientArray[i]].prenom+' '+participants[clientArray[i]].nom;
-				i++;
-				while (descText.length<=25&&i<=clientArray.length)
-				{
-					descText=descText +', '+participants[clientArray[i]].prenom+' '+participants[clientArray[i]].nom;
-					i++;
-				}
-				if(i<clientArray.length)
-				{
-					descText=descText+',...';
-					var k=0;
-					TooltipText=participants[clientArray[k]].prenom+' '+participants[clientArray[k]].nom;
-					k++;
-					while(k<clientArray.length)
-					{
-					TooltipText=TooltipText +','+participants[clientArray[j]].prenom+' '+participants[clientArray[j]].nom;
-					k++;
-					}
-				}
-			if(clientArray.length==2)
-			{imagepath='images/groupe2.png';}
-			else{imagepath='images/groupe3.png';}}
-			
-			////
-			
-			dojo.attr(this.DZList[this.userMap[idParticipant][j]].node, "innerHTML",'<img src="'+imagepath+'"/>'+'<br/> <span>'+descText+'</span>');
+				this.DZList[userMap[idParticipant][j]].refreshNode();
 			////
 			}
 			
@@ -541,10 +470,10 @@ ether.manager={
 		NON_ANIMATEURS = -3;
 	
 	//le tableau qui liste l'ensemble des participants connectés à ETHER
-	var participants = new Array();
-	participants[TOUS] = new participant('tous', '', undefined, undefined);
-	participants[ANIMATEURS] = new participant('animateurs', '', true, undefined);
-	participants[NON_ANIMATEURS] = new participant('non animateurs', '', false, undefined);
+	
+	ether.manager.participants[TOUS] = new participant('tous', '', undefined, undefined);
+	ether.manager.participants[ANIMATEURS] = new participant('animateurs', '', true, undefined);
+	ether.manager.participants[NON_ANIMATEURS] = new participant('non animateurs', '', false, undefined);
 	
 	//ma clé (inconnue pour l'instant) et le participant (vide pour l'instant) qui me représente
 	var maCle = undefined;
@@ -601,14 +530,14 @@ ether.manager={
 		var contientNonAnimateurs = false;
 		var contientParticipants = false;
 		var itemsParticipants = new Array();
-		for(var i=0; i<participants.length; i++) {
-			if(i!=maCle && participants[i]!=null) {
+		for(var i=0; i<ether.manager.participants.length; i++) {
+			if(i!=maCle && ether.manager.participants[i]!=null) {
 				contientParticipants = true;
-				if(participants[i].estAnimateur)
+				if(ether.manager.participants[i].estAnimateur)
 					contientAnimateurs = true;
 				else
 					contientNonAnimateurs = true;
-				itemsParticipants.push({ value: 'participant_'+i, name: participants[i].prenom+' '+participants[i].nom });
+				itemsParticipants.push({ value: ''+i, name: ether.manager.participants[i].prenom+' '+ether.manager.participants[i].nom });
 			}
 		}
 		if(contientParticipants) {
@@ -874,11 +803,11 @@ ether.manager={
 		//on met à jour sa clé
 		maCle = key;
 		//on met à jour la liste des participants (la variable javascript)
-		participants = liste_participants;
+		ether.manager.participants = liste_participants;
 		//on met à jour la liste des participants (le widget FilteringSelect)
 		majParticipants();
 		//on initialise le manager de post-it
-		ether.manager.initialize(dojo.byId("applicationCenter"),dojo.byId("applicationBottom"));
+		ether.manager.initialize(dojo.byId("applicationCenter"),dojo.byId("DZRow"));
 		//on masque le formulaire de connexion pour afficher l'application à l'écran
 		changementPage("connexion", "application");
 		//on effectue un "resize" pour être sûr qu'elle prenne bien toute la page
@@ -1176,7 +1105,8 @@ ether.manager={
 	//lors de la sélection d'un participant dans le FilteringSelect, on crée la dropzone qui lui correspond et on l'ajoute à l'application
 	dijit.byId("selectionParticipants").onChange = function(value) {
 		if(value!='') {
-			//à compléter avec la fonction de david
+			
+			ether.manager.createDZ(value);
 		}
 	}
 	
@@ -1231,10 +1161,10 @@ ether.manager={
 	
 	//lors de la connexion d'un nouveau participant, on l'ajoute à la variable javascript et au widget FilteringSelect
 	socket.on('connexion nouveau participant', function(participant, key) {
-		participants[key] = participant;
+		ether.manager.participants[key] = participant;
 		majParticipants();
 		if(popup) {
-			dijit.showTooltip('Connexion de ' + participants[key].prenom + ' ' + participants[key].nom, 'selectionParticipants', ['below']);
+			dijit.showTooltip('Connexion de ' + ether.manager.participants[key].prenom + ' ' +ether.manager.participants[key].nom, 'selectionParticipants', ['below']);
 			setTimeout("dijit.hideTooltip('selectionParticipants')", 2000);
 		}
 	});
@@ -1242,10 +1172,11 @@ ether.manager={
 	//lors de la déconnexion d'un nouveau participant, on le retire de la variable javascript et du widget FilteringSelect
 	socket.on('deconnexion participant', function(key) {
 		if(popup) {
-			dijit.showTooltip('Déconnexion de ' + participants[key].prenom + ' ' + participants[key].nom, 'selectionParticipants', ['below']);
+			dijit.showTooltip('Déconnexion de ' + ether.manager.participants[key].prenom + ' ' + ether.manager.participants[key].nom, 'selectionParticipants', ['below']);
 			setTimeout("dijit.hideTooltip('selectionParticipants')", 2000);
 		}
-		participants[key] = null;
+		ether.manager.participants[key] = null;
+		ether.manager.deleteParticipant(key);
 		majParticipants();
 	});
 	

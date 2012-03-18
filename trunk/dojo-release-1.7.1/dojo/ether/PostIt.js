@@ -16,7 +16,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 			 var m = this.marginBox;
 			 var pimb=dojo.marginBox(this.host.parentPostItNode);
 
-			 this.host.onMove(this, {l: Math.max(m.l + e.pageX,pimb.l+20), t:Math.max( m.t + e.pageY,pimb.t+20)}, e);
+			 this.host.onMove(this, {l: Math.max(m.l + e.pageX,pimb.l+20), t:Math.max(m.t + e.pageY,pimb.t+20)}, e);
 			
 			
 		     //this.host.onMove(this, {l: Math.max(m.l,e.pageX-positionOffset.l), t: Math.max(m.t,e.pageY-positionOffset.t)});
