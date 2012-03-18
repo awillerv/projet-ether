@@ -366,14 +366,14 @@ ether.manager={
 		//**********************
 	receptionPostIt:function(idEmetteur, objectString)		//creation de postIt à la réception. Problème du positionnement, il faudra regarder
 	{		
-			var objet=eval(objectString);
+			var objet=eval("(" + objectString + ")" );
 			var ProtoPI=dojo.create('div',{innerHTML:objet.innerHTML, 
 			id: 'PI'+this.PICount, style:{position:"absolute"}}, dojo.byId(this.PISpawnZone));
 			dojo.attr(ProtoPI,"style",objet.style);
 	
 			if(objet.type=="postItGroup")
 			{
-			PI= new ether.PostItGroup(ProtoPI,{},this);	//on transforme notre noeud en post-it
+			PI= ether.postItGroup(ProtoPI,{},this);	//on transforme notre noeud en post-it
 				this.PICount++;
 				this.PIList.push(PI);
 			}
@@ -381,7 +381,7 @@ ether.manager={
 			{
 				if(objet.type=="postIt")
 				{
-					PI= new ether.PostIt(ProtoPI,{},this,ProtoPI.children[0].tagName!="IMG");	//on transforme notre noeud en post-it
+					PI=ether.postIt(ProtoPI,{},this,ProtoPI.children[0].tagName!="IMG");	//on transforme notre noeud en post-it
 					this.PICount++;
 					this.PIList.push(PI);
 				}
