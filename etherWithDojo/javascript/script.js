@@ -76,7 +76,7 @@ ether.manager={
 	{	
 		this.PISpawnZone=postItArea;	
 		this.DZDefaultParentId=DZDefaultArea;
-		var AreaPosition=dojo.position(this.PISpawnZone));
+		var AreaPosition=dojo.position(this.PISpawnZone);
 		this.DZCorbeille=new ether.cible(dojo.byId("corbeille"));
 		this.DZCorbeille.onDrop=function(objet)
 			{
@@ -374,58 +374,28 @@ ether.manager={
 		}
 	},
 		
-	receptionPostIt:function(idEmetteur, node)		//creation de postIt à la réception. Problème du positionnement, il faudra regarder
+	receptionPostIt:function(idEmetteur, objectString)		//creation de postIt à la réception. Problème du positionnement, il faudra regarder
 	{		
-			//etape 1 : création du noeud, caché, et obtention de ses dimensions
-			var ProtoPI=dojo.create("div",{innerHTML:node, 
-			id: 'PI'+this.PICount, style:{float:"left",border:"solid", borderWidth:"1px",position:"absolute"}}, dojo.byId(this.PISpawnZone))
-			var ProtoPIPosition=dojo.position(ProtoPI);
-			var nextPosition;
-			var AreaPosition=dojo.position(dojo.byId(this.PISpawnZone));
-			dojo.style(ProtoPI,"display","none");
-			// etape 2 : on recherche une éventuelle DZ associée à l'émetteur : elle servira de base pour le positionnement
-			if(this.userMap[idEmetteur])
-			{	alert('DZ'+this.userMap[idEmetteur][0]);
-				var DZPosition=dojo.position(dojo.byId('DZ'+this.userMap[idEmetteur][0]));		// on prend la premiere de la liste (il faut bien en choisir une)
-				
-				//si la DZ est plutôt en haut de l'écran, on envoie le PI en dessous, si il est à gauche, on envoie le PI à droite, etc...
-				
-				if((DZPosition.y+DZPosition.h/2)<(AreaPosition.y+AreaPosition.h/2))
-				{
-					if((DZPosition.x+DZPosition.w/2)>(AreaPosition.w+AreaPosition.w/2))	//cas quadrant top left, le PI est placé au coin bas droite
-					{	
-						nextPosition={x:DZPosition.x+DZPosition.w, y:DZPosition.y-DZPosition.h};
-					}
-					else		//cas top right
-					{	
-						nextPosition={x:DZPosition.x-ProtoPIPosition.w, y:DZPosition.y-DZPosition.h};
-					}
-				}
-				else
-				{
-					if((DZPosition.x+DZPosition.w/2)>(AreaPosition.w+AreaPosition.w/2))	//cas bottom left
-					{
-						nextPosition={x:DZPosition.x+DZPosition.w, y:DZPosition.y+ProtoPIPosition.h};
-					}
-					else
-					{
-						nextPosition={x:DZPosition.x-ProtoPIPosition.w, y:DZPosition.y+ProtoPIPosition.h};
-					}
-				}
-				
-				dojo.style(ProtoPI,{top:nextPosition.y+"px", left:nextPosition.x+"px",display:"inline"});
+			var objet=eval("(" + objectString + ")" );
+			var ProtoPI=dojo.create('div',{innerHTML:objet.innerHTML, 
+			id: 'PI'+this.PICount, style:{position:"absolute"}}, dojo.byId(this.PISpawnZone));
+			dojo.attr(ProtoPI,"style",objet.style);
+	
+			if(objet.type=="postItGroup")
+			{
+			PI= ether.postItGroup(ProtoPI,{},this);	//on transforme notre noeud en post-it
+				this.PICount++;
+				this.PIList.push(PI);
 			}
 			else
 			{
-				dojo.style(ProtoPI,{top:AreaPosition.y+AreaPosition.h/2-ProtoPIPosition.h/2, left:AreaPosition.x+AreaPosition.w/2-ProtoPIPosition.w/2,display:"inline"});
+				if(objet.type=="postIt")
+				{
+					PI=ether.postIt(ProtoPI,{},this,ProtoPI.children[0].tagName!="IMG");	//on transforme notre noeud en post-it
+					this.PICount++;
+					this.PIList.push(PI);
+				}
 			}
-			PI= new ether.PostIt("PI"+this.PICount,{},cible);	//on transforme notre noeud en post-it
-				this.PICount++;
-				this.PIList.push(PI);
-			
-			
-			
-			
 	},
 	
 	fusionPI:function(PI1,PI2)		//fusionne deux postIt, repérés par leurs ID (ouPostItGroup). le premier est l'objet qui recoit le drop (au dessous)
@@ -456,26 +426,56 @@ ether.manager={
 		if(this.PIList[i].isPostIt)		//l'element du dessous est un postItSimple : on crée un groupePostIt à la place, et on y ajoute l'objet droppe
 		{
 			
+
 			this.PIList[i]=this.PIList[i].promote();
-			this.PIList[i].addPostIt(this.PIList[j]);
+			
+			console.log(this.PIList[j]);
+			while(this.PIList[j].node.children.length>0)
+			{	console.log(this.PIList[j].node.children[0]);
+				this.PIList[i].addNode(this.PIList[j].node.children[0]);
+			}
+			
+			dojo.destroy(this.PIList[j].node);
+			this.PIList[j].supprimer();
+			
+			this.PIList.splice(j,1);
+		}
+		else					//l'element du dessous est un postItGroup
+		{
+			
+			while(this.PIList[j].node.children.length!=0)
+			{
+				this.PIList[i].addNode(this.PIList[j].node.children[0]);
+			}
+			
 			dojo.destroy(this.PIList[j].node);
 			this.PIList[j].supprimer();
 		
 			this.PIList.splice(j,1);
 		}
-		else					//l'element du dessous est un postItGroup
-		{
-			this.PIList[i].addPostIt(this.PIList[j]);
-			
-			dojo.destroy(this.PIList[j].node);
-			//this.PIList[j].supprimer();
+	},
+	
+	wrapAndRegisterPI:function(fragment)		//transforme un postItGroupFragment emancipé en post-it complet : rajout d'un wrapper et création d'un post-it
+	{	
+		var innerNode=fragment.node;
+		var nodePosition=dojo.position(fragment.node);
+		dojo.addClass(innerNode,"contenuPI");
+		var containerPosition=dojo.position(this.PISpawnZone);
+		fragment.disable();		//on coupe le comportement normal du fragment.
+		var container= dojo.create('div',{
+			id: 'PI'+this.PICount}, this.PISpawnZone);
+		dojo.style(container,{ position:"absolute", top:nodePosition.y-containerPosition.y+"px",left:nodePosition.x-containerPosition.x+"px"});
+		dojo.place(innerNode,container,"first");
 		
-			this.PIList.splice(j,1);
-		}
+		PI= ether.postIt(container,{},this,innerNode.tagName!="IMG");	//on transforme notre noeud en post-it
+					this.PICount++;
+					this.PIList.push(PI);
+		
+		
 	},
 	
 	createPI: function(objet)		//creation de postIt à partir d'un JSON renvoyé par l'éditeur
-{
+	{
 	var innerNode = dojo.create("div",{class:"contenuPI", innerHTML:objet.texte,style:{backgroundColor: objet.couleur, width: objet.largeur+"px", height: objet.hauteur+"px", position:"absolute"}});
 	
 	var node=dojo.create("div",{id:"PI"+this.PICount}, this.PISpawnZone);	//on crée un noeud de texte (avec l'id qui va bien PI0,PI1, etc...)
@@ -490,8 +490,7 @@ ether.manager={
 	PI= ether.postIt("PI"+this.PICount,{},this);	//on transforme notre noeud en post-it
 				this.PICount++;
 				this.PIList.push(PI);
-}
-	
+	}
 }
 //**************
 

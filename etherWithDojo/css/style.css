@@ -125,7 +125,6 @@ div.resizeHandle {
 	background-image : url("../images/resize.png");
 	background-repeat: no-repeat;
 	cursor: se-resize;
-	border: 1px solid black;
 }
 
 #applicationBottom {
