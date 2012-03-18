@@ -2,12 +2,13 @@
    --  on charge toutes les bibliothèques de Dojo nécessaires à ETHER, puis on exécute le callback lorsque tout est chargé  --	
    --------------------------------------------------------------------------------------------------------------------------- */
 
-require(["dojo/parser", "dojo/on", "dojox/validate/web", "dojo/dom-construct", "dojo/dom-attr", "dojo/dom-class", "dojo/dom-style", "dojo/query", "dojo/_base/array", "dojo/_base/unload", "dojo/_base/sniff", "ether/tap",
+require(["dojo/parser", "dojo/on", "dojox/validate/web", "dojo/dom-construct", "dojo/dom-attr", "dojo/dom-class", "dojo/dom-style", "dojo/query", "dojo/_base/unload", "dojo/_base/sniff", "ether/tap",
 "dijit/Dialog", "dijit/ProgressBar", "dijit/form/ValidationTextBox", "dijit/form/RadioButton", "dijit/form/Form", 
 "dijit/MenuBar", "dijit/PopupMenuBarItem", "dijit/DropDownMenu", "dijit/MenuItem", "ether/MenuItem", "dijit/MenuSeparator", "dijit/PopupMenuItem", "dijit/CheckedMenuItem",
 "dojox/form/Uploader", "dijit/form/Textarea", "dijit/form/FilteringSelect", "dojo/data/ItemFileReadStore", "dijit/ColorPalette",
-"dijit/layout/BorderContainer", "dijit/layout/ContentPane", "dojo/dnd/Source",
-"ether/postIt", "ether/Cible", "ether/editeur", "dojo/keys", "dojo/domReady!"], function(parser, on, validate, domConstruct, domAttr, domClass, domStyle, query, unload, has, tap) {
+"dijit/layout/BorderContainer", "dijit/layout/ContentPane", "dojo/dnd/Source", "dojo/_base/array",
+"ether/PostIt", "ether/Cible", "ether/editeur", "dojo/keys", "dojo/domReady!"], function(parser, on, validate, domConstruct, domAttr, domClass, domStyle, query, unload, has, tap) {
+
 
 /*
 //test pour la détection du navigateur		
@@ -1000,7 +1001,7 @@ ether.manager={
 		}
 		// on va enregistrer les pi/groupes pi à la volée
 		var content = null;
-		var urls = null;
+		var urls = new Array();
 		var urlsUniques = new Array();
 		var isUnique = true;
 		var cpt = 0;
@@ -1029,7 +1030,10 @@ ether.manager={
 		  }
 		  // on stocke maintenant les images associés à ce pi/groupe pi
 		  // on commence par récupérer les url
-		  urls = (dojo.query("img", pi)).attr("src");
+		  dojo.forEach(dojo.query("img", pi.node), function(image, index){
+		    urls.push(dojo.attr(image, "src"));
+		  });
+		  console.log(urls);
 		  dojo.forEach(urls, function(url, j){
 		    // on vérifie si l'url courante a déjà été décodée/enregistrée
 		    cpt = 0;
