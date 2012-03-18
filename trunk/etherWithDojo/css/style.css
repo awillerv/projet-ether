@@ -113,6 +113,12 @@ div.contenuPI {
 	overflow: hidden;
 }
 
+
+div.contenuPI:hover {
+	border: 1px rgb(117,157,192) solid;
+	cursor: move;
+}
+
 div.resizeHandle {
 	height: 11px;
 	width: 11px;
@@ -122,14 +128,20 @@ div.resizeHandle {
 	border: 1px solid black;
 }
 
-div.contenuPI:hover {
-	border: 1px rgb(117,157,192) solid;
-	cursor: move;
+#applicationBottom {
+	border: none;
+	padding: 0px;
 }
 
-#applicationBottom {
+#applicationBottom table {
+	border-collapse: collapse;
+	border: none;
+}
+
+#applicationBottom td {
+	border: 1px rgb(181,188,199) solid;
+	width: 50px;
 	height: 50px;
-	padding: 0px;
 }
 
 #applicationBottom div{
