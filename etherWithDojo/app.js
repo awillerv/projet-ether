@@ -436,11 +436,11 @@ io.sockets.on('connection', function (socket) {
   
   // lorsqu'on charge une "session" le serveur décode et enregistre à la volée
   // les images précédemment sauvés localement chez notre client en string (base 64)
-  socket.on('data decode request', function(t) {
+  socket.on('data decode request', function(i, j, cleUnique, img) {
     // la fonction d'enregistrement renvoie le chemin
     console.log('data decode request');
-    var m = new msg(t[0], t[1], enregistrerImage(t[2], t[4]));
-    socket.emit('data decode response', m, t[3]);
+    var url = enregistrerImage(img[0], img[1]);
+    socket.emit('data decode response', i, j, cleUnique, url);
   });
   
   // lorsque notre client se déconnecte
