@@ -132,13 +132,13 @@ ether.manager={
 		
 	},
 	
-	createImagePostIt: function(imgpath)
+	createImagePostIt: function(imgpath, name)
 	{
 		//recupération du centre
 		marginBox=dojo.position(this.PISpawnZone);
 		topx=(marginBox.x+marginBox.w)/2;
 		topy=(marginBox.y+marginBox.h)/2;
-		var node=dojo.create("div",{id:"PI"+this.PICount,innerHTML:'<img src="'+ imgpath + '"/>'},this.PISpawnZone);
+		var node=dojo.create("div",{id:"PI"+this.PICount,innerHTML:'<img width:"100%; height:100%" src="'+ imgpath + '" alt="'+ name +'" />'},this.PISpawnZone);
 		dojo.style(node,{		//en particulier, on précise la position ici
 				position:"absolute",
 				left: topx+ "px",
@@ -485,9 +485,6 @@ ether.manager={
 	//le paramètre d'affichage des pop-up
 	var popup = true;
 	
-	//les différentes couleurs par défaut de l'éditeur
-	var editeurCouleurs = { couleur1: 'rgb(255,255,255)', couleur2: 'rgb(255,255,128)', couleur3: 'rgb(166,238,187)', couleur4: 'rgb(255,128,128)', couleur5: 'rgb(153,217,234)'};
-	
 	
 	
 	/* ----------------------------------------------------------
@@ -670,21 +667,21 @@ ether.manager={
 	parser.parse();
 	
 	//on ajoute notre super editeur de post-it au menu "Taper un texte" pour permettre à l'utilisateur d'écrire des post-its
-	new ether.editeur(editeurCouleurs, dojo.byId("menuEcrirePostit"));
+	var editeurPI = new ether.editeur(dojo.byId("menuEcrirePostit"));
 	
 	//on affiche les couleurs par défaut de l'éditeur dans le menu "Paramètres / Couleurs des post-it"
-	query(".couleur1").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", editeurCouleurs.couleur1); });
-	query(".couleur2").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", editeurCouleurs.couleur2); });
-	query(".couleur3").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", editeurCouleurs.couleur3); });
-	query(".couleur4").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", editeurCouleurs.couleur4); });
-	query(".couleur5").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", editeurCouleurs.couleur5); });
+	query(".couleur1").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", editeurPI.statics.couleur1); });
+	query(".couleur2").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", editeurPI.statics.couleur2); });
+	query(".couleur3").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", editeurPI.statics.couleur3); });
+	query(".couleur4").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", editeurPI.statics.couleur4); });
+	query(".couleur5").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", editeurPI.statics.couleur5); });
 	
 	//on ajoute les palettes de couleur pour pouvoir changer les couleurs de l'éditeur de post-it
-	new dijit.ColorPalette({id: "palette1", onChange: function(color){ editeurCouleurs.couleur1 = color; query(".couleur1").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", color); }); } }, dojo.byId("palette1"));
-	new dijit.ColorPalette({id: "palette2", onChange: function(color){ editeurCouleurs.couleur2 = color; query(".couleur2").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", color); }); } }, dojo.byId("palette2"));
-	new dijit.ColorPalette({id: "palette3", onChange: function(color){ editeurCouleurs.couleur3 = color; query(".couleur3").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", color); }); } }, dojo.byId("palette3"));
-	new dijit.ColorPalette({id: "palette4", onChange: function(color){ editeurCouleurs.couleur4 = color; query(".couleur4").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", color); }); } }, dojo.byId("palette4"));
-	new dijit.ColorPalette({id: "palette5", onChange: function(color){ editeurCouleurs.couleur5 = color; query(".couleur5").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", color); }); } }, dojo.byId("palette5"));
+	new dijit.ColorPalette({id: "palette1", onChange: function(color){ editeurPI.statics.couleur1 = color; query(".couleur1").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", color); }); } }, dojo.byId("palette1"));
+	new dijit.ColorPalette({id: "palette2", onChange: function(color){ editeurPI.statics.couleur2 = color; query(".couleur2").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", color); }); } }, dojo.byId("palette2"));
+	new dijit.ColorPalette({id: "palette3", onChange: function(color){ editeurPI.statics.couleur3 = color; query(".couleur3").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", color); }); } }, dojo.byId("palette3"));
+	new dijit.ColorPalette({id: "palette4", onChange: function(color){ editeurPI.statics.couleur4 = color; query(".couleur4").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", color); }); } }, dojo.byId("palette4"));
+	new dijit.ColorPalette({id: "palette5", onChange: function(color){ editeurPI.statics.couleur5 = color; query(".couleur5").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", color); }); } }, dojo.byId("palette5"));
 	
 	//et enfin on quitte la page "chargement" pour afficher à l'écran la page de connexion à ETHER
 	changementPage("chargement", "connexion");
@@ -1092,8 +1089,7 @@ ether.manager={
 			dijit.showTooltip('<img src="images/ok.png" /> Upload de l\'image réussi !', 'uploadPhotos', ['below']);
 			setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
 		}
-		//à remplacer par la fonction de david
-		domConstruct.create("img", { src: chemin, alt: nom }, dojo.byId("applicationCenter"));
+		ether.manager.createImagePostIt(chemin, nom);
 	});
 	
 	
@@ -1197,9 +1193,9 @@ ether.manager={
 	   --  on prend en compte le "double-tap" pour la création de post-it  --	
 	   ---------------------------------------------------------------------- */
 	
-	//
+	//lorsqu'on double tap dans le corps de l'application, on crée un éditeur de post-it qui va nous permettre d'écrire du texte
 	on(dojo.byId("applicationCenter"), tap.doubletap, function(event) {
-		new ether.editeur(editeurCouleurs, dojo.byId("applicationCenter"), event.target.tapX, event.target.tapY);
+		new ether.editeur(dojo.byId("applicationCenter"), event.target.tapX, event.target.tapY);
 	});
 	
 	

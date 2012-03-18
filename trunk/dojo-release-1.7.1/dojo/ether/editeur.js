@@ -4,13 +4,13 @@ require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo
 {
 	return declare("ether.editeur", null,
 	{
-	  statics: { counter: 0 },
+	  statics: { counter: 0, couleur1: 'rgb(255,255,255)', couleur2: 'rgb(255,255,128)', couleur3: 'rgb(166,238,187)', couleur4: 'rgb(255,128,128)', couleur5: 'rgb(153,217,234)' },
 	  
 	  // couleur du post it à éditer
 	  couleurFond: 'rgb(255,255,255)',
 	  
 	  /* ---------------------------- création d'un nouveau post it ---------------------------- */
-	  constructor: function(couleurs, node, x, y, h, w){
+	  constructor: function(node, x, y, h, w){
 		
 		var edition = false;
 		
@@ -19,11 +19,14 @@ require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo
 			var postIt = node;
 			node = dojo.byId("applicationCenter");
 			var position = domGeom.position(postIt.node.children[0]);
-			leftCorner = position.x;
-			topCorner = position.y-30;
 			h = position.h;
 			w = position.w;
+			leftCorner = position.x-domGeom.position(dojo.byId("applicationCenter")).x;
+			topCorner = position.y-domGeom.position(dojo.byId("applicationCenter")).y-30;
+			if(w<160)
+				leftCorner -= (160-w)/2;
 			this.couleurFond = domStyle.get(postIt.node.children[0], 'backgroundColor');
+			var ancienTexte = postIt.node.children[0].innerHTML.replace(/<br>/g,'\r\n');
 		} else {
 			if(x==undefined)
 				x=5;
@@ -55,33 +58,44 @@ require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo
 	    }
 		
 	    // div de chaque partie, les carrés de couleurs, la textarea puis les boutons 'ok' et 'annuler'
-	    var divCouleurs = domConstruct.create('div', { }, div);
-	    var divTextarea = domConstruct.create('div', { style: { clear: 'both' } }, div);
+	    var divCouleurs = domConstruct.create('div', { style: { margin: 'auto', width: '160px' } }, div);
+	    var divTextarea = domConstruct.create('div', { style: { clear: 'both', margin: 'auto' } }, div);
 	    var divBoutons = domConstruct.create('div', { style: { textAlign: 'center' } }, div);
 	      
 	    /* ------- on peuple divCouleurs ------- */
-		  var carre1 = domConstruct.create('div', { style: { backgroundColor: couleurs.couleur1}, class: 'carreCouleur couleur1' }, divCouleurs);
-	    var carre2 = domConstruct.create('div', { style: { backgroundColor: couleurs.couleur2}, class: 'carreCouleur couleur2' }, divCouleurs);
-	    var carre3 = domConstruct.create('div', { style: { backgroundColor: couleurs.couleur3}, class: 'carreCouleur couleur3' }, divCouleurs);
-	    var carre4 = domConstruct.create('div', { style: { backgroundColor: couleurs.couleur4}, class: 'carreCouleur couleur4' }, divCouleurs);
-		  var carre5 = domConstruct.create('div', { style: { backgroundColor: couleurs.couleur5}, class: 'carreCouleur couleur5' }, divCouleurs);
+		var carre1 = domConstruct.create('div', { style: { backgroundColor: this.statics.couleur1}, class: 'carreCouleur couleur1' }, divCouleurs);
+	    var carre2 = domConstruct.create('div', { style: { backgroundColor: this.statics.couleur2}, class: 'carreCouleur couleur2' }, divCouleurs);
+	    var carre3 = domConstruct.create('div', { style: { backgroundColor: this.statics.couleur3}, class: 'carreCouleur couleur3' }, divCouleurs);
+	    var carre4 = domConstruct.create('div', { style: { backgroundColor: this.statics.couleur4}, class: 'carreCouleur couleur4' }, divCouleurs);
+		var carre5 = domConstruct.create('div', { style: { backgroundColor: this.statics.couleur5}, class: 'carreCouleur couleur5' }, divCouleurs);
 	      
 	    /* ------- on peuple divTextarea ------- */
 	    domConstruct.create('textarea', { id: 'editeurTextarea_'+this.statics.counter }, divTextarea);
 		new Textarea({ name: 'editeurTextarea_'+this.statics.counter, style: { fontFamily: 'arial', textAlign: 'center' } }, 'editeurTextarea_'+this.statics.counter);
 		var textarea = dojo.byId('editeurTextarea_'+this.statics.counter);
-		domStyle.set(textarea, { height: h+"px", width: w+"px", backgroundColor: this.couleurFond, padding: "0px"});
+		domStyle.set(textarea, { height: h+"px", width: w+"px", backgroundColor: this.couleurFond, padding: '0px', margin: 'auto'});
+		domStyle.set(divTextarea, { width: w+"px" });
 		textarea.focus();
+		if(edition) {
+			textarea.value = ancienTexte;
+			if(textarea.setSelectionRange) {
+				var len = textarea.value.length * 2;
+				textarea.setSelectionRange(len, len);
+			} else
+			textarea.value = textarea.value;
+		}
 	    
 	    /* ------- on peuple divBoutons ------- */
 	    domConstruct.create('input', { type: 'button', value: 'OK', id: 'editeurOK_'+this.statics.counter }, divBoutons);
 		var boutonOK = new Button({ label: "OK", onClick: function() { 
-			var texte = domAttr.get(textarea, 'value').replace("\n","<br/>");
+			var texte = domAttr.get(textarea, 'value').replace(/(\r\n|\n\r|\r|\n)/g, '<br>');
 			if(texte!='') {
 				if(edition) {
 					postIt.node.children[0].innerHTML = texte;
-					domStyle.set(postIt.node.children[0], { backgroundColor: domStyle.get(textarea, 'backgroundColor'), hauteur: domGeom.position(textarea).h, largeur: domGeom.position(textarea).w });
-					domStyle.set(postIt.node, "display", "");
+					domStyle.set(postIt.node.children[0], { 'backgroundColor': domStyle.get(textarea, 'backgroundColor'), 'height': domGeom.position(textarea).h+'px', 'width': domGeom.position(textarea).w+'px' });
+					domStyle.set(postIt.node, 'display', '');
+					postIt.updatePositionResizeHandler();
+					domStyle.set(postIt.resizeHandle.node, 'display', '');
 				} else {
 				//créer un post-it
 					var postitJSON = { texte: texte, couleur: domStyle.get(textarea, 'backgroundColor'), top: domGeom.position(textarea).y, left: domGeom.position(textarea).x, hauteur: domGeom.position(textarea).h, largeur: domGeom.position(textarea).w };
@@ -92,8 +106,10 @@ require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo
 		} }, 'editeurOK_'+this.statics.counter);
 	    domConstruct.create('input', { type: 'button', value: 'Annuler', id: 'editeurAnnuler_'+this.statics.counter }, divBoutons);
 		var boutonAnnuler = new Button({ label: "Annuler", onClick: function(){
-			if(edition)
+			if(edition) {
 				domStyle.set(postIt.node, "display", "");
+				domStyle.set(postIt.resizeHandle.node, "display", "");
+			}
 			domConstruct.destroy(div);
 		} }, 'editeurAnnuler_'+this.statics.counter);
 

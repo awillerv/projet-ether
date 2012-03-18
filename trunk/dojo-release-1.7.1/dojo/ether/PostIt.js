@@ -10,17 +10,13 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 		{
 		},
 		
-		 onMouseMove:function(e)
-		 {
+		onMouseMove:function(e)
+		{
 			 dojo.dnd.autoScroll(e);
 			 var m = this.marginBox;
 			 var pimb=dojo.marginBox(this.host.parentPostItNode);
 
 			 this.host.onMove(this, {l: Math.max(m.l + e.pageX,pimb.l+20), t:Math.max(m.t + e.pageY,pimb.t+20)}, e);
-			
-			
-		     //this.host.onMove(this, {l: Math.max(m.l,e.pageX-positionOffset.l), t: Math.max(m.t,e.pageY-positionOffset.t)});
-			
 		}
 	
 	});
@@ -36,9 +32,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 		onMoved:function(mover)
 		{
 			var newPosition=dojo.marginBox(this.node);
-			//console.log(newPosition);
 			var postItMB=dojo.marginBox(this.parentPostItNode);
-			//dojo.style(this.parentPostItNode,{width: newPosition.l-postItMB.l+"px",height: newPosition.t-postItMB.t+"px"});
 			
 			for (var  i  = 0;  i<this.parentPostItNode.children.length;  i++)  {
 				var child = this.parentPostItNode.children[i];
@@ -58,10 +52,8 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 		constructor: function(node, params,manager,editable)
 		{	this.manager=manager;
 			this.resizeHandleNode=dojo.place('<div class="resizeHandle" style="visibility:visible"></div>', this.manager.PISpawnZone, "last");
-			var PostItMB=dojo.marginBox(this.node);
-			var childMB=dojo.marginBox(this.node.children[0]);
 			
-			dojo.style(this.resizeHandleNode,{position:"absolute",top:PostItMB.t+childMB.t+childMB.h-13+"px",left:PostItMB.l+childMB.w+childMB.l-13+"px"});
+			this.updatePositionResizeHandler();
 			this.resizeHandle=new ether.ResizeHandle(this.resizeHandleNode,{mover:ether.ResizeHandleMover,parentPostItNode:this.node});
 			
 			dojo.connect(this.node, dojox.gesture.tap.doubletap, this, function(e)
@@ -69,7 +61,6 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 				e.stopPropagation();
 				if(this.node.children[0].tagName!="IMG")
 				{
-					console.log("là");
 					this.startEdit();
 				}
 			});
@@ -142,8 +133,9 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 		
 		startEdit:function()
 		{	
+			new ether.editeur(this);
 			dojo.style(this.node, 'display', 'none');
-			new ether.editeur(editeurCouleurs, this);
+			dojo.style(this.resizeHandle.node, 'display', 'none');
 		},
 		getContent:function()
 		{	
@@ -193,6 +185,12 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 			return group;
 			
 			
+		},
+		updatePositionResizeHandler: function()
+		{
+			var PostItMB=dojo.marginBox(this.node);
+			var childMB=dojo.marginBox(this.node.children[0]);
+			dojo.style(this.resizeHandleNode,{position:"absolute",top:PostItMB.t+childMB.t+childMB.h-13+"px",left:PostItMB.l+childMB.w+childMB.l-13+"px"});
 		}
 		
 	}
