@@ -1,10 +1,13 @@
-require(['dojo/_base/declare','dojo/dom-geometry','dojo/dnd/Moveable'], function(declare)
+require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd/Moveable'], function(declare)
 {
 	return declare("ether.cibleEnvoi", dojo.dnd.Moveable,
-	{
-		constructor: function(node,clientKeyList)
-		{
-			this.node = dojo.byId(node);
+	{	isCibleEnvoi:true,
+
+		constructor: function(node,params,container,clientKeyList,manager)
+		{	
+		console.log(node);
+		this.manager=manager;
+		this.container=container;
 			if(clientKeyList instanceof Array)
 			{
 				this.clientKeyList=clientKeyList;
@@ -13,6 +16,8 @@ require(['dojo/_base/declare','dojo/dom-geometry','dojo/dnd/Moveable'], function
 			{
 				this.clientKeyList=new Array(clientKeyList);
 			}
+			container.DZ=this;
+			this.refreshNode();
 		},
 		onHover : function(postit) 		//fonction qui est appelée lorsque un objet droppable est envoyé. On aura l'amabilité de lui passer ledit objet. Ne pas hésiter à le surcharger.
 		{
@@ -23,7 +28,6 @@ require(['dojo/_base/declare','dojo/dom-geometry','dojo/dnd/Moveable'], function
 		
 		onStopHover : function(postit)
 		{
-			
 			dojo.removeClass(this.node,'cible-hover');
 		},
 		
@@ -38,49 +42,107 @@ require(['dojo/_base/declare','dojo/dom-geometry','dojo/dnd/Moveable'], function
 			
 		},
 		
-		addClient:function(clientKeyList)
+		addClient:function(clientKey)
 		{
-			var clientArray;
-			if(clientKeyList instanceof Array)
+
+			if(dojo.indexOf(this.clientKeyList,clientKey)==-1)		//on évite de créer des duplications...
 			{
-				clientArray=clientKeyList;
+				this.clientKeyList.push(clientKey);
 			}
-			else
-			{
-				clientArray=new Array(clientKeyList);
-			}
-			
-			var i=0;
-			while (i<=clientArray.length)
-			{
-				if(dojo.indexOf(clientArray[i])!=-1)		//on évite de créer des duplications...
-				{
-					this.clientKeyList.push(clientArray[i]);
-				}
-				i++;
-			}		
+				
 		},
-		removeClient:function(clientKeyList)
+		removeClient:function(clientKey)
 		{	
-			var clientArray;
-			if(clientKeyList instanceof Array)
-			{
-				clientArray=clientKeyList;
-			}
-			else
-			{
-				clientArray=new Array(clientKeyList);
-			}
-			var i=0;
-			while(i<=clientArray.length)
+			
+			var aux=dojo.indexOf(this.clientKeyList,clientKey);
+			if(aux!=-1)
 			{	
-				var aux=dojo.indexOf(this.clientKeyList,clientArray[i]);
-				if(aux!=-1)
-				{	
-					this.clientKeyList.splice(aux,1);
-				}
-				i++;
+				this.clientKeyList.splice(aux,1);
 			}
+
+			
+		},
+		
+		refreshNode:function()		//une fonction qui calcule l'apparence du node en fonction de la clientList
+		{
+		
+		if(this.clientKeyList.length==1)
+		{imagepath='images/participant.png'; 
+
+		descText = this.manager.participants[this.clientKeyList[0]].prenom+' '+this.manager.participants[this.clientKeyList[0]].nom;}
+		else
+		{
+		descText=this.clientKeyList.length+" personnes";
+		if(this.clientKeyList.length==2)
+		{imagepath='images/groupe2.png';}
+		else{imagepath='images/groupe3.png';}
+		}
+			this.node.innerHTML='<img src="'+imagepath+'"/><p>'+descText+'</p>';
+		},
+		
+		onMoveStart:function(mover)
+		{
+			this.ghostMB=dojo.marginBox(this.node);
+		},
+		onMoved:function(mover)
+		{		var MB=dojo.position(this.node);
+				var ContainerList=new Array();
+				
+				for(var i=0; i<this.manager.DZContainerList.length;i++)
+				{
+				if(!(this.manager.DZContainerList[i]==this.container))
+				{
+										ContainerList.push(this.manager.DZContainerList[i]);
+				}
+				}
+				
+				dojo.some(ContainerList.concat([this.manager.DZCorbeille]), function(item)
+																		{
+																			if(item.contient(MB.x,MB.y))
+																			{	
+																				item.onHover();
+																				return true;
+																			}
+																			else 
+																			{	item.onStopHover();
+																				return false;
+																			}
+													
+																		}
+																												,this);
+					
+
+		},
+		onMoveStop:function(mover)
+		{		var MB=dojo.position(this.node);
+				var ContainerList=new Array();
+				//console.log(mover.marginBox);
+				for(var i=0; i<this.manager.DZContainerList.length;i++)
+				{
+				if(!(this.manager.DZContainerList[i]==this.container))
+				{
+										ContainerList.push(this.manager.DZContainerList[i]);
+				}
+				}
+				
+				if(!(dojo.some(ContainerList.concat([this.manager.DZCorbeille]), function(item)
+																		{
+																			if(item.contient(MB.x,MB.y))
+																			{
+																				item.onDrop(this);
+																				return true;
+																			}
+																			else 
+																			{
+																				return false;
+																			}
+													
+																		}
+																												,this)
+					))
+					{
+						dojo.marginBox(this.node,this.ghostMB);
+					}
 		}
 		
 	});
