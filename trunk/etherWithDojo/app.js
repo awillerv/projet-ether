@@ -80,7 +80,7 @@ var nomValide = /^[a-zA-Z0-9]+$/;
 var extValide = new RegExp('('+allowedExtensions.join('|')+')$');
 
 // on précise les dossiers qu'on va utiliser
-app.use("/dojo-release-1.7.1", express.static(__dirname.replace('\\etherWithDojo','') + '/dojo-release-1.7.1'));
+app.use("/dojo-release-1.7.1", express.static(__dirname + '/../dojo-release-1.7.1'));
 app.use("/css", express.static(__dirname + '/css'));
 app.use("/javascript", express.static(__dirname + '/javascript'));
 app.use("/images", express.static(__dirname + '/images'));
