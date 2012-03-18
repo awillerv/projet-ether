@@ -29,13 +29,13 @@ corbeille.onDrop = function(droppable) {
 }
 var postit1 = new ether.PostIt("postit_1",{}, corbeille);
 var postit2 = new ether.PostIt("postit_2",{}, corbeille);
-*/
+
 var listeCibles = new dojo.dnd.Source("applicationBottom");
 var dernierNoeud = listeCibles.insertNodes(false, ["test1"]).node.lastChild;
 domClass.add(dernierNoeud, "groupe1");
 //new dojo.dnd.Source(dernierNoeud);
 listeCibles.insertNodes(false, ["test2"]);
-
+*/
 
 
 
@@ -74,11 +74,10 @@ ether.manager={
 	
 	initialize:function(postItArea,DZDefaultArea)		//initialisation: on passe en argument l'id de la zone où l'on peut spawner les conteneurs.
 	{	
-		this.PISpawnZone=dojo.byId(postItArea);	
+		this.PISpawnZone=postItArea;	
 		this.DZDefaultParentId=DZDefaultArea;
-		var AreaPosition=dojo.position(dojo.byId(this.PISpawnZone));
-		var CorbeilleNode=dojo.create("div", {innerHTML:'<img src="images/corbeille.png"/><br/><span>Corbeille</span>', style : {position:"absolute",left:AreaPosition.x+'px',top:AreaPosition.y+'px',textAlign:"center"}},this.PISpawnZone);
-		this.DZCorbeille=new ether.cible(CorbeilleNode);
+		var AreaPosition=dojo.position(this.PISpawnZone));
+		this.DZCorbeille=new ether.cible(dojo.byId("corbeille"));
 		this.DZCorbeille.onDrop=function(objet)
 			{
 				if(objet.isPostIt)
@@ -86,8 +85,7 @@ ether.manager={
 					ether.manager.deletePI(dojo.attr(objet.node,"id"));
 				}
 			}
-		var TousNode=dojo.create("div", {innerHTML:'<img src="images/envoiATous.png"/><br/><span>Envoyer &agrave; tous</span>', style : {position:"absolute",left:(AreaPosition.x+AreaPosition.w/2-50)+'px',top:AreaPosition.y+'px',textAlign:"center"}},this.PISpawnZone);
-		this.DZTous=new ether.cible(TousNode);
+		this.DZTous=new ether.cible(dojo.byId("envoiATous"));
 		this.DZTous.onDrop=function(objet)
 			{
 				if(objet.isPostIt)
@@ -95,8 +93,7 @@ ether.manager={
 					//ici, le code pour envoyer à tout le monde (le contenu à envoyer est donné par "objet.getContent()"
 				}
 			}
-		var AnimNode=dojo.create("div", {innerHTML:'<img src="images/envoiAuxAnimateurs.png"/><br/><span>Envoyer aux animateurs</span>', style : {position:"absolute",left:(AreaPosition.x+AreaPosition.w-100)+'px',top:AreaPosition.y+'px',textAlign:"center"}},this.PISpawnZone);
-		this.DZAnim=new ether.cible(AnimNode);
+		this.DZAnim=new ether.cible(dojo.byId("envoiAuxAnimateurs"));
 		this.DZAnim.onDrop=function(objet)
 			{
 				if(objet.isPostIt)
@@ -104,9 +101,7 @@ ether.manager={
 					//ici, le code pour envoyer aux animateurs
 				}
 			}
-		
-		var NonAnimNode=dojo.create("div", {innerHTML:'<img src="images/envoiAuxAnimateurs.png"/><br/><span>Envoyer aux animateurs</span>', style : {display:"none",position:"absolute",left:(AreaPosition.x+AreaPosition.w-100)+'px',top:AreaPosition.y+'px',textAlign:"center"}},this.PISpawnZone);
-		this.DZNonAnim=new ether.cible(NonAnimNode);
+		this.DZNonAnim=new ether.cible(dojo.byId("envoiAuxNonAnimateurs"));
 		this.DZNonAnim.onDrop=function(objet)
 			{
 				if(objet instanceof ether.PostIt)
