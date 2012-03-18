@@ -1,9 +1,10 @@
 
 // classe PostIt dérivée de Moveable avec la valeur ajoutée qui va bien
 //remplacer ether.manager.PIList par la liste privée de soi-même
-define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover','dojo/dnd/Moveable','dojo/dom-construct',"dojo/NodeList-dom","dojo/NodeList-html","ether/tap","ether/PostItGroup"], function(declare){
+define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover','dojo/dnd/Moveable','dojo/dom-construct',"dojo/NodeList-dom","dojo/NodeList-html","ether/tap","ether/postItGroup"], function(declare){
 
-	declare("ether.ResizeHandleMover",dojo.dnd.Mover,
+
+		declare("ether.ResizeHandleMover",dojo.dnd.Mover,
 	{	
 		constructor:function()
 		{
@@ -48,6 +49,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 	
 	
 	});
+	
 
 	return declare("ether.postIt",dojo.dnd.Moveable, 
 	{
@@ -58,7 +60,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 			this.resizeHandleNode=dojo.place('<div class="resizeHandle" style="visibility:visible"></div>', this.manager.PISpawnZone, "last");
 			var PostItMB=dojo.marginBox(this.node);
 			var childMB=dojo.marginBox(this.node.children[0]);
-			console.log(PostItMB);
+			
 			dojo.style(this.resizeHandleNode,{position:"absolute",top:PostItMB.t+childMB.t+childMB.h-13+"px",left:PostItMB.l+childMB.w+childMB.l-13+"px"});
 			this.resizeHandle=new ether.ResizeHandle(this.resizeHandleNode,{mover:ether.ResizeHandleMover,parentPostItNode:this.node});
 			
@@ -182,7 +184,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 		{	
 			var objet= {
 				type:"postIt",
-				child:(this.node.innerHTML),
+				innerHTML:(this.node.innerHTML),
 				style:dojo.attr(this.node,"style"),
 				class:dojo.attr(this.node,"class")
 				};
@@ -220,7 +222,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 		{	this.resizeHandle.destroy();
 			dojo.destroy(this.resizeHandleNode);
 			
-			var group=ether.PostItGroup(this.node,{},this.manager);
+			var group=ether.postItGroup(this.node,{},this.manager);
 			
 			this.destroy();
 			return group;

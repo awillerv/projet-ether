@@ -142,7 +142,7 @@ ether.manager={
 			if((dojo.attr(textarea,"value"))!="")
 				{
 					var pos=dojo.position(textarea);		
-					var node=dojo.create("div",{id:"PI"+this.PICount,innerHTML:'<div style="overflow:hidden; width:100%; height:100%">'+ dojo.attr(textarea,"value") + '</div>'},postItArea);	//on crée un noeud de texte (avec l'id qui va bien PI0,PI1, etc...)
+					var node=dojo.create("div",{id:"PI"+this.PICount,innerHTML:'<div style="overflow:hidden">'+ dojo.attr(textarea,"value") + '</div>'},postItArea);	//on crée un noeud de texte (avec l'id qui va bien PI0,PI1, etc...)
 					dojo.style(node,{		//en particulier, on précise la position ici
 					position:"absolute",
 					left: pos.x + "px",
@@ -153,7 +153,7 @@ ether.manager={
 				
 					dojo.destroy(dojo.byId("zonesaisie"));		//on détruit la textarea maintenant qu'on a récupéré toutes les infos nécessaires
 				
-					PI= ether.postIt("PI"+this.PICount,null,this,true);	//on transforme notre noeud en post-it Le dernier argument précise que le post-it est EDITABLE
+					PI= ether.postIt(node,null,this,true);	//on transforme notre noeud en post-it Le dernier argument précise que le post-it est EDITABLE
 		
 					this.PICount++;
 					this.PIList.push(PI);
@@ -362,58 +362,30 @@ ether.manager={
 		}
 	},
 		
-	receptionPostIt:function(idEmetteur, node)		//creation de postIt à la réception. Problème du positionnement, il faudra regarder
+		
+		//**********************
+	receptionPostIt:function(idEmetteur, objectString)		//creation de postIt à la réception. Problème du positionnement, il faudra regarder
 	{		
-			//etape 1 : création du noeud, caché, et obtention de ses dimensions
-			var ProtoPI=dojo.create("div",{innerHTML:node, 
-			id: 'PI'+this.PICount, style:{float:"left",border:"solid", borderWidth:"1px",position:"absolute"}}, dojo.byId(this.PISpawnZone))
-			var ProtoPIPosition=dojo.position(ProtoPI);
-			var nextPosition;
-			var AreaPosition=dojo.position(dojo.byId(this.PISpawnZone));
-			dojo.style(ProtoPI,"display","none");
-			// etape 2 : on recherche une éventuelle DZ associée à l'émetteur : elle servira de base pour le positionnement
-			if(this.userMap[idEmetteur])
-			{	alert('DZ'+this.userMap[idEmetteur][0]);
-				var DZPosition=dojo.position(dojo.byId('DZ'+this.userMap[idEmetteur][0]));		// on prend la premiere de la liste (il faut bien en choisir une)
-				
-				//si la DZ est plutôt en haut de l'écran, on envoie le PI en dessous, si il est à gauche, on envoie le PI à droite, etc...
-				
-				if((DZPosition.y+DZPosition.h/2)<(AreaPosition.y+AreaPosition.h/2))
-				{
-					if((DZPosition.x+DZPosition.w/2)>(AreaPosition.w+AreaPosition.w/2))	//cas quadrant top left, le PI est placé au coin bas droite
-					{	
-						nextPosition={x:DZPosition.x+DZPosition.w, y:DZPosition.y-DZPosition.h};
-					}
-					else		//cas top right
-					{	
-						nextPosition={x:DZPosition.x-ProtoPIPosition.w, y:DZPosition.y-DZPosition.h};
-					}
-				}
-				else
-				{
-					if((DZPosition.x+DZPosition.w/2)>(AreaPosition.w+AreaPosition.w/2))	//cas bottom left
-					{
-						nextPosition={x:DZPosition.x+DZPosition.w, y:DZPosition.y+ProtoPIPosition.h};
-					}
-					else
-					{
-						nextPosition={x:DZPosition.x-ProtoPIPosition.w, y:DZPosition.y+ProtoPIPosition.h};
-					}
-				}
-				
-				dojo.style(ProtoPI,{top:nextPosition.y+"px", left:nextPosition.x+"px",display:"inline"});
+			var objet=eval(objectString);
+			var ProtoPI=dojo.create('div',{innerHTML:objet.innerHTML, 
+			id: 'PI'+this.PICount, style:{position:"absolute"}}, dojo.byId(this.PISpawnZone));
+			dojo.attr(ProtoPI,"style",objet.style);
+	
+			if(objet.type=="postItGroup")
+			{
+			PI= new ether.PostItGroup(ProtoPI,{},this);	//on transforme notre noeud en post-it
+				this.PICount++;
+				this.PIList.push(PI);
 			}
 			else
 			{
-				dojo.style(ProtoPI,{top:AreaPosition.y+AreaPosition.h/2-ProtoPIPosition.h/2, left:AreaPosition.x+AreaPosition.w/2-ProtoPIPosition.w/2,display:"inline"});
+				if(objet.type=="postIt")
+				{
+					PI= new ether.PostIt(ProtoPI,{},this,ProtoPI.children[0].tagName!="IMG");	//on transforme notre noeud en post-it
+					this.PICount++;
+					this.PIList.push(PI);
+				}
 			}
-			PI= new ether.PostIt("PI"+this.PICount,{},cible);	//on transforme notre noeud en post-it
-				this.PICount++;
-				this.PIList.push(PI);
-			
-			
-			
-			
 	},
 	
 	fusionPI:function(PI1,PI2)		//fusionne deux postIt, repérés par leurs ID (ouPostItGroup). le premier est l'objet qui recoit le drop (au dessous)
@@ -444,24 +416,55 @@ ether.manager={
 		if(this.PIList[i].isPostIt)		//l'element du dessous est un postItSimple : on crée un groupePostIt à la place, et on y ajoute l'objet droppe
 		{
 			
+
 			this.PIList[i]=this.PIList[i].promote();
-			this.PIList[i].addPostIt(this.PIList[j]);
+			
+			console.log(this.PIList[j]);
+			while(this.PIList[j].node.children.length>0)
+			{	console.log(this.PIList[j].node.children[0]);
+				this.PIList[i].addNode(this.PIList[j].node.children[0]);
+			}
+			
+			dojo.destroy(this.PIList[j].node);
+			this.PIList[j].supprimer();
+			
+			this.PIList.splice(j,1);
+		}
+		else					//l'element du dessous est un postItGroup
+		{
+			
+			while(this.PIList[j].node.children.length!=0)
+			{
+				this.PIList[i].addNode(this.PIList[j].node.children[0]);
+			}
+			
 			dojo.destroy(this.PIList[j].node);
 			this.PIList[j].supprimer();
 		
 			this.PIList.splice(j,1);
 		}
-		else					//l'element du dessous est un postItGroup
-		{
-			this.PIList[i].addPostIt(this.PIList[j]);
-			
-			dojo.destroy(this.PIList[j].node);
-			//this.PIList[j].supprimer();
-		
-			this.PIList.splice(j,1);
-		}
 	},
 	
+	wrapAndRegisterPI:function(fragment)		//transforme un postItGroupFragment emancipé en post-it complet : rajout d'un wrapper et création d'un post-it
+	{	
+		var innerNode=fragment.node;
+		var nodePosition=dojo.position(fragment.node);
+		dojo.addClass(innerNode,"contenuPI");
+		var containerPosition=dojo.position(this.PISpawnZone);
+		fragment.disable();		//on coupe le comportement normal du fragment.
+		var container= dojo.create('div',{
+			id: 'PI'+this.PICount}, this.PISpawnZone);
+		dojo.style(container,{ position:"absolute", top:nodePosition.y-containerPosition.y+"px",left:nodePosition.x-containerPosition.x+"px"});
+		dojo.place(innerNode,container,"first");
+		
+		PI= ether.postIt(container,{},this,innerNode.tagName!="IMG");	//on transforme notre noeud en post-it
+					this.PICount++;
+					this.PIList.push(PI);
+		
+		
+	},
+	
+	//***********
 	createPI: function(objet)		//creation de postIt à partir d'un JSON renvoyé par l'éditeur
 {
 	var innerHTML = dojo.create("div",{class:"contenuPI", innerHTML:objet.texte,style:{backgroundColor: objet.couleur, width:objet.largeur,height:objet.hauteur,position:"absolute"}});
