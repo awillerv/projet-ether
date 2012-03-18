@@ -1,7 +1,7 @@
 
 // classe PostIt dérivée de Moveable avec la valeur ajoutée qui va bien
 //remplacer ether.manager.PIList par la liste privée de soi-même
-define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover','dojo/dnd/Moveable','dojo/dom-construct',"dojo/NodeList-dom","dojo/NodeList-html","ether/tap","ether/postItGroup"], function(declare){
+define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover','dojo/dnd/Moveable','dojo/dom-construct',"dojo/NodeList-dom","dojo/NodeList-html","ether/tap","ether/postItGroup","ether/editeur"], function(declare){
 
 
 		declare("ether.ResizeHandleMover",dojo.dnd.Mover,
@@ -67,20 +67,12 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 			dojo.connect(this.node, dojox.gesture.tap.doubletap, this, function(e)
 			{
 				e.stopPropagation();
-				if(editable)
+				if(this.node.children[0].tagName!="IMG")
 				{
-				if(!this.edition)		
-				{
-				if(!this.manager.EditionEnCours)
-				{
-				this.startEdit();
+					console.log("là");
+					this.startEdit();
 				}
-				}
-				else
-				{
-				this.stopEdit();
-				}
-			}});
+			});
 			
 		},
 		
@@ -149,36 +141,9 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 							},
 		
 		startEdit:function()
-		{	this.edition=true;
-			this.toggleResize();
-			dojo.toggleClass(this.node,"no-border");
-			this.manager.EditionEnCours=true;
-			this.manager.PIEdite=this;
-			var text=dojo.attr(dojo.query('> *', this.node)[0],"innerHTML");
-			console.log(text);
-			dojo.attr(this.node,"innerHTML",'<textarea id="ZoneEditionPI">'+text+'</textarea>');
-			textarea= document.getElementById("ZoneEditionPI");
-			textarea.focus();
-			if(textarea.setSelectionRange) {
-				var len = textarea.value.length * 2;
-				textarea.setSelectionRange(len, len);
-											}
-				else
-				{
-				textarea.value = textarea.value;
-				}
-
-		},
-		
-		stopEdit:function()
-		{
-			var text=dojo.attr(dojo.query('> *', this.node)[0],"value");
-			dojo.attr(this.node,"innerHTML",'<div style="overflow:hidden">'+text+'</div>');
-			this.edition=false;
-			this.manager.EditionEnCours=false;
-			this.manager.PIEdite=null;
-			this.toggleResize();
-			
+		{	
+			dojo.style(this.node, 'display', 'none');
+			new ether.editeur(editeurCouleurs, this);
 		},
 		getContent:function()
 		{	

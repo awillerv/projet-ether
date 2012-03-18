@@ -11,27 +11,41 @@ require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo
 	  
 	  /* ---------------------------- création d'un nouveau post it ---------------------------- */
 	  constructor: function(couleurs, node, x, y, h, w){
-			
-		  if(x==undefined)
-			  x=5;
-		  if(y==undefined)
-			  y=0;
-		  if(h==undefined)
-			  h=53;
-		  if(w==undefined)
-			  w=160;
 		
-		  var positionParent = domGeom.position(node);
-		  var leftCorner = x-positionParent.x-w/2;
-		  if(leftCorner<positionParent.x)
-			  leftCorner = 5;
-		  if(leftCorner+w>positionParent.x+positionParent.w)
-			  leftCorner = positionParent.w-w-5;
-		  var topCorner = y-positionParent.y-h/2-25;
-		  if(topCorner<positionParent.y)
-			  topCorner = 0;
-		  if(topCorner+h+70>positionParent.y+positionParent.h)
-			  topCorner = positionParent.h-h-70;
+		var edition = false;
+		
+		if(node.isPostIt) {
+			edition = true;
+			var postIt = node;
+			node = dojo.byId("applicationCenter");
+			var position = domGeom.position(postIt.node.children[0]);
+			leftCorner = position.x;
+			topCorner = position.y-30;
+			h = position.h;
+			w = position.w;
+			this.couleurFond = domStyle.get(postIt.node.children[0], 'backgroundColor');
+		} else {
+			if(x==undefined)
+				x=5;
+			if(y==undefined)
+				y=0;
+			if(h==undefined)
+				h=53;
+			if(w==undefined)
+				w=160;
+				
+			var positionParent = domGeom.position(node);
+			var leftCorner = x-positionParent.x-w/2;
+			if(leftCorner<positionParent.x)
+				leftCorner = 5;
+			if(leftCorner+w>positionParent.x+positionParent.w)
+				leftCorner = positionParent.w-w-5;
+			var topCorner = y-positionParent.y-h/2-25;
+			if(topCorner<positionParent.y)
+				topCorner = 0;
+			if(topCorner+h+70>positionParent.y+positionParent.h)
+				topCorner = positionParent.h-h-70;
+		}
 
 		  // div principal
 	    if(domAttr.get(node,"id")=="menuEcrirePostit") {
@@ -56,23 +70,33 @@ require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo
 	    domConstruct.create('textarea', { id: 'editeurTextarea_'+this.statics.counter }, divTextarea);
 		new Textarea({ name: 'editeurTextarea_'+this.statics.counter, style: { fontFamily: 'arial', textAlign: 'center' } }, 'editeurTextarea_'+this.statics.counter);
 		var textarea = dojo.byId('editeurTextarea_'+this.statics.counter);
-		domStyle.set(textarea, { height: h+"px", width: w+"px", backgroundColor: this.couleurFond});
+		domStyle.set(textarea, { height: h+"px", width: w+"px", backgroundColor: this.couleurFond, padding: "0px"});
 		textarea.focus();
 	    
 	    /* ------- on peuple divBoutons ------- */
 	    domConstruct.create('input', { type: 'button', value: 'OK', id: 'editeurOK_'+this.statics.counter }, divBoutons);
 		var boutonOK = new Button({ label: "OK", onClick: function() { 
-			var texte = domAttr.get(textarea, 'value');
+			var texte = domAttr.get(textarea, 'value').replace("\n","<br/>");
 			if(texte!='') {
+				if(edition) {
+					postIt.node.children[0].innerHTML = texte;
+					domStyle.set(postIt.node.children[0], { backgroundColor: domStyle.get(textarea, 'backgroundColor'), hauteur: domGeom.position(textarea).h, largeur: domGeom.position(textarea).w });
+					domStyle.set(postIt.node, "display", "");
+				} else {
 				//créer un post-it
-				var postitJSON = { texte: texte, couleur: domStyle.get(textarea, 'backgroundColor'), top: domGeom.position(textarea).y, left: domGeom.position(textarea).x, hauteur: domGeom.position(textarea).h, largeur: domGeom.position(textarea).w };
-				ether.manager.createPI(postitJSON);
+					var postitJSON = { texte: texte, couleur: domStyle.get(textarea, 'backgroundColor'), top: domGeom.position(textarea).y, left: domGeom.position(textarea).x, hauteur: domGeom.position(textarea).h, largeur: domGeom.position(textarea).w };
+					ether.manager.createPI(postitJSON);
+				}
 				domConstruct.destroy(div);
 			}
 		} }, 'editeurOK_'+this.statics.counter);
 	    domConstruct.create('input', { type: 'button', value: 'Annuler', id: 'editeurAnnuler_'+this.statics.counter }, divBoutons);
-		  var boutonAnnuler = new Button({ label: "Annuler", onClick: function(){ domConstruct.destroy(div); } }, 'editeurAnnuler_'+this.statics.counter);
-	      
+		var boutonAnnuler = new Button({ label: "Annuler", onClick: function(){
+			if(edition)
+				domStyle.set(postIt.node, "display", "");
+			domConstruct.destroy(div);
+		} }, 'editeurAnnuler_'+this.statics.counter);
+
 	    /* ------- on ajoute les événements/actions à divCouleurs------- */
 		connect.connect(div, tap.doubletap, this, function(e){
 	      e.stopPropagation();
