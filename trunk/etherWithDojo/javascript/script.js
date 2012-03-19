@@ -6,8 +6,10 @@ require(["dojo/parser", "dojo/on", "dojox/validate/web", "dojo/dom-construct", "
 "dijit/Dialog", "dijit/ProgressBar", "dijit/form/ValidationTextBox", "dijit/form/RadioButton", "dijit/form/Form", 
 "dijit/MenuBar", "dijit/PopupMenuBarItem", "dijit/DropDownMenu", "dijit/MenuItem", "ether/MenuItem", "dijit/MenuSeparator", "dijit/PopupMenuItem", "dijit/CheckedMenuItem",
 "dojox/form/Uploader", "dijit/form/Textarea", "dijit/form/FilteringSelect", "dojo/data/ItemFileReadStore", "dijit/ColorPalette",
+
 "dijit/layout/BorderContainer", "dijit/layout/ContentPane", "dojo/dnd/Source", "dojo/_base/array",
 "ether/PostIt", "ether/Cible","ether/CibleEnvoi", "ether/editeur","ether/DZContainer", "dojo/keys", "dojo/domReady!"], function(parser, on, validate, domConstruct, domAttr, domClass, domStyle, domGeom, query, unload, has, tap) {
+
 
 
 
@@ -66,13 +68,15 @@ ether.manager={
 	PICount:0,
 	EditionEnCours :false,		//une seule zone d'édition de texte à la fois
 	PIEdite :null, //le PI en cours d'édition, le cas échéant
-	DZSpawnZone :"DZRow",	
-	PISpawnZone : "",
+	DZSpawnZone :null,	
+	PISpawnZone : null,
 	DZCorbeille:null,
 	DZTous:null,
 	DZAnim:null,
+	DZBarCurrentDZ:new Array(),
 	DZNonAnim:null,
 	DZContainerList:null,
+	DZBar:dojo.byId("DZBar"),
 	participants:new Array(),
 	
 	
@@ -127,7 +131,7 @@ ether.manager={
 		//creation d'une liste de DZContainer...
 		dojo.forEach(this.DZSpawnZone.children, function(item)
 				{
-					this.DZContainerList.push(ether.DZContainer(item,this));
+					this.DZContainerList.push(ether.DZContainer(item,this.DZContainerList.length,this));
 				},this);
 		
 	},
@@ -269,6 +273,29 @@ ether.manager={
 		
 		}
 	},
+	
+	prepareAndShowDZBar: function(DZContainer)		//prepare et affiche la barre des DZ individuelles du container passé en argument
+	{	
+		var nbDZ=0;
+		if(DZContainer.DZ)
+	{
+		nbDZ=DZContainer.DZ.clientKeyList.length;
+	}
+		var MB=dojo.marginBox(DZContainer.node);
+		var parentMB=dojo.marginBox(this.DZBar.parentNode);
+		var proposedWidth=Math.min(100*nbDZ,parentMB.w);
+		var proposedLeft=Math.max(0,MB.l-proposedWidth/2);
+		
+		dojo.style(this.DZBar,{left:proposedLeft+"px",width:proposedWidth+"px"});
+		
+		if(DZContainer.DZ)
+		{	var node=dojo.create("div");
+			var DZ=ether.cibleEnvoi(node,{},null,DZContainer.DZ.clientKeyList[0],this);
+			dojo.place(node,this.DZBar,"last");
+			this.DZBarCurrentDZ.push(DZ);
+		}
+	},
+	
 	
 	deleteDZ:function(DZ) //suppression de la DZ n°X. id est de la forme "DZn" à priori
 	{	
@@ -431,7 +458,8 @@ ether.manager={
 					dojo.style(node,{		//en particulier, on précise la position ici
 					position:"absolute",
 					left: objet.left - dojo.position(dojo.byId("applicationCenter")).x + "px",
-					top: objet.top  - dojo.position(dojo.byId("applicationCenter")).y + "px"
+					top: objet.top  - dojo.position(dojo.byId("applicationCenter")).y + "px",
+					zIndex:10
 			
 
 									});
