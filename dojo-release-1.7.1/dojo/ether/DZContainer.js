@@ -32,6 +32,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll'],
 				this.timestart=0;
 				this.onDisplay=false;
 				this.manager=manager;
+				this.open=false;
 				if(DZ)
 				{
 					this.DZ=DZ;		
@@ -71,29 +72,29 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll'],
 						dojo.style(this.DZ.node,{position:"absolute",left:MB.l+MB.w/2-MBObjet.w/2+"px",top:MB.t+MB.h/2-MBObjet.h/2+"px"});
 					}
 				}
+				
+				else
+				{
+					if(objet.isPostIt)
+					{
+						this.DZ.onDrop(objet);		
+					}
+				}
 			},
 			
 			onHover:function()
 			{	
-				if(!this.timestart)
-				{	
-					this.timestart=new Date().getTime();
-				}
-				else
-				{	if(((new Date().getTime()-this.timestart)>500)&&!this.onDisplay)
+				if(!this.open)
 					{
-						
 						this.displayBar();
 					}
-				}
 				dojo.addClass(this.node,"hover");
 			},
 			onStopHover:function()
 			{
-				if(this.timestart)
+				if(this.open)
 				{
-					
-					this.timestart=null;
+					this.hideBar();
 				}
 				dojo.removeClass(this.node,"hover");
 			},
@@ -103,20 +104,23 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll'],
 			},
 			
 			displayBar:function()
+			{	
+				if(this.DZ&&!this.open)
+				{
+				
+				this.open=true;
+				this.manager.prepareAndShowDZBar(this);
+				}
+			},
+			
+			hideBar:function()
 			{
-					var bar=this.manager.DZBar;
-					this.onDisplay=true;
-					for(var i=0;i<this.DZ.clientKeyList.length;i++)
-					{	
-						var node=dojo.create('div',{style:{float:"left",position:'absolute'}});
-						var DZ=new ether.DZUnitaire(node,{},this.manager,this.DZ.clientKeyList[i]);
-						DZ.refreshNode();
-						
-						dojo.place(DZ.node, bar, "last");
-					}
+				this.open=false;
+				this.manager.closeDZBar();
+			}
 
 					
 					
-			}	
+				
 		});
 });
