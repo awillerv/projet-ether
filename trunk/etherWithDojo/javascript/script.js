@@ -1299,6 +1299,7 @@ ether.manager={
 	//lorsqu'un post-it est reçu, on le recrée, puis on l'affiche sur l'écran à côté de la dropzone de l'emmeteur
 	socket.on('reception', function(message, cle_emetteur) {
 		receptionPostIt(message.contenu);
+		socket.emit('resultat reception', message.id, cle_emetteur, true);
 	});
 	
 	
