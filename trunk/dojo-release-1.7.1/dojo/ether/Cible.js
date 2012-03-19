@@ -43,14 +43,16 @@ require(['dojo/_base/declare', 'ether/tap', 'dojo/dom-geometry','dojo/dnd/Moveab
 		{
 			dojo.addClass(this.node,'cibleEnvoiReussi');
 			var id = dojo.attr(this.node, 'id');
-			setTimeout("dojo.removeClass(dojo.byId('"+id+"'), 'cibleEnvoiReussi')",1000);
+			setTimeout("dojo.removeClass(dojo.byId('"+id+"'), 'cibleEnvoiReussi')",2000);
 		},
 		
 		envoiEchoue : function()
 		{
 			dojo.addClass(this.node,'cibleEnvoiEchoue');
 			var id = dojo.attr(this.node, 'id');
-			setTimeout("dojo.removeClass(dojo.byId('"+id+"'), 'cibleEnvoiEchoue')",1000);
+			dijit.showTooltip('<img src="images/erreur.png" /> Erreur lors de l\'envoi du post-it', id, ['above']);
+			setTimeout("dijit.hideTooltip('"+id+"')", 2000);
+			setTimeout("dojo.removeClass(dojo.byId('"+id+"'), 'cibleEnvoiEchoue')",2000);
 		}
 	});
 });
