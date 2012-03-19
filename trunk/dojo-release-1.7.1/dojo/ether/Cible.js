@@ -22,10 +22,11 @@ require(['dojo/_base/declare', 'ether/tap', 'dojo/dom-geometry','dojo/dnd/Moveab
 			dojo.removeClass(this.node,'cibleHover');
 		},
 		
-		onDrop : function(postit)		//le comportement en cas de drop d'un objet acceptable. Cette fonction a l'heur d'avoir accès à l'objet ainsi déposé, comme il se doit. Aucun comportement par défaut.
+		onDrop : function(objet)		//le comportement en cas de drop d'un objet acceptable. Cette fonction a l'heur d'avoir accès à l'objet ainsi déposé, comme il se doit. Aucun comportement par défaut.
 		{
-			if(postit.isPostIt) {
-				this.dernierEnvoye = postit.getContent();
+			this.onStopHover();
+			if(objet.isPostIt) {
+				this.dernierEnvoye = objet.getContent();
 			}
 		},
 		
@@ -51,9 +52,11 @@ require(['dojo/_base/declare', 'ether/tap', 'dojo/dom-geometry','dojo/dnd/Moveab
 		{
 			dojo.addClass(this.node,'cibleEnvoiEchoue');
 			var id = dojo.attr(this.node, 'id');
-			dijit.showTooltip('<img src="images/erreur.png" /> Erreur lors de l\'envoi du post-it', id, ['above']);
-			setTimeout("dijit.hideTooltip('"+id+"')", 2000);
 			setTimeout("dojo.removeClass(dojo.byId('"+id+"'), 'cibleEnvoiEchoue')",2000);
+			if(POPUP) {
+				dijit.showTooltip('<img src="images/erreur.png" /> Erreur lors de l\'envoi du post-it', id, ['above']);
+				setTimeout("dijit.hideTooltip('"+id+"')", 2000);
+			}
 		}
 	});
 });
