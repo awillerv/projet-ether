@@ -35,7 +35,7 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 		onDrop : function(postit)		//le comportement en cas de drop d'un objet acceptable. Cette fonction a l'heur d'avoir accès à l'objet ainsi déposé, comme il se doit. On peut accéder à la chaine à transmettre avec objet.getContent();
 		{
 			this.manager.closeDZBar();
-			if(!this.manager.sendPI(postit, this.clientKeyList) && POPUP) {
+			if(!this.manager.sendPI(postit, this.clientKeyList)) {
 				this.envoiEchoue();
 			}
 		},

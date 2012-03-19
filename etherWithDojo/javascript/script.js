@@ -88,37 +88,53 @@ ether.manager={
 		this.DZCorbeille=new ether.cible(dojo.byId("corbeille"),this);
 		this.DZCorbeille.onDrop=function(objet)
 			{
+				this.onStopHover();
 				if(objet.isPostIt)
 				{
 					this.dernierEnvoye = objet.getContent();
-					this.manager.deletePI(dojo.attr(objet.node,"id"));
+					this.manager.deletePI(dojo.attr(objet.node,"id"));	
 				}
+			}
+		this.DZCorbeille.onClick=function()
+			{
+				var id = dojo.attr(this.node, 'id');
+				dijit.showTooltip('Corbeille', id, ['below']);
+				setTimeout("dijit.hideTooltip('"+id+"')", 2000);
 			}
 		this.DZTous=new ether.cible(dojo.byId("envoiATous"),this);
 		this.DZTous.onDrop=function(objet)
 			{
+				this.onStopHover();
 				if(objet.isPostIt)
 				{
 					this.dernierEnvoye = MA_CLE+'_'+COMPTEUR;
-					this.manager.sendPI(objet, [TOUS]);
+					if(!this.manager.sendPI(objet, [TOUS])) {
+						this.envoiEchoue();
+					}
 				}
 			}
 		this.DZAnim=new ether.cible(dojo.byId("envoiAuxAnimateurs"),this);
 		this.DZAnim.onDrop=function(objet)
 			{
+				this.onStopHover();
 				if(objet.isPostIt)
 				{
 					this.dernierEnvoye = MA_CLE+'_'+COMPTEUR;
-					this.manager.sendPI(objet, [ANIMATEURS]);
+					if(!this.manager.sendPI(objet, [ANIMATEURS])) {
+						this.envoiEchoue();
+					}
 				}
 			}
-		this.DZNonAnim=new ether.cible(dojo.byId("envoiAuxNonAnimateurs"));
+		this.DZNonAnim=new ether.cible(dojo.byId("envoiAuxNonAnimateurs"),this);
 		this.DZNonAnim.onDrop=function(objet)
 			{
+				this.onStopHover();
 				if(objet.isPostIt)
 				{
 					this.dernierEnvoye = MA_CLE+'_'+COMPTEUR;
-					this.manager.sendPI(objet, [NON_ANIMATEURS]);
+					if(!this.manager.sendPI(objet, [NON_ANIMATEURS])) {
+						this.envoiEchoue();
+					}
 				}
 			}
 		
