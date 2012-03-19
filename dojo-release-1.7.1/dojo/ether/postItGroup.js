@@ -48,7 +48,6 @@ function(declare){
 			dojo.style(this.node.children[0],{zIndex : 0,position:"absolute"});
 			dojo.style(this.node,{height:MB.h+"px",width:MB.w+"px"});
 			this.isPostItGroup=true;
-			console.log(ether);
 			
 			dojo.connect(this.node, dojox.gesture.tap.doubletap,this,function(e)
 			{	if(this.estEtale)

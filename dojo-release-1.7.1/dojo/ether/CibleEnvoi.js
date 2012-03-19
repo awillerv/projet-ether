@@ -5,7 +5,6 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 
 		constructor: function(node,params,container,clientKeyList,manager)
 		{	
-		console.log(node);
 		this.manager=manager;
 		this.container=container;
 			if(clientKeyList instanceof Array)
@@ -33,7 +32,7 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 		
 		onDrop : function(postit)		//le comportement en cas de drop d'un objet acceptable. Cette fonction a l'heur d'avoir accès à l'objet ainsi déposé, comme il se doit. On peut accéder à la chaine à transmettre avec objet.getContent();
 		{
-			alert('drop détecté');
+			ether.manager.sendPI(postit, this.clientKeyList);
 		},
 		
 		contient : function(posX, posY)		//teste si la position donnée est contenue dans la surface de l'objet (pour détecter le hover, par exemple)

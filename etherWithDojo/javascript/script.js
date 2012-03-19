@@ -2,12 +2,12 @@
    --  on charge toutes les bibliothèques de Dojo nécessaires à ETHER, puis on exécute le callback lorsque tout est chargé  --	
    --------------------------------------------------------------------------------------------------------------------------- */
 
-require(["dojo/parser", "dojo/on", "dojox/validate/web", "dojo/dom-construct", "dojo/dom-attr", "dojo/dom-class", "dojo/dom-style", "dojo/query", "dojo/_base/unload", "dojo/_base/sniff", "ether/tap",
+require(["dojo/parser", "dojo/on", "dojox/validate/web", "dojo/dom-construct", "dojo/dom-attr", "dojo/dom-class", "dojo/dom-style", "dojo/dom-geometry", "dojo/query", "dojo/_base/unload", "dojo/_base/sniff", "ether/tap",
 "dijit/Dialog", "dijit/ProgressBar", "dijit/form/ValidationTextBox", "dijit/form/RadioButton", "dijit/form/Form", 
 "dijit/MenuBar", "dijit/PopupMenuBarItem", "dijit/DropDownMenu", "dijit/MenuItem", "ether/MenuItem", "dijit/MenuSeparator", "dijit/PopupMenuItem", "dijit/CheckedMenuItem",
 "dojox/form/Uploader", "dijit/form/Textarea", "dijit/form/FilteringSelect", "dojo/data/ItemFileReadStore", "dijit/ColorPalette",
-"dijit/layout/BorderContainer", "dijit/layout/ContentPane", "dojo/dnd/Source", "dojo/_base/array"
-"ether/PostIt", "ether/Cible","ether/CibleEnvoi", "ether/editeur","ether/DZContainer", "dojo/keys", "dojo/domReady!"], function(parser, on, validate, domConstruct, domAttr, domClass, domStyle, query, unload, has, tap) {
+"dijit/layout/BorderContainer", "dijit/layout/ContentPane", "dojo/dnd/Source", "dojo/_base/array",
+"ether/PostIt", "ether/Cible","ether/CibleEnvoi", "ether/editeur","ether/DZContainer", "dojo/keys", "dojo/domReady!"], function(parser, on, validate, domConstruct, domAttr, domClass, domStyle, domGeom, query, unload, has, tap) {
 
 
 
@@ -94,7 +94,7 @@ ether.manager={
 			{
 				if(objet.isPostIt)
 				{
-					//ici, le code pour envoyer à tout le monde (le contenu à envoyer est donné par "objet.getContent()"
+					sendPI(objet, [TOUS]);
 				}
 			}
 		this.DZAnim=new ether.cible(dojo.byId("envoiAuxAnimateurs"));
@@ -102,15 +102,15 @@ ether.manager={
 			{
 				if(objet.isPostIt)
 				{
-					//ici, le code pour envoyer aux animateurs
+					sendPI(objet, [ANIMATEURS]);
 				}
 			}
 		this.DZNonAnim=new ether.cible(dojo.byId("envoiAuxNonAnimateurs"));
 		this.DZNonAnim.onDrop=function(objet)
 			{
-				if(objet instanceof ether.PostIt)
+				if(objet.isPostIt)
 				{
-					//ici, le code pour envoyer aux non animateurs
+					sendPI(objet, [NON_ANIMATEURS]);
 				}
 			}
 		
@@ -134,19 +134,39 @@ ether.manager={
 	
 	createImagePostIt: function(imgpath, name)
 	{
+		var node=dojo.create("div",{id:"PI"+this.PICount,innerHTML:'<img class="contenuPI" src="'+ imgpath + '" alt="'+ name +'" onload="ether.manager.finalizeImagePostIt(this)"/>',style:{display:'none'}},this.PISpawnZone);
+	},
+	
+	finalizeImagePostIt: function(image) {
+		var node = image.parentNode;
 		//recupération du centre
 		marginBox=dojo.position(this.PISpawnZone);
-		topx=(marginBox.x+marginBox.w)/2;
-		topy=(marginBox.y+marginBox.h)/2;
-		var node=dojo.create("div",{id:"PI"+this.PICount,innerHTML:'<img width:"100%; height:100%" src="'+ imgpath + '" alt="'+ name +'" />'},this.PISpawnZone);
+		topx=marginBox.x+marginBox.w/2;
+		topy=marginBox.y+marginBox.h/2;
+		dojo.style(node, "display", "block");
+		nodeMB = dojo.position(image);
+		var hauteur = nodeMB.h;
+		var largeur = nodeMB.w;
+		var ratio = hauteur/largeur;
+		if(nodeMB.h>250 || nodeMB.w>250) {
+			if(nodeMB.h>nodeMB.w) {
+				hauteur=250;
+				largeur=Math.round(250/ratio);
+			} else {
+				hauteur=Math.round(250*ratio);
+				largeur=250;
+			}
+		}
 		dojo.style(node,{		//en particulier, on précise la position ici
 				position:"absolute",
-				left: topx+ "px",
-				top: topy + "px",
-				border:"solid",
-				borderWidth:"1px"
+				left: topx-largeur/2+"px",
+				top: topy-hauteur/2+"px",
 					});
-		PI= ether.postIt("PI"+this.PICount,{},this);	//on transforme notre noeud en post-it
+		dojo.style(image,{		//en particulier, on précise la position ici
+				height: hauteur+"px",
+				width: largeur+"px"
+					});
+		PI = ether.postIt("PI"+this.PICount,{},this);	//on transforme notre noeud en post-it
 				this.PICount++;
 				this.PIList.push(PI);
 	},
@@ -163,6 +183,7 @@ ether.manager={
 		trouve=(dojo.attr(this.PIList[i].node,"id")==id);
 		
 		}
+			dojo.destroy(this.PIList[i].node);
 			this.PIList[i].supprimer();
 			this.PIList.splice(i-1,1);
 		
@@ -321,7 +342,7 @@ ether.manager={
 			{
 				if(objet.type=="postIt")
 				{
-					PI=ether.postIt(ProtoPI,{},this,ProtoPI.children[0].tagName!="IMG");	//on transforme notre noeud en post-it
+					PI=ether.postIt(ProtoPI,{},this);	//on transforme notre noeud en post-it
 					this.PICount++;
 					this.PIList.push(PI);
 				}
@@ -351,8 +372,6 @@ ether.manager={
 				j=k;
 			}
 		}
-		console.log(i);
-		console.log(j);
 		if(this.PIList[i].isPostIt)		//l'element du dessous est un postItSimple : on crée un groupePostIt à la place, et on y ajoute l'objet droppe
 		{
 			
@@ -420,6 +439,19 @@ ether.manager={
 	PI= ether.postIt("PI"+this.PICount,{},this);	//on transforme notre noeud en post-it
 				this.PICount++;
 				this.PIList.push(PI);
+	},
+	
+	sendPI: function(postIt, cles_destinataires) {
+	//à faire = changer la structure de "message"
+		if(postIt.isPostIt) {
+			var msg_id = Math.floor(Math.random()*1000001);
+			var m = new msg(msg_id, postIt.getContent());
+			socket.emit('envoi', m, cles_destinataires);
+			if(SUPPRESSION_POSTIT)
+			{
+				ether.manager.deletePI(dojo.attr(postIt.node,"id"));
+			}
+		}
 	}
 }
 //**************
@@ -470,7 +502,6 @@ ether.manager={
 		NON_ANIMATEURS = -3;
 	
 	//le tableau qui liste l'ensemble des participants connectés à ETHER
-	
 	ether.manager.participants[TOUS] = new participant('tous', '', undefined, undefined);
 	ether.manager.participants[ANIMATEURS] = new participant('animateurs', '', true, undefined);
 	ether.manager.participants[NON_ANIMATEURS] = new participant('non animateurs', '', false, undefined);
@@ -480,10 +511,13 @@ ether.manager={
 	var moi = new participant('', '', false, 0);
 	
 	//la date (inconnue pour l'instant) d'une éventuelle sauvegarde de session en local
-	var dateSauvegarde = undefined;
+	var DATE_SAUVEGARDE = undefined;
 	
 	//le paramètre d'affichage des pop-up
-	var popup = true;
+	var POPUP = true;
+	
+	//le paramètre d'envoi des post-it : "copier" ou "deplacer"
+	var SUPPRESSION_POSTIT = false;
 	
 	
 	
@@ -622,22 +656,22 @@ ether.manager={
 			var tailleUpload = files[i].size;
 			//lorsque le FileReader commence à lire le fichier, on l'affiche dans une pop-up à l'écran
 			reader.onloadstart = function() {
-				if(popup)
+				if(POPUP)
 					dijit.showTooltip('Lecture du fichier ' + nomUpload, 'uploadPhotos', ['below']);
 			};
 			//lorsque le FileReader a fini de lire le fichier, on l'affiche dans une pop-up à l'écran
 			reader.onloadend = function() {
-				if(popup)
+				if(POPUP)
 					dijit.showTooltip('<img src="images/upload.gif" /> Upload du fichier...', 'uploadPhotos', ['below']);
 			};
 			//si une erreur s'est produite lors de la lecture, on l'affiche dans une pop-up à l'écran
 			reader.onerror = function() {
-				if(popup)
+				if(POPUP)
 					dijit.showTooltip('Erreur lors de la lecture du fichier ' + nomUpload, 'uploadPhotos', ['below']);
 			};
 			//si la lecture du fichier s'est correctement réalisée, on envoie le fichier encodé au serveur
 			reader.onload = function(d) {
-				if(popup)
+				if(POPUP)
 					dijit.showTooltip('Lecture de ' + nomUpload + 'réussie', 'uploadPhotos', ['below']);
 				socket.emit('upload', nomUpload, d.target.result);
 			};
@@ -646,7 +680,7 @@ ether.manager={
 				reader.readAsDataURL(files[i]);
 			//sinon on affiche une pop-up (pendant 2 secondes) pour prévenir l'utilisateur qu'il y a une taille max à ne pas dépasser
 			} else {
-				if(popup) {
+				if(POPUP) {
 					dijit.showTooltip('<img src="images/erreur.png" /> Impossible d\'uploader le fichier ' + nomUpload + ' qui est trop volumineux (taille maximale acceptée : 1Mo)', 'uploadPhotos', ['below']);
 					setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
 				}
@@ -701,7 +735,7 @@ ether.manager={
 		if(localStorage.getItem('sauvegardeETHER')) {
 			dijit.byId("menuChargement").disabled = false;
 			dijit.byId("menuChargement")._applyAttributes();
-			dateSauvegarde = new Date(localStorage.getItem('sauvegardeETHER'));
+			DATE_SAUVEGARDE = new Date(localStorage.getItem('sauvegardeETHER'));
 		}
 	}
 	
@@ -812,8 +846,8 @@ ether.manager={
 		//et on prévoit d'effacer le message d'accueil
 		setTimeout("dojo.fadeOut({ node: 'divBienvenue', duration: 1000, onEnd: function() { dojo.destroy('divBienvenue'); } }).play()", 6000);
 		//petit + : si une sauvegarde existe, on en informe le participant (avec la date de la sauvegarde)
-		if(dateSauvegarde!=undefined && popup) {
-			var message = 'Une sauvegarde datant du '+dateSauvegarde.toLocaleDateString()+' (à '+dateSauvegarde.toLocaleTimeString()+') a été identifée.<br />Vous pouvez la charger depuis le menu \"ETHER\" si vous le souhaitez.';
+		if(DATE_SAUVEGARDE!=undefined && POPUP) {
+			var message = 'Une sauvegarde datant du '+DATE_SAUVEGARDE.toLocaleDateString()+' (à '+DATE_SAUVEGARDE.toLocaleTimeString()+') a été identifée.<br />Vous pouvez la charger depuis le menu \"ETHER\" si vous le souhaitez.';
 			setTimeout("dijit.showTooltip('"+message+"', 'menuETHER', ['below'])", 2500);
 			setTimeout("dijit.hideTooltip('menuETHER')", 6500);
 		}
@@ -1046,13 +1080,21 @@ ether.manager={
 	
 		//on surchage la fonction "OK" de l'éditeur de post-it présent dans le menu
 		dijit.byId("editeurOK_0").onClick = function() { 
-			domAttr.set(dojo.byId("editeurTextarea_0"),"value","");
-			dijit.byId("menuTaperTexte")._onClick({ type:"custom", preventDefault:function(){}, stopPropagation:function(){} });
+			var textarea = dojo.byId("editeurTextarea_0");
+			var texte = domAttr.get(textarea, 'value');
+			if(texte!='') {
+				var postitJSON = { texte: texte, couleur: domStyle.get(textarea, 'backgroundColor'), top: domGeom.position(textarea).y, left: domGeom.position(textarea).x, hauteur: domGeom.position(textarea).h, largeur: domGeom.position(textarea).w };
+				ether.manager.createPI(postitJSON);
+				domAttr.set(textarea, 'value', '');
+				domStyle.set(textarea, 'backgroundColor', 'white');
+				dijit.byId("menuTaperTexte")._onClick({ type:"custom", preventDefault:function(){}, stopPropagation:function(){} });
+			}
 		};
 		
 		//on surchage la fonction "Annuler" de l'éditeur de post-it présent dans le menu pour qu'on ne puisse pas le détruire
 		dijit.byId("editeurAnnuler_0").onClick = function() { 
 			domAttr.set(dojo.byId("editeurTextarea_0"),"value","");
+			domStyle.set(dojo.byId("editeurTextarea_0"),"backgroundColor","white");
 			dijit.byId("menuTaperTexte")._onClick({ type:"custom", preventDefault:function(){}, stopPropagation:function(){} });
 		};
 	
@@ -1068,7 +1110,7 @@ ether.manager={
 		if(dijit.byId("uploadPhotos")._files) {
 			handleUploadFiles(dijit.byId("uploadPhotos")._files);
 		} else {
-			if(popup) {
+			if(POPUP) {
 				dijit.showTooltip('<img src="images/erreur.png" /> Impossible d\'uploader des photos car votre navigateur n\'est pas compatible', 'uploadPhotos', ['below']);
 				setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
 			}
@@ -1077,7 +1119,7 @@ ether.manager={
 	
 	//si l'upload a échoué (parce que le fichier n'était pas une photo), on affiche une pop-up (pendant 2 secondes) pour en informer le participant
 	socket.on('upload echoue', function() {
-		if(popup) {
+		if(POPUP) {
 			dijit.showTooltip('<img src="images/erreur.png" /> Echec de l\'upload : le fichier n\'est pas une image ! (les extensions acceptées sont .png, .jpg et .gif)', 'uploadPhotos', ['below']);
 			setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
 		}
@@ -1085,7 +1127,7 @@ ether.manager={
 	
 	//si l'upload a réussi, on ajoute la photo (dans un post-it) à l'application et on affiche (pendant 2 secondes) une pop-up de confirmation
 	socket.on('upload reussi', function(nom, chemin) {
-		if(popup) {
+		if(POPUP) {
 			dijit.showTooltip('<img src="images/ok.png" /> Upload de l\'image réussi !', 'uploadPhotos', ['below']);
 			setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
 		}
@@ -1146,9 +1188,13 @@ ether.manager={
 	
 	//lors du click sur "Autoriser les pop-up d'information" :
 	dijit.byId("menuParametresPopup").onChange = function(checked) {
-		popup = checked;
+		POPUP = checked;
 	}
 	
+	//lors du click sur "Supprimer les post-it lors de l'envoi" :
+	dijit.byId("menuParametresSuppressionPostit").onChange = function(checked) {
+		SUPPRESSION_POSTIT = checked;
+	}
 	
 	
 	/* --------------------------------------------------------------------------------------------
@@ -1159,7 +1205,7 @@ ether.manager={
 	socket.on('connexion nouveau participant', function(participant, key) {
 		ether.manager.participants[key] = participant;
 		majParticipants();
-		if(popup) {
+		if(POPUP) {
 			dijit.showTooltip('Connexion de ' + ether.manager.participants[key].prenom + ' ' +ether.manager.participants[key].nom, 'selectionParticipants', ['below']);
 			setTimeout("dijit.hideTooltip('selectionParticipants')", 2000);
 		}
@@ -1167,7 +1213,7 @@ ether.manager={
 	
 	//lors de la déconnexion d'un nouveau participant, on le retire de la variable javascript et du widget FilteringSelect
 	socket.on('deconnexion participant', function(key) {
-		if(popup) {
+		if(POPUP) {
 			dijit.showTooltip('Déconnexion de ' + ether.manager.participants[key].prenom + ' ' + ether.manager.participants[key].nom, 'selectionParticipants', ['below']);
 			setTimeout("dijit.hideTooltip('selectionParticipants')", 2000);
 		}
@@ -1182,9 +1228,19 @@ ether.manager={
 	   --  on associe une fonction à tous les évènements qui concernent l'échange de messages  --	
 	   ------------------------------------------------------------------------------------------ */
 	
-	//lors de la connexion d'un nouveau participant, on l'ajoute à la variable javascript et au widget FilteringSelect
+	//lorsqu'un envoi de post-it a été correctement reçu par le serveur, on confirme à l'expéditeur en faisant devenir verte la dropzone associée à l'envoi
+	socket.on('envoi reussi', function(msg_ids_ok, cles_ok) {
+	
+	});
+	
+	//si par contre il y a une erreur de transmission, on le précise à l'expéditeur en faisant devenir rouge la dropzone associée à l'envoi
+	socket.on('envoi echoue', function(msg_ids_echoues, cles_echoues) {
+	
+	});
+	
+	//lorsqu'un post-it est reçu, on le recrée, puis on l'affiche sur l'écran à côté de la dropzone de l'emmeteur
 	socket.on('reception', function(message, cle_emmeteur) {
-		//à completer avec la fonction de David
+		receptionPostIt(message.contenu);
 	});
 	
 	
