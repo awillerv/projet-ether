@@ -1,6 +1,6 @@
 require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd/Moveable','ether/Cible'], function(declare)
 {
-	return declare("ether.cibleEnvoi", [dojo.dnd.Moveable,ether.Cible],
+	return declare("ether.cibleEnvoi", dojo.dnd.Moveable,
 	{	isCibleEnvoi:true,
 
 		constructor: function(node,params,container,clientKeyList,manager)
