@@ -15,8 +15,14 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 			 dojo.dnd.autoScroll(e);
 			 var m = this.marginBox;
 			 var pimb=dojo.marginBox(this.host.parentPostItNode);
-
-			 this.host.onMove(this, {l: Math.max(m.l + e.pageX,pimb.l+20), t:Math.max(m.t + e.pageY,pimb.t+20)}, e);
+			if(this.host.isPostItImage) {
+				var left = Math.max(m.l + e.pageX,pimb.l+20);
+				var hauteur = (left+this.host.offset-pimb.l)*this.host.ratio;
+				var top = pimb.t+hauteur-this.host.offset;
+				this.host.onMove(this, {l: left, t: top }, e);
+			} else {
+				this.host.onMove(this, {l: Math.max(m.l + e.pageX,pimb.l+20), t:Math.max(m.t + e.pageY,pimb.t+20)}, e);
+			}
 		}
 	
 	});
@@ -27,6 +33,9 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 		constructor : function(node,params)
 		{	
 			this.parentPostItNode=params.parentPostItNode;
+			this.isPostItImage=params.isPostItImage;
+			this.ratio=params.ratio;
+			this.offset=params.offset;
 		},
 		
 		onMoved:function(mover)
@@ -49,17 +58,24 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 	{
 	
 		isPostIt:true,		//artefact pour un test
-		constructor: function(node, params,manager,editable)
-		{	this.manager=manager;
+		constructor: function(node, params,manager)
+		{	
+			this.isPostItImage = false;
+			if(this.node.children[0].tagName=="IMG") {
+				this.isPostItImage = true;
+				var imageMB = dojo.position(this.node.children[0]);
+				this.ratio = imageMB.h/imageMB.w;
+			}
+			this.offset = 13;
+			this.manager=manager;
 			this.resizeHandleNode=dojo.place('<div class="resizeHandle" style="visibility:visible"></div>', this.manager.PISpawnZone, "last");
-			
 			this.updatePositionResizeHandler();
-			this.resizeHandle=new ether.ResizeHandle(this.resizeHandleNode,{mover:ether.ResizeHandleMover,parentPostItNode:this.node});
+			this.resizeHandle=new ether.ResizeHandle(this.resizeHandleNode,{mover:ether.ResizeHandleMover,parentPostItNode:this.node,isPostItImage:this.isPostItImage,ratio:this.ratio,offset:this.offset});
 			
 			dojo.connect(this.node, dojox.gesture.tap.doubletap, this, function(e)
 			{
 				e.stopPropagation();
-				if(this.node.children[0].tagName!="IMG")
+				if(!this.isPostItImage)
 				{
 					this.startEdit();
 				}
@@ -93,8 +109,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 																			}
 																		}
 											,this);
-								
-								dojo.style(this.resizeHandleNode, {top:MB.t+childMB.h+childMB.t-13+"px",left:MB.l+childMB.w+childMB.l-13+"px"});
+								dojo.style(this.resizeHandleNode, {top:MB.t+childMB.h+childMB.t-this.offset+"px",left:MB.l+childMB.w+childMB.l-this.offset+"px"});
 		
 								},
 		
@@ -190,7 +205,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 		{
 			var PostItMB=dojo.marginBox(this.node);
 			var childMB=dojo.marginBox(this.node.children[0]);
-			dojo.style(this.resizeHandleNode,{position:"absolute",top:PostItMB.t+childMB.t+childMB.h-13+"px",left:PostItMB.l+childMB.w+childMB.l-13+"px"});
+			dojo.style(this.resizeHandleNode,{position:"absolute",top:PostItMB.t+childMB.t+childMB.h-this.offset+"px",left:PostItMB.l+childMB.w+childMB.l-this.offset+"px"});
 		}
 		
 	}

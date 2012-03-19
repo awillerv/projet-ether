@@ -57,6 +57,7 @@ noscript ol {
 #applicationCenter {
 	padding: 0px;
 	border: 0px;
+	background-color: transparent;
 }
 
 #applicationCenter #corbeille {
@@ -107,14 +108,14 @@ div.carreCouleur:hover {
 	cursor: pointer;
 }
 
-div.contenuPI {
+.contenuPI {
 	border: 1px rgb(181,188,199) solid;
 	text-align: center;
 	overflow: hidden;
+	box-shadow: 1px 1px 4px 0px #888888;
 }
 
-
-div.contenuPI:hover {
+.contenuPI:hover {
 	border: 1px rgb(117,157,192) solid;
 	cursor: move;
 }
@@ -130,6 +131,7 @@ div.resizeHandle {
 #applicationBottom {
 	border: none;
 	padding: 0px;
+	background-color: transparent;
 }
 
 #applicationBottom table {
