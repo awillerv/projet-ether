@@ -53,8 +53,8 @@ require(['dojo/_base/declare', 'ether/tap', 'dojo/dom-geometry','dojo/dnd/Moveab
 			dojo.addClass(this.node,'cibleEnvoiEchoue');
 			var id = dojo.attr(this.node, 'id');
 			setTimeout("dojo.removeClass(dojo.byId('"+id+"'), 'cibleEnvoiEchoue')",2000);
-			if(POPUP) {
-				dijit.showTooltip('<img src="images/erreur.png" /> Erreur lors de l\'envoi du post-it', id, ['above']);
+			if(this.manager.POPUP) {
+				dijit.showTooltip('<img src="images/erreur.png" /> Erreur lors de l\'envoi du post-it', id, ['above','below']);
 				setTimeout("dijit.hideTooltip('"+id+"')", 2000);
 			}
 		}
