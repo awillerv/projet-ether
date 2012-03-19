@@ -290,7 +290,7 @@ ether.manager={
 		dojo.fadeIn({node:this.DZBar,duration:200}).play();
 		for(var i=0; i<DZContainer.DZ.clientKeyList.length;i++)
 		{	var node=dojo.create("div");
-			var DZU=ether.DZUnitaire(node,{},this,DZContainer.DZ.clientKeyList[i]);
+			var DZU=ether.DZUnitaire(node,{},null,DZContainer.DZ.clientKeyList[i],this);
 			dojo.place(node,this.DZBar,"last");
 			this.DZBarCurrentDZ.push(DZU);
 		}
@@ -1280,7 +1280,7 @@ ether.manager={
 	
 	//lorsqu'un envoi de post-it a été correctement reçu par le serveur, on confirme à l'expéditeur en faisant devenir verte la dropzone associée à l'envoi
 	socket.on('envoi reussi', function(msg_id) {
-		dojo.forEach(this.manager.DZList.concat([this.manager.DZCorbeille,this.manager.DZTous,this.manager.DZAnim,this.manager.DZNonAnim]), function(item){
+		dojo.forEach(ether.manager.DZList.concat([ether.manager.DZCorbeille,ether.manager.DZTous,ether.manager.DZAnim,ether.manager.DZNonAnim]), function(item){
 			if(item.dernierEnvoye==msg_id)
 				item.envoiReussi();
 		});
