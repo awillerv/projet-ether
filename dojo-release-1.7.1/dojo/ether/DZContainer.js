@@ -2,12 +2,12 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll'],
 	function(declare)
 	{
 	
-		declare("ether.DZUnitaire",dojo.dnd.Moveable,
+		declare("ether.DZUnitaire",ether.cibleEnvoi,
 		{
-		constructor:function(node,params, manager,client)
+		constructor:function(node,params,container,clientKeyList,manager)
 		{	this.node=node;
 			this.manager=manager;
-			this.client=client;
+			//this.client=client;
 			this.refreshNode();
 		},
 		

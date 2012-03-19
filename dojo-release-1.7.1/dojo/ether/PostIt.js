@@ -125,7 +125,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 									}
 									}
 								//	console.log(PIList);
-									dojo.some(this.manager.DZList.concat([this.manager.DZCorbeille,this.manager.DZTous,this.manager.DZAnim,this.manager.DZNonAnim]).concat(PIList), function(item){
+									dojo.some(this.manager.DZList.concat([this.manager.DZCorbeille,this.manager.DZTous,this.manager.DZAnim,this.manager.DZNonAnim]).concat(PIList).concat(this.manager.DZBarCurrentDZ), function(item){
 																			if(item.contient(MB.l-mover.marginBox.l,MB.t-mover.marginBox.t))
 																			{
 																				item.onDrop(this);
@@ -138,6 +138,8 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 													
 																		}
 											,this);
+											
+									this.manager.closeDZBar();
 									},
 									
 		supprimer: function(){

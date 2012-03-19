@@ -113,6 +113,7 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 		onMoveStop:function(mover)
 		{		var MB=dojo.position(this.node);
 				var ContainerList=new Array();
+				this.manager.closeDZBar();
 				//console.log(mover.marginBox);
 				for(var i=0; i<this.manager.DZContainerList.length;i++)
 				{
@@ -140,6 +141,12 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 					{
 						dojo.marginBox(this.node,this.ghostMB);
 					}
+		},
+		
+		contient : function(posX, posY)		//teste si la position donnée est contenue dans la surface de l'objet (pour détecter le hover, par exemple)
+		{
+			var position = dojo.position(this.node);
+			return (posX>=position.x&&posX<=(position.x+position.w)&&posY>=position.y&&posY<=(position.y+position.h));
 		}
 		
 	});
