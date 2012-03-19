@@ -4,9 +4,10 @@ require(['dojo/_base/declare', 'ether/tap', 'dojo/dom-geometry','dojo/dnd/Moveab
 {
 	return declare("ether.cible", null, 
 	{
-		constructor: function(node)
+		constructor: function(node,manager)
 		{
 			this.node = dojo.byId(node);
+			this.manager=manager;
 			this.dernierEnvoye = null;
 			dojo.connect(this, tap, this, this.onClick);
 		},

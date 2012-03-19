@@ -85,31 +85,31 @@ ether.manager={
 		this.PISpawnZone=dojo.byId(postItArea);	
 		this.DZSpawnZone=dojo.byId(DZDefaultArea);
 		var AreaPosition=dojo.position(this.PISpawnZone);
-		this.DZCorbeille=new ether.cible(dojo.byId("corbeille"));
+		this.DZCorbeille=new ether.cible(dojo.byId("corbeille"),this);
 		this.DZCorbeille.onDrop=function(objet)
 			{
 				if(objet.isPostIt)
 				{
-					this.dernierEnvoye = postit.getContent();
-					ether.manager.deletePI(dojo.attr(objet.node,"id"));
+					this.dernierEnvoye = objet.getContent();
+					this.manager.deletePI(dojo.attr(objet.node,"id"));
 				}
 			}
-		this.DZTous=new ether.cible(dojo.byId("envoiATous"));
+		this.DZTous=new ether.cible(dojo.byId("envoiATous"),this);
 		this.DZTous.onDrop=function(objet)
 			{
 				if(objet.isPostIt)
 				{
 					this.dernierEnvoye = MA_CLE+'_'+COMPTEUR;
-					sendPI(objet, [TOUS]);
+					this.manager.sendPI(objet, [TOUS]);
 				}
 			}
-		this.DZAnim=new ether.cible(dojo.byId("envoiAuxAnimateurs"));
+		this.DZAnim=new ether.cible(dojo.byId("envoiAuxAnimateurs"),this);
 		this.DZAnim.onDrop=function(objet)
 			{
 				if(objet.isPostIt)
 				{
 					this.dernierEnvoye = MA_CLE+'_'+COMPTEUR;
-					sendPI(objet, [ANIMATEURS]);
+					this.manager.sendPI(objet, [ANIMATEURS]);
 				}
 			}
 		this.DZNonAnim=new ether.cible(dojo.byId("envoiAuxNonAnimateurs"));
@@ -118,7 +118,7 @@ ether.manager={
 				if(objet.isPostIt)
 				{
 					this.dernierEnvoye = MA_CLE+'_'+COMPTEUR;
-					sendPI(objet, [NON_ANIMATEURS]);
+					this.manager.sendPI(objet, [NON_ANIMATEURS]);
 				}
 			}
 		
