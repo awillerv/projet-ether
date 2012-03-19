@@ -326,6 +326,8 @@ io.sockets.on('connection', function (socket) {
           console.log('tentative ' + cpt + ' de ré-envoi du message ' + m.id);
         }
         else{
+          msg_cache = new msg(-1, '');
+          cpt = 0;
           console.log('échec de toutes les tentatives (' + nbrEnvoiLimite +') de ré-envoi du message ' + m.id);
         }
       }
@@ -335,6 +337,10 @@ io.sockets.on('connection', function (socket) {
           ' car le message à envoyer n\'est plus en cache au bout de ' + cpt + ' tentatives'
         );
       }
+    }
+    else{
+      msg_cache = new msg(0, '');
+      cpt = 0;
     }
   });
   
