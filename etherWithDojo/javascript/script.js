@@ -485,9 +485,7 @@ ether.manager={
 	},
 	
 	sendPI: function(postIt, cles_destinataires) {
-	
-
-		if(postIt.isPostIt) {
+		if(postIt.isPostIt && socket && socket.socket.connected) {
 			var msg_id = MA_CLE + '_' + COMPTEUR;
 			COMPTEUR++;
 			var m = new msg(msg_id, postIt.getContent());
@@ -496,6 +494,9 @@ ether.manager={
 			{
 				ether.manager.deletePI(dojo.attr(postIt.node,"id"));
 			}
+			return true;
+		} else {
+			return false;
 		}
 	}
 }
