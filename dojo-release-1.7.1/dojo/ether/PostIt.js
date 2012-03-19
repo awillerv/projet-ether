@@ -159,6 +159,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 		{	
 			var objet= {
 				type:"postIt",
+				
 				innerHTML:(this.node.innerHTML),
 				style:dojo.attr(this.node,"style"),
 				class:dojo.attr(this.node,"class")
