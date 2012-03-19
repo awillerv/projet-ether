@@ -79,11 +79,11 @@ ether.manager={
 	DZBar:dojo.byId("DZBar"),
 	participants:new Array(),
 	//le paramètre d'affichage des pop-up
-	POPUP = true,
+	POPUP: true,
 	//le paramètre d'envoi des post-it : "copier" ou "deplacer"
-	SUPPRESSION_POSTIT = true,
+	SUPPRESSION_POSTIT: true,
 	//un compteur de post its envoyés
-	COMPTEUR = 0,
+	COMPTEUR: 0,
 	
 	
 	initialize:function(postItArea,DZDefaultArea)		//initialisation: on passe en argument l'id de la zone où l'on peut spawner les conteneurs.
