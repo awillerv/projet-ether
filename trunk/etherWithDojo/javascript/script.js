@@ -171,9 +171,7 @@ ether.manager={
 		var node = image.parentNode;
 		dojo.attr(image,"onload","");
 		//recupération du centre
-		marginBox=dojo.position(this.PISpawnZone);
-		topx=marginBox.x+marginBox.w/2;
-		topy=marginBox.y+marginBox.h/2;
+		marginBox=dojo.position(dojo.byId('uploadPhotos'));
 		dojo.style(node, "display", "block");
 		nodeMB = dojo.position(image);
 		var hauteur = nodeMB.h;
@@ -190,8 +188,8 @@ ether.manager={
 		}
 		dojo.style(node,{		//en particulier, on précise la position ici
 				position:"absolute",
-				left: topx-largeur/2+"px",
-				top: topy-hauteur/2+"px",
+				left: marginBox.x+"px",
+				top: "5px",
 					});
 		dojo.style(image,{		//en particulier, on précise la position ici
 				height: hauteur+"px",
@@ -445,8 +443,34 @@ ether.manager={
 		this.userMap[idParticipant]=new Array();
 	},
 		
-	receptionPostIt:function(objectString)		//creation de postIt à la réception. Problème du positionnement, il faudra regarder
+	chargementPostIt:function(objectString)
 	{		
+			var objet=eval("(" + objectString + ")" );
+			var ProtoPI=dojo.create('div',{innerHTML:objet.innerHTML, 
+			id: 'PI'+this.PICount, style:{position:"absolute"}}, dojo.byId(this.PISpawnZone));
+			dojo.attr(ProtoPI,"style",objet.style);
+	
+			if(objet.type=="postItGroup")
+			{
+			PI= ether.postItGroup(ProtoPI,{},this);	//on transforme notre noeud en post-it
+				this.PICount++;
+				this.PIList.push(PI);
+			}
+			else
+			{
+				if(objet.type=="postIt")
+				{
+					PI=ether.postIt(ProtoPI,{},this);	//on transforme notre noeud en post-it
+					this.PICount++;
+					this.PIList.push(PI);
+				}
+			}
+	},
+	
+	receptionPostIt:function(objectString, cle_emetteur)
+	{		
+			var listeDZ = userMap[cle_emetteur];
+			
 			var objet=eval("(" + objectString + ")" );
 			var ProtoPI=dojo.create('div',{innerHTML:objet.innerHTML, 
 			id: 'PI'+this.PICount, style:{position:"absolute"}}, dojo.byId(this.PISpawnZone));
@@ -1021,7 +1045,7 @@ ether.manager={
 	    // on le transforme en JSON
 	    content = JSON.parse(content);
 	    // on recrée le post-it
-	    ether.manager.receptionPostIt(content);
+	    ether.manager.chargementPostIt(content);
 	  }
 	  // notre PIList est maintenant complète, il n'y a plus qu'à décoder/enregistrer les images et les afficher
 	  var reversePIList = ether.manager.PIList.reverse();
@@ -1377,7 +1401,7 @@ ether.manager={
 	
 	//lorsqu'un post-it est reçu, on le recrée, puis on l'affiche sur l'écran à côté de la dropzone de l'emmeteur
 	socket.on('reception', function(message, cle_emetteur) {
-		receptionPostIt(message.contenu);
+		receptionPostIt(message.contenu, cle_emetteur);
 		socket.emit('resultat reception', message.id, cle_emetteur, true);
 	});
 	
