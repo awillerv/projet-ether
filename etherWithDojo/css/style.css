@@ -153,6 +153,7 @@ div.resizeHandle {
 #applicationBottom table {
 	border-collapse: collapse;
 	border: none;
+	margin: auto;
 }
 
 #applicationBottom td {
@@ -165,7 +166,6 @@ div.resizeHandle {
 {
 	background-color:red;
 }
-
 
 #applicationBottom div.groupe1 {
 	background-image: url("../images/participant.png");
@@ -237,4 +237,12 @@ img.couleur1, img.couleur2, img.couleur3, img.couleur4, img.couleur5 {
 .dijitBorderContainer, .dijitBorderContainerNoGutter {
 	overflow:visible;
 	z-index:4;
+}
+
+#dijit_MenuBar_0_splitter {
+	display: none;
+}
+
+#applicationBottom_splitter {
+	display: none;
 }
