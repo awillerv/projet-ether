@@ -945,7 +945,6 @@ ether.manager={
 	  // on met à jour notre client
 	  moi.prenom = p[0];
 		moi.nom = p[1];
-		moi.estAnimateur = ((p[2] == 'true') ? true : false);
 		dojo.byId("moi").innerHTML = moi.prenom+" "+moi.nom+((moi.estAnimateur) ? "<br />(animateur)" : '');
 		// on indique aux autres clients de se mettre à jour
 		socket.emit('changement id', moi);
@@ -1034,7 +1033,7 @@ ether.manager={
 		var d = new Date();
 		localStorage.setItem('sauvegardeETHER', d.toString());
 		// on enregistre l'identité de l'utilisateur
-		var p = new Array(moi.prenom, moi.nom, moi.estAnimateur);
+		var p = new Array(moi.prenom, moi.nom);
 		// on utilise un try/catch au cas où on aurait plus de place
 		try {
 			localStorage.setItem('id', p.join('|'));
