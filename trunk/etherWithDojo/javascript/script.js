@@ -805,6 +805,16 @@ ether.manager={
 		dojo.setStyle(dojo.byId("champMotDePasse"), { display: "none" });
 	});
 	
+	//
+	on(dijit.byId("boutonAlerteIE"), "click", function(event) {
+		dijit.byId('alerteIE').hide(); 
+	});
+	
+	//
+	on(dijit.byId("boutonAlerteConnexion"), "click", function(event) {
+		dijit.byId('alerteConnexion').hide();
+	});
+	
 	//lors de la validation du formulaire, on vérifie que le champ "motDePasse" a bien été rempli si le participant est un administrateur
 	dijit.byId("motDePasse").validator = function() {
 		return (dijit.byId("participant").get("value") || dijit.byId("motDePasse").get("value")!="");
