@@ -416,7 +416,7 @@ io.sockets.on('connection', function (socket) {
   
   // lorsqu'on sauve une "session" le serveur encode et renvoie à la volée les images 
   // présentes sur celui-ci en base64 pour qu'elles soient sauvées comme string chez le client
-  socket.on('data encode request', function(url){
+  socket.on('data encode request', function(i, j, url){
     // url est de la forme '/uploads/3.jpg'
     var ext = 'image/' + getExt(url);
     console.log(url);
@@ -430,7 +430,7 @@ io.sockets.on('connection', function (socket) {
 	    
 	    // si tout s'est bien passé on la renvoie au client
       console.log(data.substr(0,40));
-      socket.emit('data encode response', data, ext);
+      socket.emit('data encode response', i, j, url, data, ext);
     });
   });
   

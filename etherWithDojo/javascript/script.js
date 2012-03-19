@@ -6,7 +6,6 @@ require(["dojo/parser", "dojo/on", "dojox/validate/web", "dojo/dom-construct", "
 "dijit/Dialog", "dijit/ProgressBar", "dijit/form/ValidationTextBox", "dijit/form/RadioButton", "dijit/form/Form", 
 "dijit/MenuBar", "dijit/PopupMenuBarItem", "dijit/DropDownMenu", "dijit/MenuItem", "ether/MenuItem", "dijit/MenuSeparator", "dijit/PopupMenuItem", "dijit/CheckedMenuItem",
 "dojox/form/Uploader", "dijit/form/Textarea", "dijit/form/FilteringSelect", "dojo/data/ItemFileReadStore", "dijit/ColorPalette",
-
 "dijit/layout/BorderContainer", "dijit/layout/ContentPane", "dojo/dnd/Source", "dojo/_base/array",
 "ether/PostIt", "ether/Cible","ether/CibleEnvoi", "ether/editeur","ether/DZContainer", "dojo/keys", "dojo/domReady!"], function(parser, on, validate, domConstruct, domAttr, domClass, domStyle, domGeom, query, unload, has, tap) {
 
@@ -894,19 +893,22 @@ ether.manager={
 	  // on met à jour notre client
 	  moi.prenom = p[0];
 		moi.nom = p[1];
-		moi.estAnimateur = p[2];
+		moi.estAnimateur = ((p[2] == 'true') ? true : false);
 		dojo.byId("moi").innerHTML = moi.prenom+" "+moi.nom+((moi.estAnimateur) ? "<br />(animateur)" : '');
 		// on indique aux autres clients de se mettre à jour
 		socket.emit('changement id', moi);
 	  // on va recréer les post its enregistrés et les ajouter dans la PIList
-	  // on commence par vider la PIList actuelle
+	  // on commence par détruire tous les pi/groupes pi
+	  dojo.forEach(ether.manager.PIList, function(pi, index){
+	    pi.supprimer();
+	  });
 	  ether.manager.PIList.splice(0, ether.manager.PIList.length);
+	  // puis on PICount à 0
 	  ether.manager.PICount = 0;
 	  // on ajoute les pi/groupes pi à la volée
 	  var PIlength = 0;
 	  var PIIMGlength = 0;
 	  var content = null;
-	  var urls = null;
 	  var img = null;
 	  var imgsUniques = new Array();
 	  var isUnique = true;
@@ -917,15 +919,20 @@ ether.manager={
 	    PIlength++;
 	  }
 	  // on ajoute les pi/groupes pi du plus ancien enregistré au plus récent
-	  for(var i = PIlength - 1 ; i >= 0 ; i--){
+	  for(var k = PIlength - 1 ; k >= 0 ; k--){
 	    // on récupère le string
-	    content = localStorage.getItem('PI' + i);
+	    content = localStorage.getItem('PI' + k);
 	    // on le transforme en JSON
 	    content = JSON.parse(content);
 	    // on recrée le post-it
 	    ether.manager.receptionPostIt(content);
+	  }
+	  // notre PIList est maintenant complète, il n'y a plus qu'à décoder/enregistrer les images et les afficher
+	  var reversePIList = ether.manager.PIList.reverse();
+	  dojo.forEach(reversePIList, function(pi, i){
 	    // on calcule le nombre d'images associées à notre pi/goupe pi
-	    while(localStorage.getItem('PI' + i + 'IMG' + PIIMGlength)){
+	    PIIMGlength = 0;
+	    while(localStorage.getItem('PI' + i + 'IMG' + PIIMGlength) !== null){
 	      PIIMGlength++;
 	    }
 	    // on decode/enregistre les images et on remplace les anciennes urls de notre pi/groupe pi par les nouvelles
@@ -955,17 +962,15 @@ ether.manager={
 		      socket.emit('data decode request', i, j, imgsUniques.length - 1, img.split('|'));
 		    }
 		    else{
-		      urls = (dojo.query("img", ether.manager.PIList[i])).attr("src");
-		      url = urls[j];
-	        url.innerHTML = imgsUniques[cpt][1];
+		      // il faut bien penser que l'ordre dans PIList est inverse à celui de localStorage
+		      dojo.query("img", pi.node)[j].src = imgsUniques[cpt][1];
 		    }
 	    }
-	  }
+	  });
 	  // lorsqu'une image a été décodée/enregistrée
 	  socket.on('data decode response', function(i, j, cleUnique, chemin){
-	    var urls = (dojo.query("img", ether.manager.PIList[i])).attr("src");
-	    var url = urls[j];
-	    url.innerHTML = chemin;
+	    // il faut bien penser que l'ordre dans PIList est inverse à celui de localStorage 
+	    dojo.query("img", reversePIList[i].node)[j].src = chemin;
 	    imgsUniques[cleUnique].push(chemin);
 	  });
 	};
@@ -1018,6 +1023,7 @@ ether.manager={
 		  }
 		  // on stocke maintenant les images associés à ce pi/groupe pi
 		  // on commence par récupérer les url
+		  urls.splice(0, urls.length);
 		  dojo.forEach(dojo.query("img", pi.node), function(image, index){
 		    urls.push(dojo.attr(image, "src"));
 		  });
@@ -1035,33 +1041,10 @@ ether.manager={
 		        cpt++;
 		      }
 		    }
+		    console.log('isUnique vaut ' + isUnique);
 		    // si l'url courante n'a pas encore été décodée / enregistrée
 		    if(isUnique){
-		      socket.emit('data encode request', url);
-          socket.on('data encode response', function(data, ext){
-            // on construit un tableau contenant l'image et l'extension
-            imgContenu = new Array(data, ext);
-            // on le transforme en string
-            imgContenu = imgContenu.join('|');
-            // on utilise un try/catch au cas où on aurait plus de place
-            try{
-              // on enregistre l'image avec une clé référençant le pi/groupe pi auquel appartient l'image
-              localStorage.setItem('PI' + i + 'IMG' + j, imgContenu);
-              console.log('image ' + j + ' du pi/groupe pi ' + i + ' enregistrée');
-            }
-            catch(e){
-              if (e == QUOTA_EXCEEDED_ERR){
-                alert(
-					        'L\'espace de sauvegarde est plein. ' +
-					        'Vos ' + (i + 1) + ' post-its les plus récents ont toutefois été enregistrés'
-					      );
-              }
-              console.log('impossible d\'enregistrer l\'image ' + j + ' du pi/groupe pi ' + i);
-            }
-            // on rajoute l'url à la liste urlsUniques
-            // urlsUniques[0] -> id dans localStorage ; urlsUniques[1] -> url
-            urlsUniques.push(new Array('PI' + i + 'IMG' + j, url));
-          });
+		      socket.emit('data encode request', i, j, url);
         }
         else{
           // on utilise un try/catch au cas où on aurait plus de place
@@ -1082,6 +1065,30 @@ ether.manager={
         }
 		  });
 		});
+		socket.on('data encode response', function(i, j, url, data, ext){
+      // on construit un tableau contenant l'image et l'extension
+      imgContenu = new Array(data, ext);
+      // on le transforme en string
+      imgContenu = imgContenu.join('|');
+      // on utilise un try/catch au cas où on aurait plus de place
+      try{
+        // on enregistre l'image avec une clé référençant le pi/groupe pi auquel appartient l'image
+        localStorage.setItem('PI' + i + 'IMG' + j, imgContenu);
+        console.log('image ' + j + ' du pi/groupe pi ' + i + ' enregistrée');
+      }
+      catch(e){
+        if (e == QUOTA_EXCEEDED_ERR){
+          alert(
+		        'L\'espace de sauvegarde est plein. ' +
+		        'Vos ' + (i + 1) + ' post-its les plus récents ont toutefois été enregistrés'
+		      );
+        }
+        console.log('impossible d\'enregistrer l\'image ' + j + ' du pi/groupe pi ' + i);
+      }
+      // on rajoute l'url à la liste urlsUniques
+      // urlsUniques[0] -> id dans localStorage ; urlsUniques[1] -> url
+      urlsUniques.push(new Array('PI' + i + 'IMG' + j, url));
+    });
 	};
 	
 	//lors du click sur "déconnexion" :
