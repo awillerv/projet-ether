@@ -73,6 +73,7 @@ ether.manager={
 	DZTous:null,
 	DZAnim:null,
 	DZBarCurrentDZ:new Array(),
+	DZBarCurrentContainer:null,
 	DZNonAnim:null,
 	DZContainerList:null,
 	DZBar:dojo.byId("DZBar"),
@@ -276,23 +277,40 @@ ether.manager={
 	prepareAndShowDZBar: function(DZContainer)		//prepare et affiche la barre des DZ individuelles du container passé en argument
 	{	
 		var nbDZ=0;
-		if(DZContainer.DZ)
-	{
+		for(var i=0; i<this.DZBar.children.length;i++)
+		{
+			dojo.destroy(this.DZBar.children[i]);
+		}
+		this.DZBarCurrentDZ=new Array();
 		nbDZ=DZContainer.DZ.clientKeyList.length;
-	}
 		var MB=dojo.marginBox(DZContainer.node);
-		var parentMB=dojo.marginBox(this.DZBar.parentNode);
+		var parentMB=dojo.marginBox(DZContainer.node.parentNode);
 		var proposedWidth=Math.min(100*nbDZ,parentMB.w);
 		var proposedLeft=Math.max(0,MB.l-proposedWidth/2);
 		
-		dojo.style(this.DZBar,{left:proposedLeft+"px",width:proposedWidth+"px"});
-		
-		if(DZContainer.DZ)
+		dojo.style(this.DZBar,{left:proposedLeft+"px",width:proposedWidth+"px",float:"left"});
+		dojo.fadeIn({node:this.DZBar,duration:200}).play();
+		for(var i=0; i<DZContainer.DZ.clientKeyList.length;i++)
 		{	var node=dojo.create("div");
-			var DZ=ether.cibleEnvoi(node,{},null,DZContainer.DZ.clientKeyList[0],this);
+			var DZU=ether.DZUnitaire(node,{},this,DZContainer.DZ.clientKeyList[i]);
 			dojo.place(node,this.DZBar,"last");
-			this.DZBarCurrentDZ.push(DZ);
+			this.DZBarCurrentDZ.push(DZU);
 		}
+	},
+	
+	closeDZBar:function()
+	{	dojo.fadeOut({node:this.DZBar,duration:200}).play();
+		for(var i=0; i<this.DZBar.children.length;i++)
+		{
+			dojo.destroy(this.DZBar.children[i]);
+		}
+		this.DZBarCurrentDZ=new Array();
+		if(this.DZBarCurrentContainer)
+		{
+			this.DZBarCurrentContainer.open=false;
+		}
+		this.DZBarCurrentContainer=null;
+		
 	},
 	
 	
@@ -469,7 +487,6 @@ ether.manager={
 	},
 	
 	sendPI: function(postIt, cles_destinataires) {
-	//à faire = changer la structure de "message"
 		if(postIt.isPostIt) {
 			var msg_id = Math.floor(Math.random()*1000001);
 			var m = new msg(msg_id, postIt.getContent());
