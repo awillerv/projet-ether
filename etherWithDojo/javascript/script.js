@@ -486,7 +486,7 @@ ether.manager={
 	
 	sendPI: function(postIt, cles_destinataires) {
 	
-		alert('drop');
+
 		if(postIt.isPostIt) {
 			var msg_id = MA_CLE + '_' + COMPTEUR;
 			COMPTEUR++;
@@ -562,7 +562,7 @@ ether.manager={
 	var POPUP = true;
 	
 	//le paramètre d'envoi des post-it : "copier" ou "deplacer"
-	var SUPPRESSION_POSTIT = false;
+	var SUPPRESSION_POSTIT = true;
 	
 	//un compteur de post its envoyés
 	var COMPTEUR = 0;	
