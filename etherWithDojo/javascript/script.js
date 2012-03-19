@@ -485,6 +485,8 @@ ether.manager={
 	},
 	
 	sendPI: function(postIt, cles_destinataires) {
+	
+		alert('drop');
 		if(postIt.isPostIt) {
 			var msg_id = MA_CLE + '_' + COMPTEUR;
 			COMPTEUR++;

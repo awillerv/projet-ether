@@ -4,11 +4,11 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 	{	isCibleEnvoi:true,
 
 		constructor: function(node,params,container,clientKeyList,manager)
-		{	
+		{	this.clientKeyList=new Array();
 			this.manager=manager;
 			if(container) {
 				container.DZ=this;
-				this.clientKeyList=new Array();
+				
 				this.container=container;
 			}
 			if(clientKeyList instanceof Array) {

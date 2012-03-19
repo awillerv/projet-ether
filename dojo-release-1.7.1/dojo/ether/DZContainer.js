@@ -1,27 +1,20 @@
-define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll'],
+define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvoi'],
 	function(declare)
 	{
 	
 		declare("ether.DZUnitaire",ether.cibleEnvoi,
 		{
 		constructor:function(node,params,container,clientKeyList,manager)
-		{	this.node=node;
-			this.manager=manager;
-			//this.client=client;
-			this.refreshNode();
-		},
-		
-		refreshNode:function()		//une fonction qui calcule l'apparence du node en fonction de la clientList
-		{
-		imagepath='images/participant.png'; 
-
-		descText = this.manager.participants[this.client].prenom+' '+this.manager.participants[this.client].nom;
-		
-			this.node.innerHTML='<img src="'+imagepath+'"/><p>'+descText+'</p>';
-			dojo.style(this.node,{width:"80px",height:"80px"});
-			
+		{	
 		}
+		
+		
 		});
+	
+	
+	
+	
+	
 	
 	
 		return declare("ether.DZContainer",null,
