@@ -219,11 +219,7 @@ ether.manager={
 		{
 		if(this.userMap[clientArray[k]])
 		{
-		this.userMap[clientArray[k]].push("DZ"+this.DZId);
-		}
-		else
-		{
-		this.userMap[clientArray[k]]=new Array("DZ"+this.DZId);
+		this.userMap[clientArray[k]].push(DZ);
 		}
 		k++;
 		}
@@ -283,15 +279,16 @@ ether.manager={
 		nbDZ=DZContainer.DZ.clientKeyList.length;
 		var MB=dojo.marginBox(DZContainer.node);
 		var parentMB=dojo.marginBox(DZContainer.node.parentNode);
-		var proposedWidth=Math.min(100*nbDZ,parentMB.w);
+		var proposedWidth=Math.min(60*nbDZ,parentMB.w);
 		var proposedLeft=Math.max(0,MB.l-proposedWidth/2);
-		
+		this.DZBarCurrentContainer=DZContainer;
 		dojo.style(this.DZBar,{left:proposedLeft+"px",width:proposedWidth+"px",float:"left"});
 		dojo.fadeIn({node:this.DZBar,duration:200}).play();
 		for(var i=0; i<DZContainer.DZ.clientKeyList.length;i++)
 		{	var node=dojo.create("div");
 			var DZU=ether.DZUnitaire(node,{},null,DZContainer.DZ.clientKeyList[i],this);
-			dojo.place(node,this.DZBar,"last");
+			dojo.style(node,{float:"left"});
+			dojo.place(node,this.DZBar);
 			this.DZBarCurrentDZ.push(DZU);
 		}
 	},
@@ -304,7 +301,7 @@ ether.manager={
 		}
 		this.DZBarCurrentDZ=new Array();
 		if(this.DZBarCurrentContainer)
-		{
+		{	//console.log(this.DZBarCurrentContainer);
 			this.DZBarCurrentContainer.open=false;
 		}
 		this.DZBarCurrentContainer=null;
@@ -323,7 +320,7 @@ ether.manager={
 		{
 			if(this.userMap[i])
 			{
-				aux=dojo.indexOf(this.userMap[i],id);
+				aux=dojo.indexOf(this.userMap[i],DZ);
 				if(aux!=-1)
 				{
 					this.userMap[i].splice(aux,1);
@@ -333,12 +330,16 @@ ether.manager={
 		}
 		
 		//etape 2 : on supprime effectivement la DZ
-		aux=dojo.indexOf(this.DZList,id);
+		aux=dojo.indexOf(this.DZList,DZ);
 		if(aux!=-1)
-		{
+		{	
+			dojo.destroy(this.DZList[aux].node);
+			this.DZList[aux].supprimer();
+			
 			this.DZList.splice(aux,1);
 		}
-		dojo.destroy(dojo.byId(id));
+		
+		
 	}
 	},
 
@@ -350,10 +351,11 @@ ether.manager={
 		var j=0;
 		while(j<this.userMap[idParticipant].length)
 		{	
-			this.DZList[this.userMap[idParticipant][j]].removeClient(idParticipant);
-			if(this.DZList[this.userMap[idParticipant][j]].clientKeyList.length<=0)
-			{
-				this.deleteDZ(this.DZList[this.userMap[idParticipant][j]]);
+			this.userMap[idParticipant][j].removeClient(idParticipant);
+			if(this.userMap[idParticipant][j].clientKeyList.length<=0)
+			{	
+				
+				this.deleteDZ(this.userMap[idParticipant][j]);
 			}
 			else
 			{
@@ -364,7 +366,13 @@ ether.manager={
 			j++;
 		}
 		delete(this.userMap[idParticipant]);
+		delete(this.participants[idParticipant]);
 		}
+	},
+	
+	ajoutParticipant:function(idParticipant)
+	{
+		this.userMap[idParticipant]=new Array();
 	},
 		
 	receptionPostIt:function(objectString)		//creation de postIt à la réception. Problème du positionnement, il faudra regarder
@@ -1267,6 +1275,7 @@ ether.manager={
 	//lors de la connexion d'un nouveau participant, on l'ajoute à la variable javascript et au widget FilteringSelect
 	socket.on('connexion nouveau participant', function(participant, key) {
 		ether.manager.participants[key] = participant;
+		ether.manager.ajoutParticipant(key);
 		majParticipants();
 		if(POPUP) {
 			dijit.showTooltip('Connexion de ' + ether.manager.participants[key].prenom + ' ' +ether.manager.participants[key].nom, 'selectionParticipants', ['below']);
@@ -1280,7 +1289,6 @@ ether.manager={
 			dijit.showTooltip('Déconnexion de ' + ether.manager.participants[key].prenom + ' ' + ether.manager.participants[key].nom, 'selectionParticipants', ['below']);
 			setTimeout("dijit.hideTooltip('selectionParticipants')", 2000);
 		}
-		ether.manager.participants[key] = null;
 		ether.manager.deleteParticipant(key);
 		majParticipants();
 	});

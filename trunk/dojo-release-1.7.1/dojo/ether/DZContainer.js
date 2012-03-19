@@ -1,4 +1,4 @@
-define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvoi'],
+define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvoi','ether/tap'],
 	function(declare)
 	{
 	
@@ -30,6 +30,18 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 				{
 					this.DZ=DZ;		
 				}
+				dojo.connect(this.node,"dojox.gesture.doubletap",this, function(e)
+				{	alert('yep');
+					if(!this.open)
+					{
+						this.displayBar();
+					}
+					else
+					{
+						this.hideBar();
+					}
+				});
+				
 				return this;
 			},
 			
@@ -108,7 +120,6 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 			
 			hideBar:function()
 			{
-				this.open=false;
 				this.manager.closeDZBar();
 			}
 

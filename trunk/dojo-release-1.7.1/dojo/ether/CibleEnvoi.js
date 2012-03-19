@@ -76,7 +76,7 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 		else{imagepath='images/groupe3.png';}
 		}
 			this.node.innerHTML='<img src="'+imagepath+'"/><p>'+descText+'</p>';
-			dojo.style(this.node,{width:"80px",height:"80px"});
+			dojo.style(this.node,{width:"60px",height:"60px"});
 		},
 		
 		onMoveStart:function(mover)
@@ -149,6 +149,12 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 		{
 			var position = dojo.position(this.node);
 			return (posX>=position.x&&posX<=(position.x+position.w)&&posY>=position.y&&posY<=(position.y+position.h));
+		},
+		
+		supprimer: function()
+		{
+			this.container.DZ=null;
+			this.destroy();
 		}
 		
 	});
