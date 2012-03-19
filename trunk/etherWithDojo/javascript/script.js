@@ -169,6 +169,7 @@ ether.manager={
 	
 	finalizeImagePostIt: function(image) {
 		var node = image.parentNode;
+		dojo.attr(image,"onload","");
 		//recupération du centre
 		marginBox=dojo.position(this.PISpawnZone);
 		topx=marginBox.x+marginBox.w/2;
