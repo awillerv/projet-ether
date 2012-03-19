@@ -263,8 +263,8 @@ ether.manager={
 			{
 				k++;
 			
-			trouve1=(dojo.attr(this.DZList[k].node,"id")==DZ1);
-			trouve2=(dojo.attr(this.DZList[k].node,"id")==DZ2);
+			trouve1=(this.DZList[k]==DZ1);
+			trouve2=(this.DZList[k]==DZ2);
 		
 			if(trouve1)
 			{
@@ -281,13 +281,57 @@ ether.manager={
 				var n=DZ1.clientKeyList[0];
 				DZ1.removeClient(n);
 				DZ2.addClient(n);
-				this.userMap[n].push(dojo.attr(DZ2.node,"id"));
+				this.userMap[n].push(DZ2.node);
 			}
 			DZ2.refreshNode();
 			DZ1.container.DZ=null;
 			this.deleteDZ(DZ1);
 		
 		}
+	},
+	
+	droppedDZU:function(DZU,Container)
+	{
+		var initContainer=DZU.container;
+		
+		initContainer.DZ.removeClient(DZU.client);
+		
+		aux=dojo.indexOf(this.userMap[DZU.client],initContainer.DZ);
+				if(aux!=-1)
+				{
+					this.userMap[DZU.client].splice(aux,1);
+				}
+			
+		if(Container)
+		{
+			if(Container.DZ)
+			{
+				if(Container.DZ.addClient(DZU.client));
+				{
+				this.userMap[DZU.client].push(Container.DZ);
+				}
+			}
+			else
+			{
+				var DZ=ether.cibleEnvoi(DZU.node,{},Container,DZU.client,this);
+				MB=dojo.marginBox(Container.node);
+				MBObjet=dojo.marginBox(DZ.node);
+				dojo.place(DZ.node,Container.node,"first");
+				dojo.style(DZ.node,{position:"absolute",left:MB.l+MB.w/2-MBObjet.w/2+"px",top:MB.t+MB.h/2-MBObjet.h/2+"px"});
+				DZ.refreshNode();
+				this.userMap[DZU.client].push(Container.DZ);
+			}
+		}
+		
+		if(initContainer.DZ.clientKeyList.length<=0)
+		{	
+				this.deleteDZ(initContainer.DZ);
+		}
+		else
+		{
+				initContainer.DZ.refreshNode();
+		}
+		this.closeDZBar();
 	},
 	
 	prepareAndShowDZBar: function(DZContainer)		//prepare et affiche la barre des DZ individuelles du container passé en argument
@@ -308,11 +352,12 @@ ether.manager={
 		dojo.fadeIn({node:this.DZBar,duration:200}).play();
 		for(var i=0; i<DZContainer.DZ.clientKeyList.length;i++)
 		{	var node=dojo.create("div");
-			var DZU=ether.DZUnitaire(node,{},null,DZContainer.DZ.clientKeyList[i],this);
+			var DZU=ether.DZUnitaire(node,{},DZContainer,DZContainer.DZ.clientKeyList[i],this);
 			dojo.style(node,{float:"left"});
 			dojo.place(node,this.DZBar);
 			this.DZBarCurrentDZ.push(DZU);
 		}
+		
 	},
 	
 	closeDZBar:function()

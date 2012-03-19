@@ -2,10 +2,95 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 	function(declare)
 	{
 	
-		declare("ether.DZUnitaire",ether.cibleEnvoi,
+		declare("ether.DZUnitaire",dojo.dnd.Moveable,
 		{
-		constructor:function(node,params,container,clientKeyList,manager)
-		{	
+		
+		constructor:function(node,params,container,clientKey,manager)
+		{	this.isDZU=true;
+			this.client=clientKey;
+			this.manager=manager;
+			this.ghostMB=null;
+			this.container=container;
+			this.refreshNode();
+		},
+		
+		onDrop : function(postit)		//le comportement en cas de drop d'un objet acceptable. Cette fonction a l'heur d'avoir accès à l'objet ainsi déposé, comme il se doit. On peut accéder à la chaine à transmettre avec objet.getContent();
+		{
+			this.manager.closeDZBar();
+			if(!this.manager.sendPI(postit, this.clientKeyList) && POPUP) {
+				this.envoiEchoue();
+			}
+		},
+		
+		onMoveStart:function(mover)
+		{
+			this.ghostMB=dojo.marginBox(this.node);
+		},
+		
+		
+		onMoved:function(mover)
+		{		var MB=dojo.position(this.node);
+				var ContainerList=new Array();
+				
+				
+				
+				dojo.some(this.manager.DZContainerList.concat([this.manager.DZCorbeille]), function(item)
+																		{
+																			if(item.contient(MB.x,MB.y))
+																			{	
+																				//item.onHover();
+																				return true;
+																			}
+																			else 
+																			{	//item.onStopHover();
+																				return false;
+																			}
+													
+																		}
+																												,this);
+					
+
+		},
+		onMoveStop:function(mover)
+		{		var MB=dojo.position(this.node);
+				var ContainerList=new Array();
+			
+				
+				if(!(dojo.some(this.manager.DZContainerList.concat([this.manager.DZCorbeille]), function(item)
+																		{
+																			if(item.contient(MB.x,MB.y))
+																			{	
+																				item.onDrop(this);
+																				return true;
+																			}
+																			else 
+																			{
+																				return false;
+																			}
+													
+																		}
+																												,this)
+					))
+					{
+						dojo.marginBox(this.node,this.ghostMB);
+					}
+		},
+		
+		contient : function(posX, posY)		//teste si la position donnée est contenue dans la surface de l'objet (pour détecter le hover, par exemple)
+		{
+			var position = dojo.position(this.node);
+			return (posX>=position.x&&posX<=(position.x+position.w)&&posY>=position.y&&posY<=(position.y+position.h));
+		},
+		
+		refreshNode:function()		
+		{
+		
+		imagepath='images/participant.png'; 
+
+		descText = this.manager.participants[this.client].prenom+' '+this.manager.participants[this.client].nom;
+
+		this.node.innerHTML='<img src="'+imagepath+'"/><p>'+descText+'</p>';
+		dojo.style(this.node,{width:"60px",height:"60px"});
 		}
 		
 		
@@ -30,17 +115,6 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 				{
 					this.DZ=DZ;		
 				}
-				dojo.connect(this.node,"dojox.gesture.doubletap",this, function(e)
-				{	alert('yep');
-					if(!this.open)
-					{
-						this.displayBar();
-					}
-					else
-					{
-						this.hideBar();
-					}
-				});
 				
 				return this;
 			},
@@ -52,11 +126,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 			onDrop:function(objet)
 			{		
 			
-			if(this.timestart)
-				{
-					
-					this.timestart=null;
-				}
+
 			
 			
 			dojo.removeClass(this.node,"hover");
@@ -84,6 +154,11 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 					{
 						this.DZ.onDrop(objet);		
 					}
+					else
+						if(objet.isDZU)
+						{	
+						this.manager.droppedDZU(objet,this);
+						}
 				}
 			},
 			
@@ -109,10 +184,9 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 			},
 			
 			displayBar:function()
-			{	
+			{
 				if(this.DZ&&!this.open)
 				{
-				
 				this.open=true;
 				this.manager.prepareAndShowDZBar(this);
 				}
@@ -121,7 +195,22 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 			hideBar:function()
 			{
 				this.manager.closeDZBar();
+			},
+			
+			toggleDisplay:function()
+			{
+				if(this.open)
+				{
+					this.hideBar();
+				}
+				else
+				{
+					this.displayBar();
+				}
 			}
+			
+	
+			
 
 					
 					

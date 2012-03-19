@@ -17,6 +17,19 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 				this.clientKeyList.push(clientKeyList);
 			}
 			this.refreshNode();
+			
+			dojo.connect(this.node, dojox.gesture.tap.doubletap,this,function(e)
+			{	
+			
+			if(this.container)
+				{
+				this.container.toggleDisplay();
+				}
+			e.stopPropagation();
+			}
+			
+			);
+			
 		},
 		
 		
@@ -42,10 +55,15 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 		
 		addClient:function(clientKey)
 		{
-
+			
 			if(dojo.indexOf(this.clientKeyList,clientKey)==-1)		//on évite de créer des duplications...
 			{
 				this.clientKeyList.push(clientKey);
+				return true;
+			}
+			else
+			{
+				return false;
 			}
 				
 		},
@@ -115,7 +133,7 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 		onMoveStop:function(mover)
 		{		var MB=dojo.position(this.node);
 				var ContainerList=new Array();
-				this.manager.closeDZBar();
+				//this.manager.closeDZBar();
 				//console.log(mover.marginBox);
 				for(var i=0; i<this.manager.DZContainerList.length;i++)
 				{
@@ -128,7 +146,7 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 				if(!(dojo.some(ContainerList.concat([this.manager.DZCorbeille]), function(item)
 																		{
 																			if(item.contient(MB.x,MB.y))
-																			{
+																			{	this.manager.closeDZBar();
 																				item.onDrop(this);
 																				return true;
 																			}
