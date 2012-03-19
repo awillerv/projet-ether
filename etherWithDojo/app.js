@@ -33,9 +33,8 @@ function participant(prenom, nom, estAnimateur, socketID){
   this.socketID = socketID;
 }
 
-// type = 'image' ou 'texte', id -> entier, contenu -> string
-function msg(type, id, contenu){
-  this.type = type;
+// id -> entier, contenu -> string
+function msg(id, contenu){
   this.id = id;
   this.contenu = contenu;
 }
@@ -209,123 +208,134 @@ io.sockets.on('connection', function (socket) {
     }
   });
   
-  // lorsque le client nous envoie des messages (image ou texte) pour des destinataires
-  // msgs et cles sont des tableaux de msg et d'entier
-  socket.on('envoi', function(msgs, cles){
-    var m = new msg('text', -1, ''),
-        // on enregistre les msg qui sont ok et ceux qui ne peuvent etre transmis
-        msg_ids_ok = new Array(),
-        msg_ids_echoues = new Array(),
-        // idem pour les cles
-        cles_ok = new Array(),
-        cles_echoues = new Array();
-        
-    // on fait une boucle sur les clés
-    for(var i in cles){
-      cle = cles[i];
-      // si clé est non nulle tout va bien
-      if(cle != ''){
-        cles_ok.push(cle);
-        for(var j in msgs){
-          m = msgs[j];
-          if(m.contenu != ''){
-            m.type = (testType.test(m.contenu) ? 'image' : 'texte');
-            // les bons msg seront toujours intransmissibles pour toutes les clés
-            // il suffit donc de les enregistrer pour la boucle de la toute première clé
-            if(i < 1){
-              msg_ids_ok.push(m.id);
-            }
-            switch(cle){
-              // si on s'adresse à tous
-              case TOUS:
-                // on broadcaste
+  // on définit une sorte de message "cache" qui contient le dernier message qu'on a tenté d'envoyer
+  var msg_cache = new msg(-1, '');
+  
+  function envoi(m, cles){
+    // on vérifie que le message est non vide
+    var msgValide = true;
+    if(m.contenu == ''){
+      msgValide = false;
+      socket.emit('envoi echoue', m.id, cle);
+    }
+    // on vérifie qu'il existe au moins une clé valide
+    var uneCleValide = false;
+    for(var k in cles){
+      if(cles[k] != ''){
+        uneCleValide = true;
+      }
+    }
+    // on voit si on envoie le message ou pas
+    if(msgValide && uneCleValide){
+      // on informe le client que le message a bien été reçu et est bon
+      socket.emit('envoi reussi', m.id);
+      // on met le message actuel dans le cache s'il n'y est pas déjà
+      if(msg_cache.id != m.id){
+        msg_cache = m;
+      }
+      // on fait une boucle sur les clés
+      for(var i in cles){
+        switch(cles[i]){
+          // si on s'adresse à tous
+          case TOUS:
+            // on broadcaste
+            // on transmet notre clé pour pouvoir repérer l'émetteur
+            socket.broadcast.emit('reception', m, maCle);
+            console.log(
+              "envoi d'un message " + m.id + " de contenu " + '"' + m.contenu +
+              '"' + " à tous de la part de " +
+              participants[maCle].prenom + ' ' + participants[maCle].nom
+            );
+            break;
+            
+          // si on s'adresse à tous les animateurs
+          case ANIMATEURS:
+            // on fait une boucle sur les participants
+            for(k in  participants){
+              if(participants[k].estAnimateur && k != maCle){
                 // on transmet notre clé pour pouvoir repérer l'émetteur
-                socket.broadcast.emit('reception', m, maCle);
-                console.log(
-                  "envoi d'un message " + m.id + " de contenu " + '"' + m.contenu +
-                  '"' + " à tous de la part de " +
-                  participants[maCle].prenom + ' ' + participants[maCle].nom
-                );
-                break;
-              
-              // si on s'adresse à tous les animateurs
-              case ANIMATEURS:
-                // on fait une boucle sur les participants
-                for(k in  participants){
-                  if(participants[k].estAnimateur && k != maCle){
-                    // on transmet notre clé pour pouvoir repérer l'émetteur
-                    io.sockets.socket(participants[k].socketID).emit('reception', m, maCle);
-                  }
-                }
-                console.log(
-                  "envoi d'un message " + m.id + " de contenu " + '"' + m.contenu +
-                  '"' + " à tous les animateurs de la part de " +
-                  participants[maCle].prenom + ' ' + participants[maCle].nom
-                );
-                break;
-              
-              // si on s'adresse à tous les non-animateurs
-              case NON_ANIMATEURS:
-                // on fait une boucle sur les non-participants
-                for(k in  participants){
-                  if(!participants[k].estAnimateur && k != maCle){
-                    // on transmet notre clé pour pouvoir repérer l'émetteur
-                    io.sockets.socket(participants[k].socketID).emit('reception', m, maCle);
-                  }
-                }
-                console.log(
-                  "envoi d'un message " + m.id + " de contenu " + '"' + m.contenu +
-                  '"' + " à tous les non animateurs de la part de " +
-                  participants[maCle].prenom + ' ' + participants[maCle].nom
-                );
-                break;
-              
-              // sinon, on s'adresse à un destinataire particulier
-              default:
+                io.sockets.socket(participants[k].socketID).emit('reception', m, maCle);
+              }
+            }
+            console.log(
+              "envoi d'un message " + m.id + " de contenu " + '"' + m.contenu +
+              '"' + " à tous les animateurs de la part de " +
+              participants[maCle].prenom + ' ' + participants[maCle].nom
+            );
+            break;
+                
+          // si on s'adresse à tous les non-animateurs
+          case NON_ANIMATEURS:
+            // on fait une boucle sur les non-participants
+            for(k in  participants){
+              if(!participants[k].estAnimateur && k != maCle){
                 // on transmet notre clé pour pouvoir repérer l'émetteur
-                io.sockets.socket(participants[cle].socketID).emit('reception', m, maCle);
-                console.log(
-                  "envoi d'un message " + m.id + " de contenu " + '"' + m.contenu +
-                  '"' + " à " + participants[cle].prenom + ' ' + participants[cle].nom + " de la part de " +
-                  participants[maCle].prenom + ' ' + participants[maCle].nom
-                );
+                io.sockets.socket(participants[k].socketID).emit('reception', m, maCle);
+              }
             }
-          }
-          // si le msg n'est pas bon
-          else{
-            // les mauvais msg seront toujours intransmissibles pour toutes les clés
-            // il suffit donc de les enregistrer pour la boucle de la toute première clé
-            if(i < 1){
-              msg_ids_echoues.push(m.id);
-            }
-          }
+            console.log(
+              "envoi d'un message " + m.id + " de contenu " + '"' + m.contenu +
+              '"' + " à tous les non animateurs de la part de " +
+              participants[maCle].prenom + ' ' + participants[maCle].nom
+            );
+            break;
+                
+          // sinon, on s'adresse à un destinataire particulier
+          default:
+            // on transmet notre clé pour pouvoir repérer l'émetteur
+            io.sockets.socket(participants[cles[i]].socketID).emit('reception', m, maCle);
+            console.log(
+              "envoi d'un message " + m.id + " de contenu " + '"' + m.contenu +
+              '"' + " à " + participants[cles[i]].prenom + ' ' + participants[cles[i]].nom + " de la part de " +
+              participants[maCle].prenom + ' ' + participants[maCle].nom
+            );
         }
       }
-      // si la clé n'est pas bonne
-      else{
-        cles_echoues.push(cle);
-      }
     }
-    
-    // après la boucle on transmet à notre client les msg et clés qui ont bien été transmis
-    if(msg_ids_ok.length > 0 && cles_ok.length > 0){
-      socket.emit('envoi reussi', msg_ids_ok, cles_ok);
+    else{
+      // on informe le client que le message n'a pas bien été reçu et est mauvais
+      socket.emit('envoi echoue', m.id);
     }
-    // après la boucle on transmet à notre client les msg et clés qui n'ont pas été transmis
-    if(msg_ids_echoues.length > 0 && cles_echoues > 0){
-      socket.emit('envoi echoue', msg_ids_echoues, cles_echoues);
-    }
+  }
+  
+  // lorsque le client nous envoie des messages (image ou texte) pour des destinataires
+  // msgs et cles sont des tableaux de msg et d'entier
+  socket.on('envoi', function(m, cles){
+    envoi(m, cles);
   });
+  
+  // on met en place un compteur de tentatives d'envoi
+  var cpt = 0;
+  var nbrEnvoiLimite = 5;
   
   // lorsque notre client nous informe de la bonne réception (ou non) d'un envoi
   socket.on('resultat reception', function(id_message, cle_emetteur, succes){
-    // on le reporte juste sur la console du serveur sans informer l'émetteur sinon
-    // celui-ci pourrait vite se retrouver saturé
+    // on indique le succès ou non de l'opération
     console.log("Le message " + id_message + " envoyé par " +
       participants[cle_emetteur].prenom + ' ' + participants[cle_emetteur].nom +
       ((succes) ? " a bien " : " n'a pas ") + "été reçu par " +
       participants[maCle].prenom + ' ' + participants[maCle].nom
     );
+    // si le message n'a pas bien été reçu on essaie de le renvoyer
+    if(!succes){
+      // si le message dans le cache est bien le même que celui qu'on doit renvoyer tout est ok
+      if(msg_cache.id == m.id){
+        if(cpt < nbrEnvoiLimite){
+          cpt++;
+          envoi(msg_cache, new Array(cle));
+          console.log('tentative ' + cpt + ' de ré-envoi du message ' + m.id);
+        }
+        else{
+          console.log('échec de toutes les tentatives (' + nbrEnvoiLimite +') de ré-envoi du message ' + m.id);
+        }
+      }
+      else{
+        console.log(
+          'erreur de ré-envoi du message ' + m.id +
+          ' car le message à envoyer n\'est plus en cache au bout de ' + cpt + ' tentatives'
+        );
+      }
+    }
   });
   
   // on décode l'image du base 64 au binaire, pour pouvoir la sauvegarder dans uploads
