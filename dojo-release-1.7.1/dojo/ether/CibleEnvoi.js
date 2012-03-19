@@ -5,8 +5,13 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 
 		constructor: function(node,params,container,clientKeyList,manager)
 		{	
+
 		this.manager=manager;
+		if(container)
+		{
+		container.DZ=this;
 		this.container=container;
+		}
 			if(clientKeyList instanceof Array)
 			{
 				this.clientKeyList=clientKeyList;
@@ -15,7 +20,7 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 			{
 				this.clientKeyList=new Array(clientKeyList);
 			}
-			container.DZ=this;
+			
 			this.refreshNode();
 		},
 		onHover : function(postit) 		//fonction qui est appelée lorsque un objet droppable est envoyé. On aura l'amabilité de lui passer ledit objet. Ne pas hésiter à le surcharger.
@@ -77,6 +82,7 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 		else{imagepath='images/groupe3.png';}
 		}
 			this.node.innerHTML='<img src="'+imagepath+'"/><p>'+descText+'</p>';
+			dojo.style(this.node,{width:"80px",height:"80px"});
 		},
 		
 		onMoveStart:function(mover)

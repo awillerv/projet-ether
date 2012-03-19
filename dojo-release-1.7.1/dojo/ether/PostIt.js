@@ -23,6 +23,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 			} else {
 				this.host.onMove(this, {l: Math.max(m.l + e.pageX,pimb.l+20), t:Math.max(m.t + e.pageY,pimb.t+20)}, e);
 			}
+
 		}
 	
 	});
@@ -68,7 +69,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 			}
 			this.offset = 13;
 			this.manager=manager;
-			this.resizeHandleNode=dojo.place('<div class="resizeHandle" style="visibility:visible"></div>', this.manager.PISpawnZone, "last");
+			this.resizeHandleNode=dojo.place('<div class="resizeHandle" style="visibility:visible; z-index:11"></div>', this.manager.PISpawnZone, "last");
 			this.updatePositionResizeHandler();
 			this.resizeHandle=new ether.ResizeHandle(this.resizeHandleNode,{mover:ether.ResizeHandleMover,parentPostItNode:this.node,isPostItImage:this.isPostItImage,ratio:this.ratio,offset:this.offset});
 			
@@ -169,7 +170,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 		},
 		
 		contient : function(posX, posY)		//teste si la position donnée est contenue dans la surface de l'objet (pour détecter le hover, par exemple)
-		{	var position= dojo.position(this.node);
+		{	var position= dojo.position(this.node.children[0]);
 			return (posX>=position.x&&posX<=(position.x+position.w)&&posY>=position.y&&posY<=(position.y+position.h));
 			
 		},
