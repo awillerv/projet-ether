@@ -334,7 +334,7 @@ ether.manager={
 		this.closeDZBar();
 	},
 	
-	prepareAndShowDZBar: function(DZContainer)		//prepare et affiche la barre des DZ individuelles du container passé en argument
+	prepareAndShowDZBar: function(DZContainer,toggleDelete)		//prepare et affiche la barre des DZ individuelles du container passé en argument
 	{	
 		var nbDZ=0;
 		for(var i=0; i<this.DZBar.children.length;i++)
@@ -355,7 +355,9 @@ ether.manager={
 			var DZU=ether.DZUnitaire(node,{},DZContainer,DZContainer.DZ.clientKeyList[i],this);
 			dojo.style(node,{float:"left"});
 			dojo.place(node,this.DZBar);
+			if(toggleDelete){DZU.toggleDelete();}
 			this.DZBarCurrentDZ.push(DZU);
+			
 		}
 		
 	},
@@ -399,7 +401,7 @@ ether.manager={
 		//etape 2 : on supprime effectivement la DZ
 		aux=dojo.indexOf(this.DZList,DZ);
 		if(aux!=-1)
-		{	
+		{
 			dojo.destroy(this.DZList[aux].node);
 			this.DZList[aux].supprimer();
 			

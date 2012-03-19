@@ -18,17 +18,8 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 			}
 			this.refreshNode();
 			
-			dojo.connect(this.node, dojox.gesture.tap.doubletap,this,function(e)
-			{	
 			
-			if(this.container)
-				{
-				this.container.toggleDisplay();
-				}
-			e.stopPropagation();
-			}
 			
-			);
 			
 		},
 		
@@ -81,6 +72,21 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 		
 		refreshNode:function()		//une fonction qui calcule l'apparence du node en fonction de la clientList
 		{
+		if(this.connect)
+		{
+		dojo.disconnect(this.connect);
+		}
+		this.connect=dojo.connect(this.node, dojox.gesture.tap.doubletap,this,function(e)
+			{	
+			
+			if(this.container)
+				{
+				this.container.toggleDisplay();
+				}
+			e.stopPropagation();
+			}
+			
+			);
 		
 		if(this.clientKeyList.length==1)
 		{imagepath='images/participant.png'; 
@@ -170,9 +176,11 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 		},
 		
 		supprimer: function()
-		{
+		{	
 			this.container.DZ=null;
+			this.manager.closeDZBar();
 			this.destroy();
+			
 		}
 		
 	});
