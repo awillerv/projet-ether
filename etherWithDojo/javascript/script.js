@@ -181,25 +181,19 @@ ether.manager={
 	
 	deletePI: function(id)	//id du PI à détruire.
 	{
-
 		//recherche de l'index du PI voulu
 		var i=-1;
 		var trouve=false;
 		while(i<this.PIList.length&&!trouve)
 		{
-		i++;
-		trouve=(dojo.attr(this.PIList[i].node,"id")==id);
-		
+			i++;
+			trouve=(dojo.attr(this.PIList[i].node,"id")==id);
 		}
-			dojo.destroy(this.PIList[i].node);
-			this.PIList[i].supprimer();
-			this.PIList.splice(i-1,1);
-		
-	
+		this.PIList[i].supprimer();
+		this.PIList.splice(i-1,1);
 	},
 	createDZ:function (clientList)
 	{	
-	
 		var clientArray;
 		if(clientList instanceof Array)
 		{
