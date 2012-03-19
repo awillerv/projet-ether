@@ -40,12 +40,12 @@ function(declare){
 	return declare("ether.postItGroup",dojo.dnd.Moveable,
 	{
 		constructor:function(node,params,manager)
-		{	this.currentZIndexRange={min:0,max:node.children.length};//on augmente au fur et à mesure qu'on rajoute des éléments...
+		{	this.currentZIndexRange={min:10,max:node.children.length};//on augmente au fur et à mesure qu'on rajoute des éléments...
 			this.pixelOffset=7;					  //le décalage haut-gauche en pixels du coin de chaque élément empilé.
 			this.manager=manager;
 			this.fragments=new Array();
 			var MB=dojo.marginBox(node);
-			dojo.style(this.node.children[0],{zIndex : 0,position:"absolute"});
+			dojo.style(this.node.children[0],{zIndex : 10,position:"absolute"});
 			dojo.style(this.node,{height:MB.h+"px",width:MB.w+"px"});
 			this.isPostItGroup=true;
 			

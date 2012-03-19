@@ -440,7 +440,7 @@ ether.manager={
 		fragment.disable();		//on coupe le comportement normal du fragment.
 		var container= dojo.create('div',{
 			id: 'PI'+this.PICount}, this.PISpawnZone);
-		dojo.style(container,{ position:"absolute", top:nodePosition.y-containerPosition.y+"px",left:nodePosition.x-containerPosition.x+"px"});
+		dojo.style(container,{ position:"absolute", top:nodePosition.y+"px",left:nodePosition.x+"px"});
 		dojo.place(innerNode,container,"first");
 		
 		PI= ether.postIt(container,{},this,innerNode.tagName!="IMG");	//on transforme notre noeud en post-it
