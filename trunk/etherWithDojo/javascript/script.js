@@ -90,6 +90,7 @@ ether.manager={
 			{
 				if(objet.isPostIt)
 				{
+					this.dernierEnvoye = postit.getContent();
 					ether.manager.deletePI(dojo.attr(objet.node,"id"));
 				}
 			}
@@ -98,6 +99,7 @@ ether.manager={
 			{
 				if(objet.isPostIt)
 				{
+					this.dernierEnvoye = MA_CLE+'_'+COMPTEUR;
 					sendPI(objet, [TOUS]);
 				}
 			}
@@ -106,6 +108,7 @@ ether.manager={
 			{
 				if(objet.isPostIt)
 				{
+					this.dernierEnvoye = MA_CLE+'_'+COMPTEUR;
 					sendPI(objet, [ANIMATEURS]);
 				}
 			}
@@ -114,6 +117,7 @@ ether.manager={
 			{
 				if(objet.isPostIt)
 				{
+					this.dernierEnvoye = MA_CLE+'_'+COMPTEUR;
 					sendPI(objet, [NON_ANIMATEURS]);
 				}
 			}
@@ -488,7 +492,8 @@ ether.manager={
 	
 	sendPI: function(postIt, cles_destinataires) {
 		if(postIt.isPostIt) {
-			var msg_id = Math.floor(Math.random()*1000001);
+			var msg_id = MA_CLE + '_' + COMPTEUR;
+			COMPTEUR++;
 			var m = new msg(msg_id, postIt.getContent());
 			socket.emit('envoi', m, cles_destinataires);
 			if(SUPPRESSION_POSTIT)
@@ -534,7 +539,7 @@ ether.manager={
 
 
 	/* ------------------------------------------------------------
-	   --  on initialise les varibles globales de l'application  --	
+	   --  on initialise les variables globales de l'application  --	
 	   ------------------------------------------------------------ */
 
 	//la taille maximale autorisée pour l'upload de photos : ici 1Mo
@@ -551,7 +556,7 @@ ether.manager={
 	ether.manager.participants[NON_ANIMATEURS] = new participant('non animateurs', '', false, undefined);
 	
 	//ma clé (inconnue pour l'instant) et le participant (vide pour l'instant) qui me représente
-	var maCle = undefined;
+	var MA_CLE = undefined;
 	var moi = new participant('', '', false, 0);
 	
 	//la date (inconnue pour l'instant) d'une éventuelle sauvegarde de session en local
@@ -563,6 +568,8 @@ ether.manager={
 	//le paramètre d'envoi des post-it : "copier" ou "deplacer"
 	var SUPPRESSION_POSTIT = false;
 	
+	//un compteur de post its envoyés
+	var COMPTEUR = 0;	
 	
 	
 	/* ----------------------------------------------------------
@@ -578,8 +585,7 @@ ether.manager={
 	}
 
 	//cette fonction permet d'instancier un objet javascript "message"
-	function msg(type, id, contenu) {
-		this.type = type;
+	function msg(id, contenu) {
 		this.id = id;
 		this.contenu = contenu;
 	}
@@ -606,7 +612,7 @@ ether.manager={
 		var contientParticipants = false;
 		var itemsParticipants = new Array();
 		for(var i=0; i<ether.manager.participants.length; i++) {
-			if(i!=maCle && ether.manager.participants[i]!=null) {
+			if(i!=MA_CLE && ether.manager.participants[i]!=null) {
 				contientParticipants = true;
 				if(ether.manager.participants[i].estAnimateur)
 					contientAnimateurs = true;
@@ -812,20 +818,18 @@ ether.manager={
 	on(dijit.byId("boutonConnexion"), "click", function(event) {
 		//on vérifie que la connexion via socket.io est active
 		if(socket && socket.socket.connected) {	
-			if(event.type=="click" || (event.type=="keyup" && event.keyCode==dojo.keys.ENTER)) {
-				//on vérifie que le formulaire est correctement rempli
-				if(dijit.byId("formulaireConnexion").validate()) {
-					//on récupère les informations entrées dans le formulaire
-					var valeursEntrees = dijit.byId('formulaireConnexion').get('value');
-					//on transforme le string estAnimateur en boolean pour satisfaire aux spécifications
-					var estAnimateur = false;
-					if(valeursEntrees.estAnimateur=="true")
-						estAnimateur = true;
-					//on met à jour le participant "moi"
-					moi = new participant(valeursEntrees.prenom, valeursEntrees.nom, estAnimateur, 0);
-					//on envoie une requête d'identification au serveur
-					socket.emit('identification', moi, valeursEntrees.motDePasse);
-				}
+			//on vérifie que le formulaire est correctement rempli
+			if(dijit.byId("formulaireConnexion").validate()) {
+				//on récupère les informations entrées dans le formulaire
+				var valeursEntrees = dijit.byId('formulaireConnexion').get('value');
+				//on transforme le string estAnimateur en boolean pour satisfaire aux spécifications
+				var estAnimateur = false;
+				if(valeursEntrees.estAnimateur=="true")
+					estAnimateur = true;
+				//on met à jour le participant "moi"
+				moi = new participant(valeursEntrees.prenom, valeursEntrees.nom, estAnimateur, 0);
+				//on envoie une requête d'identification au serveur
+				socket.emit('identification', moi, valeursEntrees.motDePasse);
 			}
 		} else {
 			dijit.byId('alerteConnexion').show();
@@ -876,7 +880,7 @@ ether.manager={
 			dijit.byId('menuParametresAuxNonAnimateurs').destroyRendering();
 		}
 		//on met à jour sa clé
-		maCle = key;
+		MA_CLE = key;
 		//on met à jour la liste des participants (la variable javascript)
 		ether.manager.participants = liste_participants;
 		//on met à jour la liste des participants (le widget FilteringSelect)
@@ -1281,17 +1285,23 @@ ether.manager={
 	   ------------------------------------------------------------------------------------------ */
 	
 	//lorsqu'un envoi de post-it a été correctement reçu par le serveur, on confirme à l'expéditeur en faisant devenir verte la dropzone associée à l'envoi
-	socket.on('envoi reussi', function(msg_ids_ok, cles_ok) {
-	
+	socket.on('envoi reussi', function(msg_id) {
+		dojo.forEach(this.manager.DZList.concat([this.manager.DZCorbeille,this.manager.DZTous,this.manager.DZAnim,this.manager.DZNonAnim]), function(item){
+			if(item.dernierEnvoye==msg_id)
+				item.envoiReussi();
+		});
 	});
 	
 	//si par contre il y a une erreur de transmission, on le précise à l'expéditeur en faisant devenir rouge la dropzone associée à l'envoi
-	socket.on('envoi echoue', function(msg_ids_echoues, cles_echoues) {
-	
+	socket.on('envoi echoue', function(msg_id) {
+		dojo.forEach(this.manager.DZList.concat([this.manager.DZCorbeille,this.manager.DZTous,this.manager.DZAnim,this.manager.DZNonAnim]), function(item){
+			if(item.dernierEnvoye==msg_id)
+				item.envoiEchoue();
+		});
 	});
 	
 	//lorsqu'un post-it est reçu, on le recrée, puis on l'affiche sur l'écran à côté de la dropzone de l'emmeteur
-	socket.on('reception', function(message, cle_emmeteur) {
+	socket.on('reception', function(message, cle_emetteur) {
 		receptionPostIt(message.contenu);
 	});
 	
