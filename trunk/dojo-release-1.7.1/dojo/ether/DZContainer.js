@@ -10,6 +10,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 			this.client=clientKey;
 			this.manager=manager;
 			this.ghostMB=null;
+			this.croix=null;
 			this.container=container;
 			this.refreshNode();
 		},
@@ -91,6 +92,28 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 
 		this.node.innerHTML='<img src="'+imagepath+'"/><p>'+descText+'</p>';
 		dojo.style(this.node,{width:"60px",height:"60px"});
+		},
+		
+		toggleDelete:function()
+		{
+			if(!this.croix)
+				{
+				var MB=dojo.marginBox(this.node);
+				this.croix=dojo.create("img",{src:"images/erreur.png"},this.node);
+				dojo.style(this.croix, {top:0+"px",left:MB.w-12+"px",position:"absolute"});
+				
+				dojo.connect(this.croix, dojox.gesture.tap,this,function(e)
+				{	
+					this.toggleDelete();
+					this.manager.droppedDZU(this);
+				});
+				}
+				
+				else
+				{
+				dojo.destroy(this.croix);
+				this.croix=null;
+				}
 		}
 		
 		
@@ -108,6 +131,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 			{	this.position=position;
 				this.node=node;
 				this.timestart=0;
+				this.croix=null;
 				this.onDisplay=false;
 				this.manager=manager;
 				this.open=false;
@@ -126,7 +150,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 			onDrop:function(objet)
 			{		
 			
-
+			this.manager.closeDZBar();
 			
 			
 			dojo.removeClass(this.node,"hover");
@@ -145,6 +169,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 						objet.container=this;
 						dojo.place(this.DZ.node,this.node,"first");
 						dojo.style(this.DZ.node,{position:"absolute",left:MB.l+MB.w/2-MBObjet.w/2+"px",top:MB.t+MB.h/2-MBObjet.h/2+"px"});
+						this.DZ.refreshNode();
 					}
 				}
 				
@@ -200,12 +225,36 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 			toggleDisplay:function()
 			{
 				if(this.open)
-				{
+				{	
 					this.hideBar();
 				}
 				else
 				{
-					this.displayBar();
+					
+					this.manager.prepareAndShowDZBar(this, true);
+				}
+			},
+			
+			toggleDelete:function()
+			{
+				if(!this.croix)
+				{
+				var MB=dojo.marginBox(this.node);
+				this.croix=dojo.create("img",{src:"images/erreur.png"},this.node);
+				dojo.style(this.croix, {top:0+"px",left:MB.w-12+"px",position:"absolute"});
+				
+				dojo.connect(this.croix, dojox.gesture.tap,this,function(e)
+				{
+					this.manager.deleteDZ(this.DZ);
+				});
+				}
+				
+				else
+				{
+				this.manager.closeDZBar();
+				dojo.destroy(this.croix);
+				this.croix=null;
+				
 				}
 			}
 			
