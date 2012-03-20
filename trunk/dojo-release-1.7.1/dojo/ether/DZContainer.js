@@ -15,11 +15,18 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 			this.refreshNode();
 		},
 		
-		onDrop : function(postit)		//le comportement en cas de drop d'un objet acceptable. Cette fonction a l'heur d'avoir accès à l'objet ainsi déposé, comme il se doit. On peut accéder à la chaine à transmettre avec objet.getContent();
-		{	alert('drop');
+		onDrop : function(objet)		//le comportement en cas de drop d'un objet acceptable. Cette fonction a l'heur d'avoir accès à l'objet ainsi déposé, comme il se doit. On peut accéder à la chaine à transmettre avec objet.getContent();
+		{	
 			this.manager.closeDZBar();
-			if(!this.manager.sendPI(postit, this.clientKeyList) && POPUP) {
-				this.envoiEchoue();
+			this.onStopHover();
+			if(objet.isPostIt)
+			{
+				var resultat = this.manager.sendPI(objet, [this.client]);
+				if(resultat==undefined) {
+					this.envoiEchoue();
+				} else {
+					this.dernierEnvoye = resultat;
+				}
 			}
 		},
 		
