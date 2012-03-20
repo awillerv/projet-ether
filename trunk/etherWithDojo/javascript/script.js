@@ -11,53 +11,10 @@ require(["dojo/parser", "dojo/on", "dojox/validate/web", "dojo/dom-construct", "
 
 
 
+/* --------------------------------------------------------------------------------------------------------------------------
+   --  on définit une classe appelée ether.manager, qui est en charge de la gestion de l'ensemble des post-it et dropzone  --	
+   -------------------------------------------------------------------------------------------------------------------------- */
 
-/*
-//test pour la détection du navigateur		
-console.log("mozilla : "+has("mozilla"));
-console.log("firefox : "+has("ff"));
-console.log("opera : "+has("opera"));
-console.log("mac : "+has("mac"));
-console.log("chrome : "+has("chrome"));
-console.log("safari : "+has("safari"));
-console.log("ios : "+has("ios"));
-console.log("android : "+has("android"));
-console.log("webkit : "+has("webkit"));
-
-var corbeille = new ether.Corbeille({ id: 'corbeille'});
-corbeille.onDrop = function(droppable) {
-	this.dernierSupprime = "droppable";
-	dojo.destroy(droppable.node);
-	this.onStopHover();
-}
-var postit1 = new ether.PostIt("postit_1",{}, corbeille);
-var postit2 = new ether.PostIt("postit_2",{}, corbeille);
-
-var listeCibles = new dojo.dnd.Source("applicationBottom");
-var dernierNoeud = listeCibles.insertNodes(false, ["test1"]).node.lastChild;
-domClass.add(dernierNoeud, "groupe1");
-//new dojo.dnd.Source(dernierNoeud);
-listeCibles.insertNodes(false, ["test2"]);
-*/
-
-
-
-
-/*
-	ether.manager : un objet qui gère l'ensemble des drop-zones et des post-it. 
-	
-	méthodes :
-	initialize(zonePI,zoneDZ) : à executer au moment de l'activation de l'interface 'post-it' (après le login, je l'ai mis ligne 643) : arguments : id de la zone où se créent les post-it, id de la zone où se créent les DZ (qui sont déplaçables, mais bon...)
-								PROBLEMES : la position des cibles corbeille/tous/animateurs est complètement ratée, ça marchait pourtant bien sur ma page de test...
-	createImagePostIt(imgpath): crée un post-it contenant l'image dont on donne l'adresse (URL) au centre de la zone post-it(à peu près...)
-	createDZ(clientList) : crée une dropZone pour la liste des participants passée en paramètres. Normalement elle se place dans la zoneDZ, mais comme elle est déplacable et que ça fait automatiquement du "position:absolute", ça rend bizarre. A examiner. Reste aussi à rajouter une tooltip avec la liste des associés (dans le code, la variable TooltipText est prête). Plante si on lui passe des id de participants qui ne sont pas dans la variable globale "participants"
-	deletePI(id): supprime le postIt dont on passe l'id (id du div : tous les post-its ont une id de la forme PIx, avec x un compteur)
-	deleteDZ(id): supprime la DZ dont on passe l'id (quelle surprise!). Ceux-ci sont normalement de la forme (DZx, avec x un compteur).De plus, le div entourant la dropZone a la class DropZone. Notez que ce n'est pas le cas des DZ "constantes" (corbeille, tous, anims, nonanims) qui sont crées dans initialize(), non déplacable et non supprimable.
-	deleteParticipant(id) : supprime le participant n°'id' de toutes les DZ qui lui sont associées. A un effet uniquement sur le manager, pas sur la variable globale "participants"
-	receptionPostIt(idEmetteur, node) : pour la réception d'un postIt. Crée un post-it contenant le node, à proximité d'une DZ associée au participant idEmetteur.Le placement est un peu bizarre en ce moment, je ne sais pas compter, mais je corrigerai ça vite. 
-	
-	voir lignes 78,88,98 pour completer les codes afin de faire fonctionner les DZ spéciales, ainsi que ligne 32 du fichier dojo/ether/cibleEnvoi.js pour le cas général
-*/
 ether.manager={
 	PIList :new Array(),		//liste des post-it;
 	DZList :new Array(),	//liste des Dropzones
@@ -642,38 +599,6 @@ ether.manager={
 		}
 	}
 }
-//**************
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
