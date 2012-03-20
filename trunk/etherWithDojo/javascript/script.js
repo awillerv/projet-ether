@@ -242,11 +242,12 @@ ether.manager={
 	
 	deletePI: function(PI)	
 	{
+	
+		if(PI.next){this.deletePI(PI.next)};
 		var aux=dojo.indexOf(this.PIList,PI);
 
 		if(aux!=-1) {
 			dojo.destroy(this.PIList[aux].node);
-			this.delete
 			this.PIList[aux].supprimer();
 			this.PIList.splice(aux,1);
 		}
