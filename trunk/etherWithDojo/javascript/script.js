@@ -317,7 +317,7 @@ ether.manager={
 				var n=DZ1.clientKeyList[0];
 				DZ1.removeClient(n);
 				DZ2.addClient(n);
-				this.userMap[n].push(DZ2.node);
+				this.userMap[n].push(DZ2);
 			}
 			DZ2.refreshNode();
 			DZ1.container.DZ=null;
@@ -462,7 +462,7 @@ ether.manager={
 			}
 			else
 			{
-				this.DZList[userMap[idParticipant][j]].refreshNode();
+				this.DZList[this.userMap[idParticipant][j]].refreshNode();
 			////
 			}
 			
@@ -510,8 +510,27 @@ ether.manager={
 			var ProtoPI=dojo.create('div',{innerHTML:objet.innerHTML, id: 'PI'+this.PICount, style:{position:"absolute"}}, dojo.byId(this.PISpawnZone));
 			dojo.attr(ProtoPI,"style",objet.style);
 			
-			var MBselect = dojo.position(dojo.byId('selectionParticipants'));
-			dojo.style(ProtoPI, { top: "5px", left: MBselect.x+"px"});
+			if(listeDZ.length > 0){
+			  var k = -1;
+			  dojo.forEach(listeDZ, function(DZ, i){
+			    if(listeDZ[i].clientKeyList.length == 1){
+			      k = i;
+			    }
+			  });
+			  if(k == -1){
+			    k = listeDZ.length - 1;
+			  }
+			  var MBDZselect = dojo.position(listeDZ[k].node);
+			  var MBapplicationCenterContainer = dojo.position(dojo.byId('applicationCenterContainer'));
+			  console.log(objet.style);
+			  console.log(dojo.position(ProtoPI));
+			  console.log(dojo.position(ProtoPI.children[0]));
+			  dojo.style(ProtoPI, { top: (MBapplicationCenterContainer.h - dojo.position(ProtoPI.children[0]).h - 5) + "px", left: MBDZselect.x+"px"});
+			}
+			else{
+			  var MBselect = dojo.position(dojo.byId('selectionParticipants'));
+			  dojo.style(ProtoPI, { top: "5px", left: MBselect.x+"px"});
+			}
 			
 			if(objet.type=="postItGroup")
 			{
