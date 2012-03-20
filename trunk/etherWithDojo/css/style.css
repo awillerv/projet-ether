@@ -54,7 +54,6 @@ noscript ol {
 	margin: auto;
 }
 
-
 #applicationCenterContainer
 {
 	z-index:4;
@@ -63,18 +62,16 @@ noscript ol {
 }
 
 #applicationCenter {
-overflow:visible;
+	overflow:visible;
 	z-index:4;
 	padding: 0px;
 	border: 0px;
-
 	background-color:transparent;
-
-	background-color: transparent;
-
 }
 
-
+.uploadPhotosErreur .dijitButtonNode {
+	background-color: rgb(237,28,36) !important;
+}
 
 #applicationCenter #corbeille {
 	display: block;
@@ -214,6 +211,10 @@ img.couleur1, img.couleur2, img.couleur3, img.couleur4, img.couleur5 {
 	width: 24px;
 	height: 24px;
 	border: 1px solid lightgrey;
+}
+
+.ciblePrincipale:hover {
+	cursor: pointer;
 }
 
 .cibleHover {

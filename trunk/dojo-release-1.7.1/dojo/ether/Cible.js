@@ -9,7 +9,7 @@ require(['dojo/_base/declare', 'ether/tap', 'dojo/dom-geometry','dojo/dnd/Moveab
 			this.node = dojo.byId(node);
 			this.manager=manager;
 			this.dernierEnvoye = null;
-			dojo.connect(this, tap, this, this.onClick);
+			dojo.connect(this.node, tap.doubletap, this, this.onDoubleClick);
 		},
 		
 		onHover : function(postit) 		//fonction qui est appelée lorsque un objet droppable est envoyé. On aura l'amabilité de lui passer ledit objet. Ne pas hésiter à le surcharger.
@@ -30,9 +30,9 @@ require(['dojo/_base/declare', 'ether/tap', 'dojo/dom-geometry','dojo/dnd/Moveab
 			}
 		},
 		
-		onClick : function(event)
+		onDoubleClick : function(event)
 		{
-		
+			event.stopPropagation();
 		},
 		
 		contient : function(posX, posY)		//teste si la position donnée est contenue dans la surface de l'objet (pour détecter le hover, par exemple)

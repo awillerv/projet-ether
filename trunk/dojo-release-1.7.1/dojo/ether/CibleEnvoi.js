@@ -181,6 +181,24 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 			this.manager.closeDZBar();
 			this.destroy();
 			
+		},
+		
+		envoiReussi : function()
+		{
+			dojo.addClass(this.node,'cibleEnvoiReussi');
+			var id = dojo.attr(this.node, 'id');
+			setTimeout("dojo.removeClass(dojo.byId('"+id+"'), 'cibleEnvoiReussi')",2000);
+		},
+		
+		envoiEchoue : function()
+		{
+			dojo.addClass(this.node,'cibleEnvoiEchoue');
+			var id = dojo.attr(this.node, 'id');
+			setTimeout("dojo.removeClass(dojo.byId('"+id+"'), 'cibleEnvoiEchoue')",2000);
+			if(this.manager.POPUP) {
+				dijit.showTooltip('<img src="images/erreur.png" /> Erreur lors de l\'envoi du post-it', id, ['above','below']);
+				setTimeout("dijit.hideTooltip('"+id+"')", 2000);
+			}
 		}
 		
 	});
