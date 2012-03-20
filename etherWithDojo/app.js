@@ -252,7 +252,7 @@ io.sockets.on('connection', function (socket) {
           case ANIMATEURS:
             // on fait une boucle sur les participants
             for(k in  participants){
-              if(participants[k].estAnimateur && k != maCle){
+              if(participants[k] != null && participants[k].estAnimateur && k != maCle){
                 // on transmet notre clé pour pouvoir repérer l'émetteur
                 io.sockets.socket(participants[k].socketID).emit('reception', m, maCle);
               }
@@ -268,7 +268,7 @@ io.sockets.on('connection', function (socket) {
           case NON_ANIMATEURS:
             // on fait une boucle sur les non-participants
             for(k in  participants){
-              if(!participants[k].estAnimateur && k != maCle){
+              if(participants[k] != null && !participants[k].estAnimateur && k != maCle){
                 // on transmet notre clé pour pouvoir repérer l'émetteur
                 io.sockets.socket(participants[k].socketID).emit('reception', m, maCle);
               }
