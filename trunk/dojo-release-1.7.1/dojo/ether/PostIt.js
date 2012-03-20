@@ -69,7 +69,9 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 			}
 			this.offset = 13;
 			this.manager=manager;
+
 			this.resizeHandleNode=dojo.place('<div class="resizeHandle" style="visibility:visible;"></div>', this.node, "after");
+
 			this.updatePositionResizeHandler();
 			this.resizeHandle=new ether.ResizeHandle(this.resizeHandleNode,{mover:ether.ResizeHandleMover,parentPostItNode:this.node,isPostItImage:this.isPostItImage,ratio:this.ratio,offset:this.offset});
 			
@@ -100,7 +102,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 									}
 								}
 								
-								dojo.forEach(this.manager.DZList.concat([this.manager.DZCorbeille,this.manager.DZTous,this.manager.DZAnim,this.manager.DZNonAnim]).concat(PIList), function(item){
+								dojo.forEach(this.manager.DZList.concat([this.manager.DZCorbeille,this.manager.DZTous,this.manager.DZAnim,this.manager.DZNonAnim]).concat(PIList).concat(this.manager.DZBarCurrentDZ), function(item){
 																			if(item.contient(MB.l-mover.marginBox.l,MB.t-mover.marginBox.t))
 																			{	
 																				item.onHover(this);
@@ -148,6 +150,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 									
 		supprimer: function(){
 							dojo.destroy(this.resizeHandleNode);
+							
 							this.destroy();
 							},
 		
