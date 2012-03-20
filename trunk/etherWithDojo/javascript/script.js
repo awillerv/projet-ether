@@ -246,6 +246,7 @@ ether.manager={
 
 		if(aux!=-1) {
 			dojo.destroy(this.PIList[aux].node);
+			this.delete
 			this.PIList[aux].supprimer();
 			this.PIList.splice(aux,1);
 		}
@@ -464,7 +465,7 @@ ether.manager={
 			}
 			else
 			{
-				this.DZList[this.userMap[idParticipant][j]].refreshNode();
+				this.userMap[idParticipant][j].refreshNode();
 			////
 			}
 			
@@ -544,6 +545,7 @@ ether.manager={
 					{
 						PI.next=this.chargementPostIt(objet.next);
 					}
+					PI.refreshNextPosition();
 					this.PICount++;
 					this.PIList.push(PI);
 				}
