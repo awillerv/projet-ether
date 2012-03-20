@@ -10,7 +10,7 @@ require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo
 	  couleurFond: 'rgb(255,255,255)',
 	  
 	  /* ---------------------------- création d'un nouveau post it ---------------------------- */
-	  constructor: function(node, x, y, h, w){
+	  constructor: function(node, x, y, h, w, ancienTexte){
 		
 		var edition = false;
 		
@@ -76,7 +76,7 @@ require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo
 		domStyle.set(textarea, { height: h+"px", width: w+"px", backgroundColor: this.couleurFond, padding: '0px', margin: 'auto'});
 		domStyle.set(divTextarea, { width: w+"px" });
 		textarea.focus();
-		if(edition) {
+		if(ancienTexte!=undefined) {
 			textarea.value = ancienTexte;
 			if(textarea.setSelectionRange) {
 				var len = textarea.value.length * 2;

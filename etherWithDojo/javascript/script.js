@@ -101,12 +101,20 @@ ether.manager={
 					this.manager.deletePI(dojo.attr(objet.node,"id"));	
 				}
 			}
-		this.DZCorbeille.onClick=function()
+		dojo.connect(this.DZCorbeille.node, tap, this.DZCorbeille, function()
 			{
-				var id = dojo.attr(this.node, 'id');
-				dijit.showTooltip('Corbeille', id, ['below']);
-				setTimeout("dijit.hideTooltip('"+id+"')", 2000);
-			}
+				if(this.dernierEnvoye!=undefined) {
+					var message = "Corbeille<br /><br/>Voulez-vous restaurer le dernier élément supprimé ?<br /><input id=\"boutonRestaurer\" value=\"oui\" type=\"button\"/> <input id=\"boutonNePasRestaurer\" value=\"non\" type=\"button\"/>";
+					dijit.showTooltip(message, 'corbeille', ['below']);
+					dojo.connect(dojo.byId("boutonRestaurer"), 'click', this, function(e) { this.manager.chargementPostIt(this.dernierEnvoye); this.dernierEnvoye=null; dijit.hideTooltip('corbeille'); });
+					dojo.connect(dojo.byId("boutonNePasRestaurer"), 'click', function(e) { dijit.hideTooltip('corbeille'); });
+					//new Button({ label: "Restaurer", onClick: function() { console.log("cliqué"); } }, "boutonRestaurer");
+				} else {
+					dijit.showTooltip('Corbeille', 'corbeille', ['below']);
+					setTimeout("dijit.hideTooltip('corbeille')", 2000);
+				}
+				
+			});
 		this.DZTous=new ether.cible(dojo.byId("envoiATous"),this);
 		this.DZTous.onDrop=function(objet)
 			{
@@ -119,6 +127,11 @@ ether.manager={
 					}
 				}
 			}
+		dojo.connect(this.DZTous.node, tap, function()
+			{
+				dijit.showTooltip('Envoi à tous', 'envoiATous', ['below']);
+				setTimeout("dijit.hideTooltip('envoiATous')", 2000);
+			});
 		this.DZAnim=new ether.cible(dojo.byId("envoiAuxAnimateurs"),this);
 		this.DZAnim.onDrop=function(objet)
 			{
@@ -131,6 +144,11 @@ ether.manager={
 					}
 				}
 			}
+		dojo.connect(this.DZAnim.node, tap, function()
+			{
+				dijit.showTooltip('Envoi aux animateurs', 'envoiAuxAnimateurs', ['below']);
+				setTimeout("dijit.hideTooltip('envoiAuxAnimateurs')", 2000);
+			});
 		this.DZNonAnim=new ether.cible(dojo.byId("envoiAuxNonAnimateurs"),this);
 		this.DZNonAnim.onDrop=function(objet)
 			{
@@ -143,7 +161,11 @@ ether.manager={
 					}
 				}
 			}
-		
+		dojo.connect(this.DZNonAnim.node, tap, function()
+			{
+				dijit.showTooltip('Envoi aux participants (non animateurs)', 'envoiAuxNonAnimateurs', ['below']);
+				setTimeout("dijit.hideTooltip('envoiAuxNonAnimateurs')", 2000);
+			});
 		
 		
 		var i=0;
@@ -781,7 +803,7 @@ ether.manager={
 			//si c'est le cas, on crée les crée des post-its avec le texte dedans
 			for(var i=0; i<types.length; i++) {
 				if(evt.dataTransfer.types[i]=='text/plain') {
-					//à compléter avec la fonction de david : il faut ici créer un post it avec le contenu : evt.dataTransfer.getData('text/plain')
+					new ether.editeur(dojo.byId("applicationCenter"), evt.clientX, evt.clientY, 53, 160, evt.dataTransfer.getData('text'));
 				}
 			}
 		}
@@ -789,41 +811,52 @@ ether.manager={
 	}
 	
 	function handleUploadFiles(files) {
-		//pour chaque photo sélectionnées, on lui attribut un FileReader
-		for (var i = 0; i < files.length; i++) {
-			var reader = new FileReader();
-			var nomUpload = files[i].name;
-			var tailleUpload = files[i].size;
-			//lorsque le FileReader commence à lire le fichier, on l'affiche dans une pop-up à l'écran
-			reader.onloadstart = function() {
-				if(ether.manager.POPUP)
-					dijit.showTooltip('Lecture du fichier ' + nomUpload, 'uploadPhotos', ['below']);
-			};
-			//lorsque le FileReader a fini de lire le fichier, on l'affiche dans une pop-up à l'écran
-			reader.onloadend = function() {
-				if(ether.manager.POPUP)
-					dijit.showTooltip('<img src="images/upload.gif" /> Upload du fichier...', 'uploadPhotos', ['below']);
-			};
-			//si une erreur s'est produite lors de la lecture, on l'affiche dans une pop-up à l'écran
-			reader.onerror = function() {
-				if(ether.manager.POPUP)
-					dijit.showTooltip('Erreur lors de la lecture du fichier ' + nomUpload, 'uploadPhotos', ['below']);
-			};
-			//si la lecture du fichier s'est correctement réalisée, on envoie le fichier encodé au serveur
-			reader.onload = function(d) {
-				if(ether.manager.POPUP)
-					dijit.showTooltip('Lecture de ' + nomUpload + 'réussie', 'uploadPhotos', ['below']);
-				socket.emit('upload', nomUpload, d.target.result);
-			};
-			//si la taille du fichier est inférieure à la taille max, on démarre la lecture
-			if(files[i].size < tailleMaxUpload) {
-				reader.readAsDataURL(files[i]);
-			//sinon on affiche une pop-up (pendant 2 secondes) pour prévenir l'utilisateur qu'il y a une taille max à ne pas dépasser
-			} else {
-				if(ether.manager.POPUP) {
-					dijit.showTooltip('<img src="images/erreur.png" /> Impossible d\'uploader le fichier ' + nomUpload + ' qui est trop volumineux (taille maximale acceptée : 1Mo)', 'uploadPhotos', ['below']);
-					setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
+		if(socket && socket.socket.connected) {
+			//pour chaque photo sélectionnées, on lui attribut un FileReader
+			for (var i = 0; i < files.length; i++) {
+				var reader = new FileReader();
+				var nomUpload = files[i].name;
+				var tailleUpload = files[i].size;
+				//lorsque le FileReader commence à lire le fichier, on l'affiche dans une pop-up à l'écran
+				reader.onloadstart = function() {
+					if(ether.manager.POPUP)
+						dijit.showTooltip('Lecture du fichier ' + nomUpload, 'uploadPhotos', ['below']);
+				};
+				//lorsque le FileReader a fini de lire le fichier, on l'affiche dans une pop-up à l'écran
+				reader.onloadend = function() {
+					if(ether.manager.POPUP)
+						dijit.showTooltip('<img src="images/upload.gif" /> Upload du fichier...', 'uploadPhotos', ['below']);
+				};
+				//si une erreur s'est produite lors de la lecture, on l'affiche dans une pop-up à l'écran
+				reader.onerror = function() {
+					if(ether.manager.POPUP)
+						dijit.showTooltip('Erreur lors de la lecture du fichier ' + nomUpload, 'uploadPhotos', ['below']);
+				};
+				//si la lecture du fichier s'est correctement réalisée, on envoie le fichier encodé au serveur
+				reader.onload = function(d) {
+					if(ether.manager.POPUP)
+						dijit.showTooltip('Lecture de ' + nomUpload + 'réussie', 'uploadPhotos', ['below']);
+					socket.emit('upload', nomUpload, d.target.result);
+				};
+				//si la taille du fichier est inférieure à la taille max, on démarre la lecture
+				if(files[i].size < tailleMaxUpload) {
+					reader.readAsDataURL(files[i]);
+				//sinon on affiche une pop-up (pendant 2 secondes) pour prévenir l'utilisateur qu'il y a une taille max à ne pas dépasser
+				} else {
+					dojo.addClass(dijit.byId('uploadPhotos').domNode,'uploadPhotosErreur');
+					setTimeout("dojo.removeClass(dijit.byId('uploadPhotos').domNode,'uploadPhotosErreur')", 2000);
+					if(ether.manager.POPUP) {
+						dijit.showTooltip('<img src="images/erreur.png" /> Impossible d\'uploader le fichier ' + nomUpload + ' qui est trop volumineux (taille maximale acceptée : 1Mo)', 'uploadPhotos', ['below']);
+						setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
+					}
 				}
+			}
+		} else {
+			dojo.addClass(dijit.byId('uploadPhotos').domNode,'uploadPhotosErreur');
+			setTimeout("dojo.removeClass(dijit.byId('uploadPhotos').domNode,'uploadPhotosErreur')", 2000);
+			if(ether.manager.POPUP) {
+				dijit.showTooltip('<img src="images/erreur.png" /> Impossible d\'uploader le fichier car vous n\'êtes plus connecté au serveur', 'uploadPhotos', ['below']);
+				setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
 			}
 		}
 	}
@@ -1265,6 +1298,8 @@ ether.manager={
 		if(dijit.byId("uploadPhotos")._files) {
 			handleUploadFiles(dijit.byId("uploadPhotos")._files);
 		} else {
+			dojo.addClass(dijit.byId('uploadPhotos').domNode,'uploadPhotosErreur');
+			setTimeout("dojo.removeClass(dijit.byId('uploadPhotos').domNode,'uploadPhotosErreur')", 2000);
 			if(ether.manager.POPUP) {
 				dijit.showTooltip('<img src="images/erreur.png" /> Impossible d\'uploader des photos car votre navigateur n\'est pas compatible', 'uploadPhotos', ['below']);
 				setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
@@ -1298,8 +1333,8 @@ ether.manager={
 	//lors de la sélection d'un participant dans le FilteringSelect, on crée la dropzone qui lui correspond et on l'ajoute à l'application
 	dijit.byId("selectionParticipants").onChange = function(value) {
 		if(value!='') {
-			
 			ether.manager.createDZ(value);
+			dijit.byId("selectionParticipants").set('value', '');
 		}
 	}
 	
