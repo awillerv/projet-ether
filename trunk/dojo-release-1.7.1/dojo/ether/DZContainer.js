@@ -15,9 +15,12 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 			this.refreshNode();
 		},
 		
+
 		onDrop : function(objet)		//le comportement en cas de drop d'un objet acceptable. Cette fonction a l'heur d'avoir accès à l'objet ainsi déposé, comme il se doit. On peut accéder à la chaine à transmettre avec objet.getContent();
 		{	
+
 			this.manager.closeDZBar();
+
 			this.onStopHover();
 			if(objet.isPostIt)
 			{
@@ -27,7 +30,9 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 				} else {
 					this.dernierEnvoye = resultat;
 				}
+
 			}
+			return true;
 		},
 		
 		onMoveStart:function(mover)

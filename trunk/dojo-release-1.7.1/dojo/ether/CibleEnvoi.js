@@ -50,6 +50,7 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 					this.dernierEnvoye = resultat;
 				}
 			}
+			return true;
 		},
 		
 		addClient:function(clientKey)
