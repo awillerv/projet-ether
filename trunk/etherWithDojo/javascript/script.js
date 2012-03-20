@@ -116,8 +116,8 @@ ether.manager={
 				if(this.dernierEnvoye!=undefined) {
 					var message = "Corbeille<br /><br/>Voulez-vous restaurer le dernier élément supprimé ?<br /><input id=\"boutonRestaurer\" value=\"oui\" type=\"button\"/> <input id=\"boutonNePasRestaurer\" value=\"non\" type=\"button\"/>";
 					dijit.showTooltip(message, 'corbeille', ['below']);
-					new dijit.form.Button({ label: "Oui", onClick: function() { var corbeille = ether.manager.DZCorbeille; corbeille.manager.chargementPostIt(corbeille.dernierEnvoye); corbeille.dernierEnvoye=null; dijit.hideTooltip('corbeille'); } }, "boutonRestaurer");
-					new dijit.form.Button({ label: "Non", onClick: function() { dijit.hideTooltip('corbeille'); } }, "boutonNePasRestaurer");
+					new dijit.form.Button({ label: "Oui", onClick: function() { dijit.byId("boutonRestaurer").destroy(); dijit.byId("boutonNePasRestaurer").destroy(); var corbeille = ether.manager.DZCorbeille; corbeille.manager.chargementPostIt(corbeille.dernierEnvoye); corbeille.dernierEnvoye=null; dijit.hideTooltip('corbeille'); } }, "boutonRestaurer");
+					new dijit.form.Button({ label: "Non", onClick: function() { dijit.byId("boutonRestaurer").destroy(); dijit.byId("boutonNePasRestaurer").destroy(); dijit.hideTooltip('corbeille'); } }, "boutonNePasRestaurer");
 				} else {
 					dijit.showTooltip('Corbeille', 'corbeille', ['below']);
 					setTimeout("dijit.hideTooltip('corbeille')", 2000);
