@@ -1,7 +1,7 @@
 
 // classe PostIt dérivée de Moveable avec la valeur ajoutée qui va bien
 //remplacer ether.manager.PIList par la liste privée de soi-même
-define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover','dojo/dnd/Moveable','dojo/dom-construct',"dojo/NodeList-dom","dojo/NodeList-html","ether/tap","ether/postItGroup","ether/editeur"], function(declare){
+define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover','dojo/dnd/Moveable','dojo/dom-construct',"dojo/NodeList-dom","dojo/NodeList-html","ether/tap","ether/editeur"], function(declare){
 
 
 		declare("ether.ResizeHandleMover",dojo.dnd.Mover,
