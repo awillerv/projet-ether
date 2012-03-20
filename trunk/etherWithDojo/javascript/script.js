@@ -234,9 +234,6 @@ ether.manager={
 					this.PIList[aux].supprimer();
 					this.PIList.splice(aux,1);
 				}
-			
-		
-
 	},
 	createDZ:function (clientList)
 	{	
