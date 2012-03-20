@@ -37,6 +37,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 			this.isPostItImage=params.isPostItImage;
 			this.ratio=params.ratio;
 			this.offset=params.offset;
+			this.PI=params.parentPI;
 		},
 		
 		onMoved:function(mover)
@@ -48,6 +49,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 				var child = this.parentPostItNode.children[i];
 				var childMB=dojo.marginBox(child);
 				dojo.style(child,{width: newPosition.l+newPosition.w-postItMB.l-childMB.l+"px",height: newPosition.t-postItMB.t+newPosition.h-childMB.t+"px"});
+				this.PI.refreshNextPosition();
 			}
 		}
 	
@@ -69,27 +71,57 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 			}
 			this.offset = 13;
 			this.manager=manager;
-
+			this.next=null;
+			this.pred=null;
 			this.resizeHandleNode=dojo.place('<div class="resizeHandle" style="visibility:visible;"></div>', this.node, "after");
 
 			this.updatePositionResizeHandler();
-			this.resizeHandle=new ether.ResizeHandle(this.resizeHandleNode,{mover:ether.ResizeHandleMover,parentPostItNode:this.node,isPostItImage:this.isPostItImage,ratio:this.ratio,offset:this.offset});
+			this.resizeHandle=new ether.ResizeHandle(this.resizeHandleNode,{mover:ether.ResizeHandleMover,parentPI:this,parentPostItNode:this.node,isPostItImage:this.isPostItImage,ratio:this.ratio,offset:this.offset});
 			
 			dojo.connect(this.node, dojox.gesture.tap.doubletap, this, function(e)
 			{
 				e.stopPropagation();
+			if(!(this.pred))
+			{
 				if(!this.isPostItImage)
 				{
 					this.startEdit();
+				}
+			}
+			else
+				{
+					this.separate();
 				}
 			});
 			
 		},
 		
+		separate:function()
+		{	this.enableResize();
+			this.pred.next=this.next();
+			this.pred=null;
+			this.next=null;
+			
+		},
+		
+		refreshNextPosition:function()
+		{
+			var MB=dojo.marginBox(this.node);
+			var MBChild=dojo.marginBox(this.node.children[0]);
+			if(this.pred){dojo.style(this.node, {zIndex:dojo.style(this.pred.node,"zIndex")-1})};
+			if(this.next)
+			{	var MBNext=dojo.marginBox(this.next.node.children[0]);
+				this.next.disableResize();
+				dojo.style(this.next.node,{left:MB.l+MBChild.w-MBNext.w+20+"px",top:MB.t+MBChild.h-MBNext.h+20+"px"});
+				this.next.refreshNextPosition();
+			}
+		},
 
 		onMoved: function(mover){
-		
-		            dojo.style(this.node, 'zIndex', 1);
+					
+					if(this.pred){this.pred.next=null;this.pred=null;this.enableResize()};
+					
+		            dojo.style(this.node, 'zIndex', 1000);
 								var MB=dojo.marginBox(this.node);
 								var childMB=dojo.marginBox(this.node.children[0]);
 								
@@ -115,11 +147,14 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 																		}
 											,this);
 								dojo.style(this.resizeHandleNode, {top:MB.t+childMB.h+childMB.t-this.offset+"px",left:MB.l+childMB.w+childMB.l-this.offset+"px", zIndex:1});
-		
+								
+								this.refreshNextPosition();
+								
 								},
 		
 		onMoveStop: function(mover){
 		              dojo.style(this.node, 'zIndex', 0);
+					  if(this.next){this.next.refreshNextPosition();}
 		              dojo.style(this.resizeHandleNode, 'zIndex', 0);
 									var MB=dojo.marginBox(this.node);
 									var PIList=new Array();
@@ -134,8 +169,8 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 									dojo.some(this.manager.DZList.concat([this.manager.DZCorbeille,this.manager.DZTous,this.manager.DZAnim,this.manager.DZNonAnim]).concat(PIList).concat(this.manager.DZBarCurrentDZ), function(item){
 																			if(item.contient(MB.l-mover.marginBox.l,MB.t-mover.marginBox.t))
 																			{
-																				item.onDrop(this);
-																				return true;
+																				return (item.onDrop(this));
+																				
 																			}
 																			else 
 																			{
@@ -160,21 +195,39 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 			dojo.style(this.node, 'display', 'none');
 			dojo.style(this.resizeHandle.node, 'display', 'none');
 		},
-		getContent:function()
-		{	
-			var objet= {
+		
+		
+		getContentObject:function()
+		{
+		var objet= {
 				type:"postIt",
 				
 				innerHTML:(this.node.innerHTML),
 				style:dojo.attr(this.node,"style"),
-				class:dojo.attr(this.node,"class")
+				class:dojo.attr(this.node,"class"),
 				};
 				
-			return JSON.stringify(objet);
+		if(this.next)
+		{
+			objet.next=this.next.getContentObject();
+		}
+		return objet;
 		},
-		toggleResize :function()
+		
+		getContent:function()
 		{	
-			dojo.toggleClass(this.resizeHandleNode,"hidden");
+			
+				
+			return JSON.stringify(this.getContentObject());
+		},
+		disableResize :function()
+		{	
+			dojo.addClass(this.resizeHandleNode,"hidden");
+		},
+		
+		enableResize :function()
+		{	
+			dojo.removeClass(this.resizeHandleNode,"hidden");
 		},
 		
 		contient : function(posX, posY)		//teste si la position donnée est contenue dans la surface de l'objet (pour détecter le hover, par exemple)
@@ -184,10 +237,17 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 		},
 		
 		onDrop: function(objet)
-		{	console.log(objet);
-			if(objet.isPostIt||objet.isPostItGroup)
-			{	
-				this.manager.fusionPI(dojo.attr(this.node,"id"),dojo.attr(objet.node,"id"));
+		{	
+			if(objet.isPostIt)
+			{	if(!this.pred)
+				{
+				this.pred=objet;
+				objet.next=this;
+				objet.refreshNextPosition();
+				return true;
+				}
+				else return false;
+				
 			}
 		},
 		onHover:function()
@@ -199,17 +259,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 		
 		},
 		
-		promote: function()		//promeut un post-it en postItGroup : création d'un postItGroup avec le même node puis autodestruction.
-		{	this.resizeHandle.destroy();
-			dojo.destroy(this.resizeHandleNode);
-			
-			var group=ether.postItGroup(this.node,{},this.manager);
-			
-			this.destroy();
-			return group;
-			
-			
-		},
+		
 		updatePositionResizeHandler: function()
 		{
 			var PostItMB=dojo.marginBox(this.node);

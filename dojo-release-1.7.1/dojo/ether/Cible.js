@@ -29,6 +29,8 @@ require(['dojo/_base/declare', 'ether/tap', 'dojo/dom-geometry','dojo/dnd/Moveab
 			{
 				//à surcharger selon qu'il s'agit d'une cible individuelle ou d'une cible principale (à tous, aux animateurs, aux non-animateurs)
 			}
+			
+			return true;
 		},
 		
 		onDoubleClick : function(event)

@@ -263,3 +263,7 @@ img.couleur1, img.couleur2, img.couleur3, img.couleur4, img.couleur5 {
 {
 	background-color:rgb(153,217,237);
 }
+.hidden
+{
+	display:none;
+}

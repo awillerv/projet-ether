@@ -116,8 +116,10 @@ ether.manager={
 				if(this.dernierEnvoye!=undefined) {
 					var message = "Corbeille<br /><br/>Voulez-vous restaurer le dernier élément supprimé ?<br /><input id=\"boutonRestaurer\" value=\"oui\" type=\"button\"/> <input id=\"boutonNePasRestaurer\" value=\"non\" type=\"button\"/>";
 					dijit.showTooltip(message, 'corbeille', ['below']);
+
 					new dijit.form.Button({ label: "Oui", onClick: function() { dijit.byId("boutonRestaurer").destroy(); dijit.byId("boutonNePasRestaurer").destroy(); var corbeille = ether.manager.DZCorbeille; corbeille.manager.chargementPostIt(corbeille.dernierEnvoye); corbeille.dernierEnvoye=null; dijit.hideTooltip('corbeille'); } }, "boutonRestaurer");
 					new dijit.form.Button({ label: "Non", onClick: function() { dijit.byId("boutonRestaurer").destroy(); dijit.byId("boutonNePasRestaurer").destroy(); dijit.hideTooltip('corbeille'); } }, "boutonNePasRestaurer");
+
 				} else {
 					dijit.showTooltip('Corbeille', 'corbeille', ['below']);
 					setTimeout("dijit.hideTooltip('corbeille')", 2000);
@@ -478,28 +480,29 @@ ether.manager={
 		this.userMap[idParticipant]=new Array();
 	},
 		
-	chargementPostIt:function(objectString)
+	chargementPostIt:function(objet)
 	{		
-			var objet=eval("(" + objectString + ")" );
+			
 			var ProtoPI=dojo.create('div',{innerHTML:objet.innerHTML, 
 			id: 'PI'+this.PICount, style:{position:"absolute"}}, dojo.byId(this.PISpawnZone));
 			dojo.attr(ProtoPI,"style",objet.style);
-	
-			if(objet.type=="postItGroup")
-			{
-			PI= ether.postItGroup(ProtoPI,{},this);	//on transforme notre noeud en post-it
-				this.PICount++;
-				this.PIList.push(PI);
-			}
-			else
-			{
+			console.log(objet);
+			
 				if(objet.type=="postIt")
 				{
-					PI=ether.postIt(ProtoPI,{},this);	//on transforme notre noeud en post-it
+					var PI=ether.postIt(ProtoPI,{},this);	//on transforme notre noeud en post-it
+					if(objet.next)
+					{
+						PI.next=this.chargementPostIt(objet.next);
+					}
 					this.PICount++;
 					this.PIList.push(PI);
+					
+					return PI;
 				}
-			}
+			
+			
+			
 	},
 	
 	receptionPostIt:function(objectString, cle_emetteur)
@@ -1162,7 +1165,7 @@ ether.manager={
 	    // on le transforme en JSON
 	    content = JSON.parse(content);
 	    // on recrée le post-it
-	    ether.manager.chargementPostIt(content);
+	    ether.manager.chargementPostIt(eval("(" + content + ")" ));
 	  }
 	  // notre PIList est maintenant complète, il n'y a plus qu'à décoder/enregistrer les images et les afficher
 	  var reversePIList = ether.manager.PIList.reverse();
@@ -1542,12 +1545,15 @@ ether.manager={
 	
 	//si par contre il y a une erreur de transmission, on le précise à l'expéditeur en faisant devenir rouge la dropzone associée à l'envoi
 	socket.on('envoi echoue', function(msg_id) {
+
+
 		if(MA_CLE!=undefined) {
 			dojo.forEach(this.manager.DZList.concat([this.manager.DZCorbeille,this.manager.DZTous,this.manager.DZAnim,this.manager.DZNonAnim]), function(item){
 				if(item.dernierEnvoye==msg_id)
 					item.envoiEchoue();
 			});
 		}
+
 	});
 	
 	//lorsqu'un post-it est reçu, on le recrée, puis on l'affiche sur l'écran à côté de la dropzone de l'emmeteur
