@@ -106,9 +106,8 @@ ether.manager={
 				if(this.dernierEnvoye!=undefined) {
 					var message = "Corbeille<br /><br/>Voulez-vous restaurer le dernier élément supprimé ?<br /><input id=\"boutonRestaurer\" value=\"oui\" type=\"button\"/> <input id=\"boutonNePasRestaurer\" value=\"non\" type=\"button\"/>";
 					dijit.showTooltip(message, 'corbeille', ['below']);
-					dojo.connect(dojo.byId("boutonRestaurer"), 'click', this, function(e) { this.manager.chargementPostIt(this.dernierEnvoye); this.dernierEnvoye=null; dijit.hideTooltip('corbeille'); });
-					dojo.connect(dojo.byId("boutonNePasRestaurer"), 'click', function(e) { dijit.hideTooltip('corbeille'); });
-					//new Button({ label: "Restaurer", onClick: function() { console.log("cliqué"); } }, "boutonRestaurer");
+					new dijit.form.Button({ label: "Oui", onClick: function() { var corbeille = ether.manager.DZCorbeille; corbeille.manager.chargementPostIt(corbeille.dernierEnvoye); corbeille.dernierEnvoye=null; dijit.hideTooltip('corbeille'); } }, "boutonRestaurer");
+					new dijit.form.Button({ label: "Non", onClick: function() { dijit.hideTooltip('corbeille'); } }, "boutonNePasRestaurer");
 				} else {
 					dijit.showTooltip('Corbeille', 'corbeille', ['below']);
 					setTimeout("dijit.hideTooltip('corbeille')", 2000);
@@ -495,13 +494,15 @@ ether.manager={
 			var listeDZ = userMap[cle_emetteur];
 			
 			var objet=eval("(" + objectString + ")" );
-			var ProtoPI=dojo.create('div',{innerHTML:objet.innerHTML, 
-			id: 'PI'+this.PICount, style:{position:"absolute"}}, dojo.byId(this.PISpawnZone));
+			var ProtoPI=dojo.create('div',{innerHTML:objet.innerHTML, id: 'PI'+this.PICount, style:{position:"absolute"}}, dojo.byId(this.PISpawnZone));
 			dojo.attr(ProtoPI,"style",objet.style);
-	
+			
+			var MBselect = dojo.position(dojo.byId('selectionParticipants'));
+			dojo.style(ProtoPI, { top: "5px", left: MBselect.x+"px"});
+			
 			if(objet.type=="postItGroup")
 			{
-			PI= ether.postItGroup(ProtoPI,{},this);	//on transforme notre noeud en post-it
+				PI= ether.postItGroup(ProtoPI,{},this);	//on transforme notre noeud en post-it
 				this.PICount++;
 				this.PIList.push(PI);
 			}
