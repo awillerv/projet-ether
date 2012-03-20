@@ -98,7 +98,7 @@ ether.manager={
 				if(objet.isPostIt)
 				{
 					this.dernierEnvoye = objet.getContent();
-					this.manager.deletePI(dojo.attr(objet.node,"id"));	
+					this.manager.deletePI(objet);	
 				}
 			}
 		dojo.connect(this.DZCorbeille.node, tap, this.DZCorbeille, function()
@@ -147,6 +147,7 @@ ether.manager={
 		dojo.connect(this.DZAnim.node, tap, function()
 			{
 				dijit.showTooltip('Envoi aux animateurs', 'envoiAuxAnimateurs', ['below']);
+				setTimeout("dijit.hideTooltip('envoiAuxAnimateurs')", 2000);
 				setTimeout("dijit.hideTooltip('envoiAuxAnimateurs')", 2000);
 			});
 		this.DZNonAnim=new ether.cible(dojo.byId("envoiAuxNonAnimateurs"),this);
@@ -222,18 +223,20 @@ ether.manager={
 				this.PIList.push(PI);
 	},
 	
-	deletePI: function(id)	//id du PI à détruire.
+	deletePI: function(PI)	
 	{
 		//recherche de l'index du PI voulu
-		var i=-1;
+		
 		var trouve=false;
-		while(i<this.PIList.length&&!trouve)
-		{
-			i++;
-			trouve=(dojo.attr(this.PIList[i].node,"id")==id);
-		}
-		this.PIList[i].supprimer();
-		this.PIList.splice(i-1,1);
+		var aux=dojo.indexOf(this.PIList,PI);
+				if(aux!=-1)
+				{
+					this.PIList[aux].supprimer();
+					this.PIList.splice(aux,1);
+				}
+			
+		
+
 	},
 	createDZ:function (clientList)
 	{	
