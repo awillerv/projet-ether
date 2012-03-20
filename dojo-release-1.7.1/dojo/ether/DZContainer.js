@@ -16,7 +16,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 		},
 		
 		onDrop : function(postit)		//le comportement en cas de drop d'un objet acceptable. Cette fonction a l'heur d'avoir accès à l'objet ainsi déposé, comme il se doit. On peut accéder à la chaine à transmettre avec objet.getContent();
-		{
+		{	alert('drop');
 			this.manager.closeDZBar();
 			if(!this.manager.sendPI(postit, this.clientKeyList) && POPUP) {
 				this.envoiEchoue();
@@ -28,6 +28,16 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 			this.ghostMB=dojo.marginBox(this.node);
 		},
 		
+		onHover:function()
+		{
+		dojo.addClass(this.node,'cibleHover');
+		},
+		
+		onStopHover:function()
+		{
+		dojo.removeClass(this.node,'cibleHover');
+		},
+		
 		
 		onMoved:function(mover)
 		{		var MB=dojo.position(this.node);
@@ -35,15 +45,15 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 				
 				
 				
-				dojo.some(this.manager.DZContainerList.concat([this.manager.DZCorbeille]), function(item)
+				dojo.forEach(this.manager.DZContainerList.concat([this.manager.DZCorbeille]), function(item)
 																		{
 																			if(item.contient(MB.x,MB.y))
 																			{	
-																				//item.onHover();
+																				dojo.addClass(item.node,'CibleHover');
 																				return true;
 																			}
 																			else 
-																			{	//item.onStopHover();
+																			{	dojo.removeClass(item.node,'CibleHover');
 																				return false;
 																			}
 													
@@ -122,7 +132,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 	
 	
 	
-	
+	//****************************************************
 	
 	
 		return declare("ether.DZContainer",null,
@@ -163,12 +173,13 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 					else
 					{
 						this.DZ=objet;
-						MB=dojo.marginBox(this.node);
-						MBObjet=dojo.marginBox(objet.node);
+						var MB=dojo.marginBox(this.node);
+						
+						var MBObjet=dojo.marginBox(objet.node);
 						objet.container.DZ=null;
 						objet.container=this;
 						dojo.place(this.DZ.node,this.node,"first");
-						dojo.style(this.DZ.node,{position:"absolute",left:MB.l+MB.w/2-MBObjet.w/2+"px",top:MB.t+MB.h/2-MBObjet.h/2+"px"});
+						dojo.style(this.DZ.node,{position:"relative",left:MB.w/2-MBObjet.w/2+"px",top:0+"px"});
 						this.DZ.refreshNode();
 					}
 				}
@@ -196,12 +207,13 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 				dojo.addClass(this.node,"hover");
 			},
 			onStopHover:function()
-			{
+			{	
+			dojo.removeClass(this.node,"hover");
 				if(this.open)
 				{
 					this.hideBar();
 				}
-				dojo.removeClass(this.node,"hover");
+				
 			},
 			isFree:function()
 			{

@@ -37,7 +37,7 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 		},
 		
 		onDrop : function(postit)		//le comportement en cas de drop d'un objet acceptable. Cette fonction a l'heur d'avoir accès à l'objet ainsi déposé, comme il se doit. On peut accéder à la chaine à transmettre avec objet.getContent();
-		{
+		{	
 			this.manager.closeDZBar();
 			if(!this.manager.sendPI(postit, this.clientKeyList)) {
 				this.envoiEchoue();
@@ -98,14 +98,18 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 		if(this.clientKeyList.length==2)
 		{imagepath='images/groupe2.png';}
 		else{imagepath='images/groupe3.png';}
-		}
+		}	
+			var MB=dojo.marginBox(this.container.node);
+			var MBObjet=dojo.marginBox(this.node);
+			
 			this.node.innerHTML='<img src="'+imagepath+'"/><p>'+descText+'</p>';
-			dojo.style(this.node,{width:"60px",height:"60px"});
+			//dojo.style(this.node,{width:"60px",height:"60px"});
+			dojo.style(this.node,{position:"relative",left:MB.w/2-MBObjet.w/2+"px",top:0+"px"});
 		},
 		
 		onMoveStart:function(mover)
 		{
-			this.ghostMB=dojo.marginBox(this.node);
+			
 		},
 		onMoved:function(mover)
 		{		var MB=dojo.position(this.node);
@@ -119,7 +123,7 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 				}
 				}
 				
-				dojo.some(ContainerList.concat([this.manager.DZCorbeille]), function(item)
+				dojo.forEach(ContainerList.concat([this.manager.DZCorbeille]), function(item)
 																		{
 																			if(item.contient(MB.x,MB.y))
 																			{	
@@ -133,6 +137,14 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 													
 																		}
 																												,this);
+				if(this.container.contient(MB.x,MB.y))
+				{
+					dojo.addClass(this.container.node,"hover");
+				}
+				else
+				{
+					dojo.removeClass(this.container.node,"hover");
+				}
 					
 
 		},
@@ -164,10 +176,19 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 																		}
 																												,this)
 					))
-					{
-						dojo.marginBox(this.node,this.ghostMB);
+					{	
+						var MB=dojo.marginBox(this.container.node);
+						var MBObjet=dojo.marginBox(this.node);
+					dojo.style(this.node,{position:"relative",left:MB.w/2-MBObjet.w/2+"px",top:0+"px"});
+						
 					}
+					
+					dojo.forEach(this.manager.DZContainerList,function(item)
+						{
+							dojo.removeClass(item.node,"hover");
+						});
 		},
+		
 		
 		contient : function(posX, posY)		//teste si la position donnée est contenue dans la surface de l'objet (pour détecter le hover, par exemple)
 		{
@@ -199,6 +220,11 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 				dijit.showTooltip('<img src="images/erreur.png" /> Erreur lors de l\'envoi du post-it', id, ['above','below']);
 				setTimeout("dijit.hideTooltip('"+id+"')", 2000);
 			}
+		},
+		
+		hasClient:function(key)
+		{
+			return (dojo.indexOf(this.clientKeyList,key)!=-1);
 		}
 		
 	});
