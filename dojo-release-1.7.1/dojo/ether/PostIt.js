@@ -144,8 +144,6 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 									
 		supprimer: function(){
 							dojo.destroy(this.resizeHandleNode);
-							dojo.destroy(this.node);
-							
 							this.destroy();
 							},
 		

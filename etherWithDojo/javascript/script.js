@@ -232,6 +232,7 @@ ether.manager={
 				if(aux!=-1)
 				{
 					this.PIList[aux].supprimer();
+					dojo.destroy(this.PIList[aux].node);
 					this.PIList.splice(aux,1);
 				}
 	},
