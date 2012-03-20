@@ -505,11 +505,11 @@ ether.manager={
 			
 	},
 	
-	receptionPostIt:function(objectString, cle_emetteur)
+	receptionPostIt:function(objet, cle_emetteur)
 	{		
 			var listeDZ = this.userMap[cle_emetteur];
 			
-			var objet=eval("(" + objectString + ")" );
+			
 			var ProtoPI=dojo.create('div',{innerHTML:objet.innerHTML, id: 'PI'+this.PICount, style:{position:"absolute"}}, dojo.byId(this.PISpawnZone));
 			dojo.attr(ProtoPI,"style",objet.style);
 			
@@ -535,21 +535,19 @@ ether.manager={
 			  dojo.style(ProtoPI, { top: "5px", left: MBselect.x+"px"});
 			}
 			
-			if(objet.type=="postItGroup")
-			{
-				PI= ether.postItGroup(ProtoPI,{},this);	//on transforme notre noeud en post-it
-				this.PICount++;
-				this.PIList.push(PI);
-			}
-			else
-			{
+			
 				if(objet.type=="postIt")
 				{
 					PI=ether.postIt(ProtoPI,{},this);	//on transforme notre noeud en post-it
+					
+						if(objet.next)
+					{
+						PI.next=this.chargementPostIt(objet.next);
+					}
 					this.PICount++;
 					this.PIList.push(PI);
 				}
-			}
+			
 	},
 	
 	fusionPI:function(PI1,PI2)		//fusionne deux postIt, repérés par leurs ID (ouPostItGroup). le premier est l'objet qui recoit le drop (au dessous)
@@ -607,24 +605,7 @@ ether.manager={
 		}
 	},
 	
-	wrapAndRegisterPI:function(fragment)		//transforme un postItGroupFragment emancipé en post-it complet : rajout d'un wrapper et création d'un post-it
-	{	
-		var innerNode=fragment.node;
-		var nodePosition=dojo.position(fragment.node);
-		dojo.addClass(innerNode,"contenuPI");
-		var containerPosition=dojo.position(this.PISpawnZone);
-		fragment.disable();		//on coupe le comportement normal du fragment.
-		var container= dojo.create('div',{
-			id: 'PI'+this.PICount}, this.PISpawnZone);
-		dojo.style(container,{ position:"absolute", top:nodePosition.y+"px",left:nodePosition.x+"px"});
-		dojo.place(innerNode,container,"first");
-		
-		PI= ether.postIt(container,{},this,innerNode.tagName!="IMG");	//on transforme notre noeud en post-it
-					this.PICount++;
-					this.PIList.push(PI);
-		
-		
-	},
+	
 	
 	createPI: function(objet)		//creation de postIt à partir d'un JSON renvoyé par l'éditeur
 	{
@@ -1561,7 +1542,7 @@ ether.manager={
 		if(MA_CLE==undefined) {
 			socket.emit('resultat reception', message.id, cle_emetteur, false);
 		} else {
-			ether.manager.receptionPostIt(message.contenu, cle_emetteur);
+			ether.manager.receptionPostIt(eval("(" + message.contenu + ")" ), cle_emetteur);
 			socket.emit('resultat reception', message.id, cle_emetteur, true);
 		}
 	});
