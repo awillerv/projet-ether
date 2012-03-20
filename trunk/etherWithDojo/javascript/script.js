@@ -120,7 +120,7 @@ ether.manager={
 				this.onStopHover();
 				if(objet.isPostIt)
 				{
-					this.dernierEnvoye = MA_CLE+'_'+this.COMPTEUR;
+					this.dernierEnvoye = MA_CLE+'_'+ether.manager.COMPTEUR;
 					if(!this.manager.sendPI(objet, [TOUS])) {
 						this.envoiEchoue();
 					}
@@ -137,7 +137,7 @@ ether.manager={
 				this.onStopHover();
 				if(objet.isPostIt)
 				{
-					this.dernierEnvoye = MA_CLE+'_'+this.COMPTEUR;
+					this.dernierEnvoye = MA_CLE+'_'+ether.manager.COMPTEUR;
 					if(!this.manager.sendPI(objet, [ANIMATEURS])) {
 						this.envoiEchoue();
 					}
@@ -155,7 +155,7 @@ ether.manager={
 				this.onStopHover();
 				if(objet.isPostIt)
 				{
-					this.dernierEnvoye = MA_CLE+'_'+this.COMPTEUR;
+					this.dernierEnvoye = MA_CLE+'_'+ether.manager.COMPTEUR;
 					if(!this.manager.sendPI(objet, [NON_ANIMATEURS])) {
 						this.envoiEchoue();
 					}
@@ -224,16 +224,12 @@ ether.manager={
 	
 	deletePI: function(PI)	
 	{
-		//recherche de l'index du PI voulu
-		
-		var trouve=false;
 		var aux=dojo.indexOf(this.PIList,PI);
-				if(aux!=-1)
-				{
-					this.PIList[aux].supprimer();
-					dojo.destroy(this.PIList[aux].node);
-					this.PIList.splice(aux,1);
-				}
+		if(aux!=-1) {
+			dojo.destroy(this.PIList[aux].node);
+			this.PIList[aux].supprimer();
+			this.PIList.splice(aux,1);
+		}
 	},
 	createDZ:function (clientList)
 	{	
@@ -607,15 +603,15 @@ ether.manager={
 				this.PIList.push(PI);
 	},
 	
-	sendPI: function(postIt, cles_destinataires) {
-		if(postIt.isPostIt && socket && socket.socket.connected) {
+	sendPI: function(objet, cles_destinataires) {
+		if(objet.isPostIt && socket && socket.socket.connected) {
 			var msg_id = MA_CLE + '_' + this.COMPTEUR;
 			this.COMPTEUR++;
-			var m = new msg(msg_id, postIt.getContent());
+			var m = new msg(msg_id, objet.getContent());
 			socket.emit('envoi', m, cles_destinataires);
 			if(this.SUPPRESSION_POSTIT)
 			{
-				ether.manager.deletePI(dojo.attr(postIt.node,"id"));
+				this.deletePI(objet);
 			}
 			return true;
 		} else {
