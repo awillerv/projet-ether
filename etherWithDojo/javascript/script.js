@@ -188,6 +188,7 @@ ether.manager={
 	createImagePostIt: function(imgpath, name)
 	{
 		var node=dojo.create("div",{id:"PI"+this.PICount,innerHTML:'<img class="contenuPI" src="'+ imgpath + '" alt="'+ name +'" onload="ether.manager.finalizeImagePostIt(this)"/>',style:{display:'none'}},this.PISpawnZone);
+	  this.PICount++;
 	},
 	
 	finalizeImagePostIt: function(image) {
@@ -218,8 +219,7 @@ ether.manager={
 				height: hauteur+"px",
 				width: largeur+"px"
 					});
-		PI = ether.postIt("PI"+this.PICount,{},this);	//on transforme notre noeud en post-it
-				this.PICount++;
+		PI = ether.postIt(dojo.attr(node, 'id'),{},this);	//on transforme notre noeud en post-it
 				this.PIList.push(PI);
 	},
 	
@@ -740,6 +740,9 @@ ether.manager={
 			if(dijit.byId("menuParametresATous").checked) {
 				domStyle.set(dojo.byId('envoiATous'), "display", "block");
 			}
+			else{
+			  domStyle.set(dojo.byId('envoiATous'), "display", "none");
+			}
 		} else {
 			domStyle.set(dojo.byId('envoiATous'), "display", "none");
 			dijit.byId("menuParametresATous").disabled = true;
@@ -752,6 +755,9 @@ ether.manager={
 				if(dijit.byId("menuParametresAuxNonAnimateurs").checked) {
 					domStyle.set(dojo.byId('envoiAuxNonAnimateurs'), "display", "block");
 				}
+				else{
+			    domStyle.set(dojo.byId('envoiAuxNonAnimateurs'), "display", "none");
+			  }
 			} else {
 				domStyle.set(dojo.byId('envoiAuxNonAnimateurs'), "display", "none");
 				dijit.byId("menuParametresAuxNonAnimateurs").disabled = true;
@@ -764,6 +770,9 @@ ether.manager={
 				if(dijit.byId("menuParametresAuxAnimateurs").checked) {
 					domStyle.set(dojo.byId('envoiAuxAnimateurs'), "display", "block");
 				}
+				else{
+			    domStyle.set(dojo.byId('envoiAuxAnimateurs'), "display", "none");
+			  }
 			} else {
 				domStyle.set(dojo.byId('envoiAuxAnimateurs'), "display", "none");
 				dijit.byId("menuParametresAuxAnimateurs").disabled = true;
@@ -1048,6 +1057,50 @@ ether.manager={
 	  // on met à jour notre client
 	  moi.prenom = p[0];
 		moi.nom = p[1];
+		// on récupère les préférences de l'utilisateur
+		// affichage Corbeille/Tous/Animateurs/NonAnimateurs
+		if(p[2] == 'true'){
+		  dijit.byId("menuParametresCorbeille").checked = true;
+		  dijit.byId("menuParametresCorbeille")._applyAttributes();
+		  dojo.style(dojo.byId('corbeille'), 'display', 'block');
+	  }
+	  else{
+	    dijit.byId("menuParametresCorbeille").checked = false;
+		  dijit.byId("menuParametresCorbeille")._applyAttributes();
+		  dojo.style(dojo.byId('corbeille'), 'display', 'none');
+	  }
+		dijit.byId("menuParametresATous").checked = ((p[3] == 'true') ? true : false);
+		dijit.byId("menuParametresATous")._applyAttributes();
+		if(!moi.estAnimateur){
+	    dijit.byId("menuParametresAuxAnimateurs").checked = ((p[4] == 'true') ? true : false);
+	    dijit.byId("menuParametresAuxAnimateurs")._applyAttributes();
+	  }
+	  else{
+	    dijit.byId("menuParametresAuxNonAnimateurs").checked = ((p[5] == 'true') ? true : false);
+	    dijit.byId("menuParametresAuxNonAnimateurs")._applyAttributes();
+	  }
+	  // affichage Popups
+	  dijit.byId("menuParametresPopup").checked = ((p[6] == 'true') ? true : false);
+	  dijit.byId("menuParametresPopup")._applyAttributes();
+	  // suppression ou non des pi
+	  dijit.byId("menuParametresSuppressionPostit").checked = ((p[7] == 'true') ? true : false);
+	  dijit.byId("menuParametresSuppressionPostit")._applyAttributes();
+	  // on met à jours les l'affichage du menu et les différents éléments concernés(corbeille, etc)
+	  majParticipants();
+	  // couleurs d'édition
+	  //on affiche les couleurs par défaut de l'éditeur dans le menu "Paramètres / Couleurs des post-it"
+	  query(".couleur1").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", p[8]); });
+	  query(".couleur2").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", p[9]); });
+	  query(".couleur3").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", p[10]); });
+	  query(".couleur4").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", p[11]); });
+	  query(".couleur5").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", p[12]); });
+	  // on remplace les couleurs dans l'éditeur
+	  editeurPI.statics.couleur1 = p[8];
+	  editeurPI.statics.couleur2 = p[9];
+	  editeurPI.statics.couleur3 = p[10];
+	  editeurPI.statics.couleur4 = p[11];
+	  editeurPI.statics.couleur5 = p[12];
+	  // on change le 'connecté en tant que' avec le nouvel id
 		dojo.byId("moi").innerHTML = moi.prenom+" "+moi.nom+((moi.estAnimateur) ? "<br />(animateur)" : '');
 		// on indique aux autres clients de se mettre à jour
 		socket.emit('changement id', moi);
@@ -1137,6 +1190,22 @@ ether.manager={
 		localStorage.setItem('sauvegardeETHER', d.toString());
 		// on enregistre l'identité de l'utilisateur
 		var p = new Array(moi.prenom, moi.nom);
+		// on va chercher les préférences dans le menu correspondant
+		// affichage Corbeille/Tous/Animateurs/NonAnimateurs
+		p.push(dijit.byId("menuParametresCorbeille").checked);
+		p.push(dijit.byId("menuParametresATous").checked);
+	  p.push(dijit.byId("menuParametresAuxAnimateurs").checked);
+	  p.push(dijit.byId("menuParametresAuxNonAnimateurs").checked);
+	  // affichage Popups
+	  p.push(dijit.byId("menuParametresPopup").checked);
+	  // suppression ou non des pi
+	  p.push(dijit.byId("menuParametresSuppressionPostit").checked);
+	  // couleurs d'édition
+	  p.push(editeurPI.statics.couleur1);
+	  p.push(editeurPI.statics.couleur2);
+	  p.push(editeurPI.statics.couleur3);
+	  p.push(editeurPI.statics.couleur4);
+	  p.push(editeurPI.statics.couleur5);
 		// on utilise un try/catch au cas où on aurait plus de place
 		try {
 			localStorage.setItem('id', p.join('|'));

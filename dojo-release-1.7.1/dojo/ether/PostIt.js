@@ -69,7 +69,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 			}
 			this.offset = 13;
 			this.manager=manager;
-			this.resizeHandleNode=dojo.place('<div class="resizeHandle" style="visibility:visible; z-index:11"></div>', this.manager.PISpawnZone, "last");
+			this.resizeHandleNode=dojo.place('<div class="resizeHandle" style="visibility:visible;"></div>', this.node, "after");
 			this.updatePositionResizeHandler();
 			this.resizeHandle=new ether.ResizeHandle(this.resizeHandleNode,{mover:ether.ResizeHandleMover,parentPostItNode:this.node,isPostItImage:this.isPostItImage,ratio:this.ratio,offset:this.offset});
 			
@@ -86,6 +86,8 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 		
 
 		onMoved: function(mover){
+		
+		            dojo.style(this.node, 'zIndex', 1);
 								var MB=dojo.marginBox(this.node);
 								var childMB=dojo.marginBox(this.node.children[0]);
 								
@@ -110,11 +112,13 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 																			}
 																		}
 											,this);
-								dojo.style(this.resizeHandleNode, {top:MB.t+childMB.h+childMB.t-this.offset+"px",left:MB.l+childMB.w+childMB.l-this.offset+"px"});
+								dojo.style(this.resizeHandleNode, {top:MB.t+childMB.h+childMB.t-this.offset+"px",left:MB.l+childMB.w+childMB.l-this.offset+"px", zIndex:1});
 		
 								},
 		
 		onMoveStop: function(mover){
+		              dojo.style(this.node, 'zIndex', 0);
+		              dojo.style(this.resizeHandleNode, 'zIndex', 0);
 									var MB=dojo.marginBox(this.node);
 									var PIList=new Array();
 									for(var i=0; i<this.manager.PIList.length;i++)
