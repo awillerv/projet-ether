@@ -100,6 +100,16 @@ ether.manager={
 					this.dernierEnvoye = objet.getContent();
 					this.manager.deletePI(objet);	
 				}
+				
+				if(objet.isDZU)
+				{
+					this.manager.droppedDZU(objet);
+				}
+				
+				if(objet.isCibleEnvoi)
+				{
+					this.manager.deleteDZ(objet);
+				}
 			}
 		dojo.connect(this.DZCorbeille.node, tap, this.DZCorbeille, function()
 			{
@@ -225,11 +235,13 @@ ether.manager={
 	deletePI: function(PI)	
 	{
 		var aux=dojo.indexOf(this.PIList,PI);
+
 		if(aux!=-1) {
 			dojo.destroy(this.PIList[aux].node);
 			this.PIList[aux].supprimer();
 			this.PIList.splice(aux,1);
 		}
+
 	},
 	createDZ:function (clientList)
 	{	
@@ -250,7 +262,8 @@ ether.manager={
 		i++;
 		}
 		console.log(clientArray);
-		dojo.create('div',{id:"DZ"+this.DZId,class:"DropZone"},this.DZContainerList[i].node)
+		dojo.create('div',{id:"DZ"+this.DZId,class:"DropZone"},this.DZContainerList[i].node);
+
 		var DZ=ether.cibleEnvoi(this.DZContainerList[i].node.children[0],{},this.DZContainerList[i], clientArray,this);
 		var k=0;
 		
@@ -327,15 +340,13 @@ ether.manager={
 				{
 				this.userMap[DZU.client].push(Container.DZ);
 				}
+				Container.DZ.refreshNode();
 			}
 			else
-			{
-				var DZ=ether.cibleEnvoi(DZU.node,{},Container,DZU.client,this);
+			{	
+				var DZ=ether.cibleEnvoi(dojo.create("div"),{},Container,DZU.client,this);
 				MB=dojo.marginBox(Container.node);
 				MBObjet=dojo.marginBox(DZ.node);
-				dojo.place(DZ.node,Container.node,"first");
-				dojo.style(DZ.node,{position:"absolute",left:MB.l+MB.w/2-MBObjet.w/2+"px",top:MB.t+MB.h/2-MBObjet.h/2+"px"});
-				DZ.refreshNode();
 				this.userMap[DZU.client].push(Container.DZ);
 			}
 		}
@@ -360,10 +371,10 @@ ether.manager={
 		}
 		this.DZBarCurrentDZ=new Array();
 		nbDZ=DZContainer.DZ.clientKeyList.length;
-		var MB=dojo.marginBox(DZContainer.node);
+		var MB=dojo.position(DZContainer.node);
 		var parentMB=dojo.marginBox(DZContainer.node.parentNode);
 		var proposedWidth=Math.min(60*nbDZ,parentMB.w);
-		var proposedLeft=Math.max(0,MB.l-proposedWidth/2);
+		var proposedLeft=Math.max(0,MB.x+MB.w/2-proposedWidth/2);
 		this.DZBarCurrentContainer=DZContainer;
 		dojo.style(this.DZBar,{left:proposedLeft+"px",width:proposedWidth+"px",float:"left"});
 		dojo.fadeIn({node:this.DZBar,duration:200}).play();
@@ -372,7 +383,7 @@ ether.manager={
 			var DZU=ether.DZUnitaire(node,{},DZContainer,DZContainer.DZ.clientKeyList[i],this);
 			dojo.style(node,{float:"left"});
 			dojo.place(node,this.DZBar);
-			if(toggleDelete){DZU.toggleDelete();}
+			
 			this.DZBarCurrentDZ.push(DZU);
 			
 		}
@@ -1506,12 +1517,19 @@ ether.manager={
 	
 	//si par contre il y a une erreur de transmission, on le précise à l'expéditeur en faisant devenir rouge la dropzone associée à l'envoi
 	socket.on('envoi echoue', function(msg_id) {
+<<<<<<< .mine
+		dojo.forEach(ether.manager.DZList.concat([ether.manager.DZCorbeille,ether.manager.DZTous,ether.manager.DZAnim,ether.manager.DZNonAnim]), function(item){
+			if(item.dernierEnvoye==msg_id)
+				item.envoiEchoue();
+		});
+=======
 		if(MA_CLE!=undefined) {
 			dojo.forEach(this.manager.DZList.concat([this.manager.DZCorbeille,this.manager.DZTous,this.manager.DZAnim,this.manager.DZNonAnim]), function(item){
 				if(item.dernierEnvoye==msg_id)
 					item.envoiEchoue();
 			});
 		}
+>>>>>>> .r104
 	});
 	
 	//lorsqu'un post-it est reçu, on le recrée, puis on l'affiche sur l'écran à côté de la dropzone de l'emmeteur
