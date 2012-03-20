@@ -48,12 +48,17 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 				dojo.forEach(this.manager.DZContainerList.concat([this.manager.DZCorbeille]), function(item)
 																		{
 																			if(item.contient(MB.x,MB.y))
-																			{	
-																				dojo.addClass(item.node,'CibleHover');
+																			{if(item.isDZContainer)
+																				{
+																				dojo.addClass(item.node,'hover');
 																				return true;
+																				}
+																			else{dojo.addClass(item.node,'cibleHover')
+																				}
 																			}
 																			else 
-																			{	dojo.removeClass(item.node,'CibleHover');
+																			{	dojo.removeClass(item.node,'cibleHover');
+																				dojo.removeClass(item.node,'hover');
 																				return false;
 																			}
 													
@@ -136,7 +141,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 	
 	
 		return declare("ether.DZContainer",null,
-		{
+		{	isDZContainer:true,
 			constructor: function(node,position,manager,DZ)
 			{	this.position=position;
 				this.node=node;

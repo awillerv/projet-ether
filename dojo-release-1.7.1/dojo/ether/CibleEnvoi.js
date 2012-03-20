@@ -8,8 +8,9 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 			this.manager=manager;
 			if(container) {
 				container.DZ=this;
-				
 				this.container=container;
+				dojo.place(this.node,this.container.node,"last");
+				
 			}
 			if(clientKeyList instanceof Array) {
 				this.clientKeyList=clientKeyList;
