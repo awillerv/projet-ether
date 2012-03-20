@@ -498,7 +498,7 @@ ether.manager={
 	
 	receptionPostIt:function(objectString, cle_emetteur)
 	{		
-			var listeDZ = userMap[cle_emetteur];
+			var listeDZ = this.userMap[cle_emetteur];
 			
 			var objet=eval("(" + objectString + ")" );
 			var ProtoPI=dojo.create('div',{innerHTML:objet.innerHTML, id: 'PI'+this.PICount, style:{position:"absolute"}}, dojo.byId(this.PISpawnZone));
@@ -1517,19 +1517,12 @@ ether.manager={
 	
 	//si par contre il y a une erreur de transmission, on le précise à l'expéditeur en faisant devenir rouge la dropzone associée à l'envoi
 	socket.on('envoi echoue', function(msg_id) {
-<<<<<<< .mine
-		dojo.forEach(ether.manager.DZList.concat([ether.manager.DZCorbeille,ether.manager.DZTous,ether.manager.DZAnim,ether.manager.DZNonAnim]), function(item){
-			if(item.dernierEnvoye==msg_id)
-				item.envoiEchoue();
-		});
-=======
 		if(MA_CLE!=undefined) {
 			dojo.forEach(this.manager.DZList.concat([this.manager.DZCorbeille,this.manager.DZTous,this.manager.DZAnim,this.manager.DZNonAnim]), function(item){
 				if(item.dernierEnvoye==msg_id)
 					item.envoiEchoue();
 			});
 		}
->>>>>>> .r104
 	});
 	
 	//lorsqu'un post-it est reçu, on le recrée, puis on l'affiche sur l'écran à côté de la dropzone de l'emmeteur
@@ -1537,7 +1530,7 @@ ether.manager={
 		if(MA_CLE==undefined) {
 			socket.emit('resultat reception', message.id, cle_emetteur, false);
 		} else {
-			receptionPostIt(message.contenu, cle_emetteur);
+			ether.manager.receptionPostIt(message.contenu, cle_emetteur);
 			socket.emit('resultat reception', message.id, cle_emetteur, true);
 		}
 	});
