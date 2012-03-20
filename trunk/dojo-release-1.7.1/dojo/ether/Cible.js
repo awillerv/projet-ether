@@ -25,8 +25,9 @@ require(['dojo/_base/declare', 'ether/tap', 'dojo/dom-geometry','dojo/dnd/Moveab
 		onDrop : function(objet)		//le comportement en cas de drop d'un objet acceptable. Cette fonction a l'heur d'avoir accès à l'objet ainsi déposé, comme il se doit. Aucun comportement par défaut.
 		{
 			this.onStopHover();
-			if(objet.isPostIt) {
-				this.dernierEnvoye = objet.getContent();
+			if(objet.isPostIt)
+			{
+				//à surcharger selon qu'il s'agit d'une cible individuelle ou d'une cible principale (à tous, aux animateurs, aux non-animateurs)
 			}
 		},
 		
