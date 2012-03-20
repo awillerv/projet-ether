@@ -599,10 +599,7 @@ ether.manager={
 					dojo.style(node,{		//en particulier, on précise la position ici
 					position:"absolute",
 					left: objet.left - dojo.position(dojo.byId("applicationCenter")).x + "px",
-					top: objet.top  - dojo.position(dojo.byId("applicationCenter")).y + "px",
-					zIndex:10
-			
-
+					top: objet.top  - dojo.position(dojo.byId("applicationCenter")).y + "px"
 									});
 	dojo.place(innerNode,node,"first");
 	PI= ether.postIt("PI"+this.PICount,{},this);	//on transforme notre noeud en post-it
@@ -1177,9 +1174,11 @@ ether.manager={
 	  });
 	  // lorsqu'une image a été décodée/enregistrée
 	  socket.on('data decode response', function(i, j, cleUnique, chemin){
-	    // il faut bien penser que l'ordre dans PIList est inverse à celui de localStorage 
-	    dojo.query("img", reversePIList[i].node)[j].src = chemin;
-	    imgsUniques[cleUnique].push(chemin);
+		if(MA_CLE!=undefined) {
+			// il faut bien penser que l'ordre dans PIList est inverse à celui de localStorage 
+			dojo.query("img", reversePIList[i].node)[j].src = chemin;
+			imgsUniques[cleUnique].push(chemin);
+		}
 	  });
 	};
 	
@@ -1290,29 +1289,31 @@ ether.manager={
 		  });
 		});
 		socket.on('data encode response', function(i, j, url, data, ext){
-      // on construit un tableau contenant l'image et l'extension
-      imgContenu = new Array(data, ext);
-      // on le transforme en string
-      imgContenu = imgContenu.join('|');
-      // on utilise un try/catch au cas où on aurait plus de place
-      try{
-        // on enregistre l'image avec une clé référençant le pi/groupe pi auquel appartient l'image
-        localStorage.setItem('PI' + i + 'IMG' + j, imgContenu);
-        console.log('image ' + j + ' du pi/groupe pi ' + i + ' enregistrée');
-      }
-      catch(e){
-        if (e == QUOTA_EXCEEDED_ERR){
-          alert(
-		        'L\'espace de sauvegarde est plein. ' +
-		        'Vos ' + (i + 1) + ' post-its les plus récents ont toutefois été enregistrés'
-		      );
-        }
-        console.log('impossible d\'enregistrer l\'image ' + j + ' du pi/groupe pi ' + i);
-      }
-      // on rajoute l'url à la liste urlsUniques
-      // urlsUniques[0] -> id dans localStorage ; urlsUniques[1] -> url
-      urlsUniques.push(new Array('PI' + i + 'IMG' + j, url));
-    });
+		  if(MA_CLE!=undefined) {
+			  // on construit un tableau contenant l'image et l'extension
+			  imgContenu = new Array(data, ext);
+			  // on le transforme en string
+			  imgContenu = imgContenu.join('|');
+			  // on utilise un try/catch au cas où on aurait plus de place
+			  try{
+				// on enregistre l'image avec une clé référençant le pi/groupe pi auquel appartient l'image
+				localStorage.setItem('PI' + i + 'IMG' + j, imgContenu);
+				console.log('image ' + j + ' du pi/groupe pi ' + i + ' enregistrée');
+			  }
+			  catch(e){
+				if (e == QUOTA_EXCEEDED_ERR){
+				  alert(
+						'L\'espace de sauvegarde est plein. ' +
+						'Vos ' + (i + 1) + ' post-its les plus récents ont toutefois été enregistrés'
+					  );
+				}
+				console.log('impossible d\'enregistrer l\'image ' + j + ' du pi/groupe pi ' + i);
+			  }
+			  // on rajoute l'url à la liste urlsUniques
+			  // urlsUniques[0] -> id dans localStorage ; urlsUniques[1] -> url
+			  urlsUniques.push(new Array('PI' + i + 'IMG' + j, url));
+		  }
+		});
 	};
 	
 	//lors du click sur "déconnexion" :
@@ -1380,19 +1381,23 @@ ether.manager={
 	
 	//si l'upload a échoué (parce que le fichier n'était pas une photo), on affiche une pop-up (pendant 2 secondes) pour en informer le participant
 	socket.on('upload echoue', function() {
-		if(ether.manager.POPUP) {
-			dijit.showTooltip('<img src="images/erreur.png" /> Echec de l\'upload : le fichier n\'est pas une image ! (les extensions acceptées sont .png, .jpg et .gif)', 'uploadPhotos', ['below']);
-			setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
+		if(MA_CLE!=undefined) {
+			if(ether.manager.POPUP) {
+				dijit.showTooltip('<img src="images/erreur.png" /> Echec de l\'upload : le fichier n\'est pas une image ! (les extensions acceptées sont .png, .jpg et .gif)', 'uploadPhotos', ['below']);
+				setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
+			}
 		}
 	});	
 	
 	//si l'upload a réussi, on ajoute la photo (dans un post-it) à l'application et on affiche (pendant 2 secondes) une pop-up de confirmation
 	socket.on('upload reussi', function(nom, chemin) {
-		if(ether.manager.POPUP) {
-			dijit.showTooltip('<img src="images/ok.png" /> Upload de l\'image réussi !', 'uploadPhotos', ['below']);
-			setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
+		if(MA_CLE!=undefined) {
+			if(ether.manager.POPUP) {
+				dijit.showTooltip('<img src="images/ok.png" /> Upload de l\'image réussi !', 'uploadPhotos', ['below']);
+				setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
+			}
+			ether.manager.createImagePostIt(chemin, nom);
 		}
-		ether.manager.createImagePostIt(chemin, nom);
 	});
 	
 	
@@ -1464,23 +1469,27 @@ ether.manager={
 	
 	//lors de la connexion d'un nouveau participant, on l'ajoute à la variable javascript et au widget FilteringSelect
 	socket.on('connexion nouveau participant', function(participant, key) {
-		ether.manager.participants[key] = participant;
-		ether.manager.ajoutParticipant(key);
-		majParticipants();
-		if(ether.manager.POPUP) {
-			dijit.showTooltip('Connexion de ' + ether.manager.participants[key].prenom + ' ' +ether.manager.participants[key].nom, 'selectionParticipants', ['below']);
-			setTimeout("dijit.hideTooltip('selectionParticipants')", 2000);
+		if(MA_CLE!=undefined) {
+			ether.manager.participants[key] = participant;
+			ether.manager.ajoutParticipant(key);
+			majParticipants();
+			if(ether.manager.POPUP) {
+				dijit.showTooltip('Connexion de ' + ether.manager.participants[key].prenom + ' ' +ether.manager.participants[key].nom, 'selectionParticipants', ['below']);
+				setTimeout("dijit.hideTooltip('selectionParticipants')", 2000);
+			}
 		}
 	});
 	
 	//lors de la déconnexion d'un nouveau participant, on le retire de la variable javascript et du widget FilteringSelect
 	socket.on('deconnexion participant', function(key) {
-		if(ether.manager.POPUP) {
-			dijit.showTooltip('Déconnexion de ' + ether.manager.participants[key].prenom + ' ' + ether.manager.participants[key].nom, 'selectionParticipants', ['below']);
-			setTimeout("dijit.hideTooltip('selectionParticipants')", 2000);
+		if(MA_CLE!=undefined) {
+			if(ether.manager.POPUP) {
+				dijit.showTooltip('Déconnexion de ' + ether.manager.participants[key].prenom + ' ' + ether.manager.participants[key].nom, 'selectionParticipants', ['below']);
+				setTimeout("dijit.hideTooltip('selectionParticipants')", 2000);
+			}
+			ether.manager.deleteParticipant(key);
+			majParticipants();
 		}
-		ether.manager.deleteParticipant(key);
-		majParticipants();
 	});
 	
 	
@@ -1491,24 +1500,32 @@ ether.manager={
 	
 	//lorsqu'un envoi de post-it a été correctement reçu par le serveur, on confirme à l'expéditeur en faisant devenir verte la dropzone associée à l'envoi
 	socket.on('envoi reussi', function(msg_id) {
-		dojo.forEach(ether.manager.DZList.concat([ether.manager.DZCorbeille,ether.manager.DZTous,ether.manager.DZAnim,ether.manager.DZNonAnim]), function(item){
-			if(item.dernierEnvoye==msg_id)
-				item.envoiReussi();
-		});
+		if(MA_CLE!=undefined) {
+			dojo.forEach(ether.manager.DZList.concat([ether.manager.DZCorbeille,ether.manager.DZTous,ether.manager.DZAnim,ether.manager.DZNonAnim]), function(item){
+				if(item.dernierEnvoye==msg_id)
+					item.envoiReussi();
+			});
+		}
 	});
 	
 	//si par contre il y a une erreur de transmission, on le précise à l'expéditeur en faisant devenir rouge la dropzone associée à l'envoi
 	socket.on('envoi echoue', function(msg_id) {
-		dojo.forEach(this.manager.DZList.concat([this.manager.DZCorbeille,this.manager.DZTous,this.manager.DZAnim,this.manager.DZNonAnim]), function(item){
-			if(item.dernierEnvoye==msg_id)
-				item.envoiEchoue();
-		});
+		if(MA_CLE!=undefined) {
+			dojo.forEach(this.manager.DZList.concat([this.manager.DZCorbeille,this.manager.DZTous,this.manager.DZAnim,this.manager.DZNonAnim]), function(item){
+				if(item.dernierEnvoye==msg_id)
+					item.envoiEchoue();
+			});
+		}
 	});
 	
 	//lorsqu'un post-it est reçu, on le recrée, puis on l'affiche sur l'écran à côté de la dropzone de l'emmeteur
 	socket.on('reception', function(message, cle_emetteur) {
-		receptionPostIt(message.contenu, cle_emetteur);
-		socket.emit('resultat reception', message.id, cle_emetteur, true);
+		if(MA_CLE==undefined) {
+			socket.emit('resultat reception', message.id, cle_emetteur, false);
+		} else {
+			receptionPostIt(message.contenu, cle_emetteur);
+			socket.emit('resultat reception', message.id, cle_emetteur, true);
+		}
 	});
 	
 	
