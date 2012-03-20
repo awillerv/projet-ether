@@ -130,9 +130,11 @@ ether.manager={
 				this.onStopHover();
 				if(objet.isPostIt)
 				{
-					this.dernierEnvoye = MA_CLE+'_'+ether.manager.COMPTEUR;
-					if(!this.manager.sendPI(objet, [TOUS])) {
+					var resultat = this.manager.sendPI(objet, [TOUS]);
+					if(resultat==undefined) {
 						this.envoiEchoue();
+					} else {
+						this.dernierEnvoye = resultat;
 					}
 				}
 			}
@@ -147,9 +149,11 @@ ether.manager={
 				this.onStopHover();
 				if(objet.isPostIt)
 				{
-					this.dernierEnvoye = MA_CLE+'_'+ether.manager.COMPTEUR;
-					if(!this.manager.sendPI(objet, [ANIMATEURS])) {
+					var resultat = this.manager.sendPI(objet, [ANIMATEURS]);
+					if(resultat==undefined) {
 						this.envoiEchoue();
+					} else {
+						this.dernierEnvoye = resultat;
 					}
 				}
 			}
@@ -165,9 +169,11 @@ ether.manager={
 				this.onStopHover();
 				if(objet.isPostIt)
 				{
-					this.dernierEnvoye = MA_CLE+'_'+ether.manager.COMPTEUR;
-					if(!this.manager.sendPI(objet, [NON_ANIMATEURS])) {
+					var resultat = this.manager.sendPI(objet, [NON_ANIMATEURS]);
+					if(resultat==undefined) {
 						this.envoiEchoue();
+					} else {
+						this.dernierEnvoye = resultat;
 					}
 				}
 			}
@@ -624,9 +630,9 @@ ether.manager={
 			{
 				this.deletePI(objet);
 			}
-			return true;
+			return msg_id;
 		} else {
-			return false;
+			return undefined;
 		}
 	}
 }
