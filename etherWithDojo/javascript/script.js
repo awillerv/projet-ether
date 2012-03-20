@@ -55,18 +55,22 @@ ether.manager={
 				if(objet.isPostIt)
 				{
 					this.dernierEnvoye = objet.getContent();
-					this.manager.deletePI(objet);	
+					this.manager.deletePI(objet);
+					return true;
 				}
 				
 				if(objet.isDZU)
 				{
 					this.manager.droppedDZU(objet);
+					return true;
 				}
 				
 				if(objet.isCibleEnvoi)
 				{
 					this.manager.deleteDZ(objet);
+					return true;
 				}
+				return false;
 			}
 		dojo.connect(this.DZCorbeille.node, tap, this.DZCorbeille, function()
 			{
@@ -95,6 +99,9 @@ ether.manager={
 					} else {
 						this.dernierEnvoye = resultat;
 					}
+					return true;
+				} else {
+					return false;
 				}
 			}
 		dojo.connect(this.DZTous.node, tap, function()
@@ -114,6 +121,9 @@ ether.manager={
 					} else {
 						this.dernierEnvoye = resultat;
 					}
+					return true;
+				} else {
+					return false;
 				}
 			}
 		dojo.connect(this.DZAnim.node, tap, function()
@@ -134,6 +144,9 @@ ether.manager={
 					} else {
 						this.dernierEnvoye = resultat;
 					}
+					return true;
+				} else {
+					return false;
 				}
 			}
 		dojo.connect(this.DZNonAnim.node, tap, function()
