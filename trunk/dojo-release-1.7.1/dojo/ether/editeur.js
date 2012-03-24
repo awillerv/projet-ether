@@ -1,5 +1,3 @@
-
-
 require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo/dom-geometry', 'dojo/dom-style', 'dojo/dom-attr', 'ether/tap', 'dijit/form/Textarea', 'dijit/form/Button'], function(declare, connect, domConstruct, domGeom, domStyle, domAttr, tap, Textarea, Button)
 {
 	return declare("ether.editeur", null,
@@ -21,8 +19,8 @@ require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo
 			var position = domGeom.position(postIt.node.children[0]);
 			h = position.h;
 			w = position.w;
-			leftCorner = position.x-domGeom.position(dojo.byId("applicationCenter")).x;
-			topCorner = position.y-domGeom.position(dojo.byId("applicationCenter")).y-30;
+			leftCorner = position.x-domGeom.position(node).x;
+			topCorner = position.y-domGeom.position(node).y-30;
 			if(w<160)
 				leftCorner -= (160-w)/2;
 			this.couleurFond = domStyle.get(postIt.node.children[0], 'backgroundColor');
@@ -37,7 +35,7 @@ require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo
 			if(w==undefined)
 				w=160;
 				
-			var positionParent = domGeom.position(node);
+			var positionParent = domGeom.position(dojo.byId("applicationCenterContainer"));
 			var leftCorner = x-positionParent.x-w/2;
 			if(leftCorner<positionParent.x)
 				leftCorner = 5;
@@ -138,7 +136,7 @@ require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo
 		    domStyle.set(textarea, 'backgroundColor', this.couleurFond);
 	    });
 		
-		  this.statics.counter = this.statics.counter+1;
+		this.statics.counter = this.statics.counter+1;
 	  }
 	});
 

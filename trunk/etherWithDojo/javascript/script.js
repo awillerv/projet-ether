@@ -2,12 +2,12 @@
    --  on charge toutes les bibliothèques de Dojo nécessaires à ETHER, puis on exécute le callback lorsque tout est chargé  --	
    --------------------------------------------------------------------------------------------------------------------------- */
 
-require(["dojo/parser", "dojo/on", "dojox/validate/web", "dojo/dom-construct", "dojo/dom-attr", "dojo/dom-class", "dojo/dom-style", "dojo/dom-geometry", "dojo/query", "dojo/_base/unload", "dojo/_base/sniff", "ether/tap",
+require(["dojo/parser", "dojo/on", "dojox/validate/web", "dojo/dom-construct", "dojo/dom-attr", "dojo/dom-class", "dojo/dom-style", "dojo/dom-geometry", "dojo/query", "dojo/_base/fx", "dojo/fx", "dojo/fx/easing", "dojo/_base/unload", "dojo/_base/sniff", "ether/tap",
 "dijit/Dialog", "dijit/ProgressBar", "dijit/form/ValidationTextBox", "dijit/form/RadioButton", "dijit/form/Form", 
 "dijit/MenuBar", "dijit/PopupMenuBarItem", "dijit/DropDownMenu", "dijit/MenuItem", "ether/MenuItem", "dijit/MenuSeparator", "dijit/PopupMenuItem", "dijit/CheckedMenuItem",
 "dojox/form/Uploader", "dijit/form/Textarea", "dijit/form/FilteringSelect", "dojo/data/ItemFileReadStore", "dijit/ColorPalette",
 "dijit/layout/BorderContainer", "dijit/layout/ContentPane", "dojo/dnd/Source", "dojo/_base/array",
-"ether/PostIt", "ether/Cible","ether/CibleEnvoi", "ether/editeur","ether/DZContainer", "dojo/keys", "dojo/domReady!"], function(parser, on, validate, domConstruct, domAttr, domClass, domStyle, domGeom, query, unload, has, tap) {
+"ether/PostIt", "ether/Cible","ether/CibleEnvoi", "ether/editeur","ether/DZContainer", "dojo/keys", "dojo/domReady!"], function(parser, on, validate, domConstruct, domAttr, domClass, domStyle, domGeom, query, baseFx, fx, easing, unload, has, tap) {
 
 
 
@@ -16,14 +16,20 @@ require(["dojo/parser", "dojo/on", "dojox/validate/web", "dojo/dom-construct", "
    -------------------------------------------------------------------------------------------------------------------------- */
 
 ether.manager={
-	PIList :new Array(),		//liste des post-it;
-	DZList :new Array(),	//liste des Dropzones
+
+	/* -------------------------------------------------------------------------------------------------------------------------
+	   --  toutes les variables globales de la classe, qui permettent la gestion en temps réel des post-its et des dropzones  --	
+	   ------------------------------------------------------------------------------------------------------------------------- */
+   
+	//liste des post-it
+	PIList :new Array(),
+	//liste des Dropzones	
+	DZList :new Array(),	
 	DZId:0,
 	DZGroupId:0,
-	userMap :new Array(),		//un array pour associer à chaque participant la DZ à laquelle il est associé
+	//un array pour associer à chaque participant la DZ à laquelle il est associé
+	userMap :new Array(),
 	PICount:0,
-	EditionEnCours :false,		//une seule zone d'édition de texte à la fois
-	PIEdite :null, //le PI en cours d'édition, le cas échéant
 	DZSpawnZone :null,	
 	PISpawnZone : null,
 	DZCorbeille:null,
@@ -43,151 +49,450 @@ ether.manager={
 	COMPTEUR: 0,
 	
 	
-	initialize:function(postItArea,DZDefaultArea)		//initialisation: on passe en argument l'id de la zone où l'on peut spawner les conteneurs.
+	
+	/* -------------------------------------------------------------------------------------------------------------------------------------------------
+	   --  cette fonction permet d'instancier le manager et toutes ses variables. Elle est appelée lors de l'authentification réussie du participant  --	
+	   ------------------------------------------------------------------------------------------------------------------------------------------------- */
+	   
+	initialize:function(postItArea, DZDefaultArea)
 	{	
-		this.PISpawnZone=dojo.byId(postItArea);	
+		//la zone dans laquelle seront créés les post-its
+		this.PISpawnZone=dojo.byId(postItArea);
+		//la zone dans laquelle seront créées les dropzones
 		this.DZSpawnZone=dojo.byId(DZDefaultArea);
-		var AreaPosition=dojo.position(this.PISpawnZone);
+
+		//on définit ici la dropzone permanante "corbeille" 
 		this.DZCorbeille=new ether.cible(dojo.byId("corbeille"),this);
-		this.DZCorbeille.onDrop=function(objet)
-			{
-				this.onStopHover();
-				if(objet.isPostIt)
-				{
-					this.dernierEnvoye = objet.getContent();
-					this.manager.deletePI(objet);
-					return true;
+		this.DZCorbeille.onDrop=function(objet) {
+			this.onStopHover();
+			if(objet.isPostIt) {
+				this.dernierEnvoye = objet.getContent();
+				this.manager.deletePI(objet);
+				return true;
+			}
+			if(objet.isDZU) {
+				this.manager.droppedDZU(objet);
+				return true;
+			}
+			if(objet.isCibleEnvoi) {
+				this.manager.deleteDZ(objet);
+				return true;
+			}
+			return false;
+		}
+		dojo.connect(this.DZCorbeille.node, tap, this.DZCorbeille, function() {
+			if(this.dernierEnvoye!=undefined) {
+				var message = "Corbeille<br /><br/>Voulez-vous restaurer le dernier élément supprimé ?<br /><input id=\"boutonRestaurer\" value=\"oui\" type=\"button\"/> <input id=\"boutonNePasRestaurer\" value=\"non\" type=\"button\"/>";
+				dijit.showTooltip(message, 'corbeille', ['below']);
+				new dijit.form.Button({ label: "Oui", onClick: function() { dijit.byId("boutonRestaurer").destroy(); dijit.byId("boutonNePasRestaurer").destroy(); var corbeille = ether.manager.DZCorbeille; ether.manager.chargementPostIt(eval("(" + corbeille.dernierEnvoye + ")"), null); corbeille.dernierEnvoye=null; dijit.hideTooltip('corbeille'); } }, "boutonRestaurer");
+				new dijit.form.Button({ label: "Non", onClick: function() { dijit.byId("boutonRestaurer").destroy(); dijit.byId("boutonNePasRestaurer").destroy(); dijit.hideTooltip('corbeille'); } }, "boutonNePasRestaurer");
+			} else {
+				dijit.showTooltip('Corbeille', 'corbeille', ['below']);
+				setTimeout("dijit.hideTooltip('corbeille')", 2000);
+			}
+		});
+
+		//on définit ici la dropzone permanante "envoi à tous"
+		this.DZTous=new ether.cible(dojo.byId("envoiATous"),this);
+		this.DZTous.onDrop=function(objet) {
+			this.onStopHover();
+			if(objet.isPostIt) {
+				var resultat = this.manager.sendPI(objet, [TOUS]);
+				if(resultat==undefined) {
+					this.envoiEchoue();
+				} else {
+					this.dernierEnvoye = resultat;
 				}
-				
-				if(objet.isDZU)
-				{
-					this.manager.droppedDZU(objet);
-					return true;
-				}
-				
-				if(objet.isCibleEnvoi)
-				{
-					this.manager.deleteDZ(objet);
-					return true;
-				}
+				return true;
+			} else {
 				return false;
 			}
-		dojo.connect(this.DZCorbeille.node, tap, this.DZCorbeille, function()
-			{
-				if(this.dernierEnvoye!=undefined) {
-					var message = "Corbeille<br /><br/>Voulez-vous restaurer le dernier élément supprimé ?<br /><input id=\"boutonRestaurer\" value=\"oui\" type=\"button\"/> <input id=\"boutonNePasRestaurer\" value=\"non\" type=\"button\"/>";
-					dijit.showTooltip(message, 'corbeille', ['below']);
-
-					new dijit.form.Button({ label: "Oui", onClick: function() { dijit.byId("boutonRestaurer").destroy(); dijit.byId("boutonNePasRestaurer").destroy(); var corbeille = ether.manager.DZCorbeille; ether.manager.chargementPostIt(eval("(" + corbeille.dernierEnvoye + ")"), null); corbeille.dernierEnvoye=null; dijit.hideTooltip('corbeille'); } }, "boutonRestaurer");
-					new dijit.form.Button({ label: "Non", onClick: function() { dijit.byId("boutonRestaurer").destroy(); dijit.byId("boutonNePasRestaurer").destroy(); dijit.hideTooltip('corbeille'); } }, "boutonNePasRestaurer");
-
-				} else {
-					dijit.showTooltip('Corbeille', 'corbeille', ['below']);
-					setTimeout("dijit.hideTooltip('corbeille')", 2000);
-				}
-				
-			});
-		this.DZTous=new ether.cible(dojo.byId("envoiATous"),this);
-		this.DZTous.onDrop=function(objet)
-			{
-				this.onStopHover();
-				if(objet.isPostIt)
-				{
-					var resultat = this.manager.sendPI(objet, [TOUS]);
-					if(resultat==undefined) {
-						this.envoiEchoue();
-					} else {
-						this.dernierEnvoye = resultat;
-					}
-					return true;
-				} else {
-					return false;
-				}
-			}
-		dojo.connect(this.DZTous.node, tap, function()
-			{
-				dijit.showTooltip('Envoi à tous', 'envoiATous', ['below']);
-				setTimeout("dijit.hideTooltip('envoiATous')", 2000);
-			});
-		this.DZAnim=new ether.cible(dojo.byId("envoiAuxAnimateurs"),this);
-		this.DZAnim.onDrop=function(objet)
-			{
-				this.onStopHover();
-				if(objet.isPostIt)
-				{
-					var resultat = this.manager.sendPI(objet, [ANIMATEURS]);
-					if(resultat==undefined) {
-						this.envoiEchoue();
-					} else {
-						this.dernierEnvoye = resultat;
-					}
-					return true;
-				} else {
-					return false;
-				}
-			}
-		dojo.connect(this.DZAnim.node, tap, function()
-			{
-				dijit.showTooltip('Envoi aux animateurs', 'envoiAuxAnimateurs', ['below']);
-				setTimeout("dijit.hideTooltip('envoiAuxAnimateurs')", 2000);
-				setTimeout("dijit.hideTooltip('envoiAuxAnimateurs')", 2000);
-			});
-		this.DZNonAnim=new ether.cible(dojo.byId("envoiAuxNonAnimateurs"),this);
-		this.DZNonAnim.onDrop=function(objet)
-			{
-				this.onStopHover();
-				if(objet.isPostIt)
-				{
-					var resultat = this.manager.sendPI(objet, [NON_ANIMATEURS]);
-					if(resultat==undefined) {
-						this.envoiEchoue();
-					} else {
-						this.dernierEnvoye = resultat;
-					}
-					return true;
-				} else {
-					return false;
-				}
-			}
-		dojo.connect(this.DZNonAnim.node, tap, function()
-			{
-				dijit.showTooltip('Envoi aux participants (non animateurs)', 'envoiAuxNonAnimateurs', ['below']);
-				setTimeout("dijit.hideTooltip('envoiAuxNonAnimateurs')", 2000);
-			});
-		
-		
-		var i=0;
-		while(i<=this.participants.length)		//initialisation de l'usermap pour les participants présents au départ
-		{
-		
-			this.userMap[i]=new Array();
-				i++;
 		}
-		this.DZContainerList=new Array();
-		//creation d'une liste de DZContainer...
-		dojo.forEach(this.DZSpawnZone.children, function(item)
-				{
-					this.DZContainerList.push(ether.DZContainer(item,this.DZContainerList.length,this));
-				},this);
+		dojo.connect(this.DZTous.node, tap, function() {
+			dijit.showTooltip('Envoi à tous', 'envoiATous', ['below']);
+			setTimeout("dijit.hideTooltip('envoiATous')", 2000);
+		});
+
+		//on définit ici la dropzone permanante "envoi aux animateurs" 
+		this.DZAnim=new ether.cible(dojo.byId("envoiAuxAnimateurs"),this);
+		this.DZAnim.onDrop=function(objet) {
+			this.onStopHover();
+			if(objet.isPostIt) {
+				var resultat = this.manager.sendPI(objet, [ANIMATEURS]);
+				if(resultat==undefined) {
+					this.envoiEchoue();
+				} else {
+					this.dernierEnvoye = resultat;
+				}
+				return true;
+			} else {
+				return false;
+			}
+		}
+		dojo.connect(this.DZAnim.node, tap, function() {
+			dijit.showTooltip('Envoi aux animateurs', 'envoiAuxAnimateurs', ['below']);
+			setTimeout("dijit.hideTooltip('envoiAuxAnimateurs')", 2000);
+		});
 		
+		//on définit ici la dropzone permanante "envoi aux non-animateurs"
+		this.DZNonAnim=new ether.cible(dojo.byId("envoiAuxNonAnimateurs"),this);
+		this.DZNonAnim.onDrop=function(objet) {
+			this.onStopHover();
+			if(objet.isPostIt) {
+				var resultat = this.manager.sendPI(objet, [NON_ANIMATEURS]);
+				if(resultat==undefined) {
+					this.envoiEchoue();
+				} else {
+					this.dernierEnvoye = resultat;
+				}
+				return true;
+			} else {
+				return false;
+			}
+		}
+		dojo.connect(this.DZNonAnim.node, tap, function() {
+			dijit.showTooltip('Envoi aux participants (non animateurs)', 'envoiAuxNonAnimateurs', ['below']);
+			setTimeout("dijit.hideTooltip('envoiAuxNonAnimateurs')", 2000);
+		});
+		
+		//initialisation de l'usermap pour les participants présents au départ
+		var i=0;
+		while(i<=this.participants.length)		{
+			this.userMap[i]=new Array();
+			i++;
+		}
+		
+		//creation d'une liste de DZContainer...
+		this.DZContainerList=new Array();
+		dojo.forEach(this.DZSpawnZone.children, function(item) {
+			this.DZContainerList.push(ether.DZContainer(item,this.DZContainerList.length,this));
+		},this);
+		this.closeDZBar();
 	},
 	
-	createImagePostIt: function(imgpath, name)
-	{
-		var node=dojo.create("div",{id:"PI"+this.PICount,innerHTML:'<img class="contenuPI" src="'+ imgpath + '" alt="'+ name +'" onload="ether.manager.finalizeImagePostIt(this)"/>',style:{display:'none'}},this.PISpawnZone);
-	  this.PICount++;
+	
+	
+	/* ---------------------------------------------------------------------------------------------------------
+	   --  les deux premiers fonctions sont responsables de la gestion de la liste de participants connectés  --	
+	   --------------------------------------------------------------------------------------------------------- */
+	
+	//si un participant se connecte, on lui crée un tableau de dropzone associées vide pour l'instant
+	ajoutParticipant:function(idParticipant) {
+		this.userMap[idParticipant]=new Array();
 	},
 	
-	finalizeImagePostIt: function(image) {
+	//si un participant se déconnecte, on supprime toutes les dropzones qui le concerne à l'écran
+	deleteParticipant: function(idParticipant) {
+		//d'abord on vérifie qu'il est effectivement associé à des DZ dans UserMap
+		if(this.userMap[idParticipant]) {
+			var j=0;
+			while(j<this.userMap[idParticipant].length) {	
+				this.userMap[idParticipant][j].removeClient(idParticipant);
+				if(this.userMap[idParticipant][j].clientKeyList.length<=0) {
+					this.deleteDZ(this.userMap[idParticipant][j]);
+				} else {
+					this.userMap[idParticipant][j].refreshNode();
+				}
+				j++;
+			}
+			delete(this.userMap[idParticipant]);
+			delete(this.participants[idParticipant]);
+		}
+	},
+
+	
+	
+	/* ---------------------------------------------------------------------------------------------------------------------------------------------
+	   --  les fonctions suivantes assurent la gestion des dropzones, ainsi que de la barre (localisée en bas de l'application) qui les contient  --	
+	   --------------------------------------------------------------------------------------------------------------------------------------------- */
+	
+	//lorsque l'utilisateur sélectionne un participant avec qui il souhaite communiquer
+	createDZ: function(clientList) {	
+		var clientArray;
+		if(clientList instanceof Array) {
+			clientArray=clientList;
+		} else {
+			clientArray=[clientList];
+		}
+		//on récupere le premier container libre.
+		var i=0;
+		while(!this.DZContainerList[i].isFree()) {
+			i++;
+		}
+		dojo.create('div',{id:"DZ"+this.DZId,class:"DropZone"},this.DZContainerList[i].node);
+
+		var DZ=ether.cibleEnvoi(this.DZContainerList[i].node.children[0],{},this.DZContainerList[i], clientArray,this);
+		var k=0;
+		while(k<clientArray.length) {
+			if(this.userMap[clientArray[k]]) {
+				this.userMap[clientArray[k]].push(DZ);
+			}
+			k++;
+		}
+		
+		this.DZList[this.DZId]=DZ;
+		this.DZId++;
+	},
+	
+	//lorsque deux dropzones sont superposées
+	fusionDZ: function(DZ1, DZ2) {
+		if(DZ1.isCibleEnvoi&&DZ2.isCibleEnvoi) {
+			var i=-1;						
+			var j=-1;
+			var k=-1;
+			var trouve1=false;
+			var trouve2=false;
+			//on recherche les deux éléments dans le tableau : &&!(trouve1&&trouve2)
+			while((k<this.DZList.length-1)) {
+				k++;
+				trouve1=(this.DZList[k]==DZ1);
+				trouve2=(this.DZList[k]==DZ2);
+				if(trouve1) {
+					i=k;
+				}
+				if(trouve2) {
+					j=k;
+				}
+			}
+			while(DZ1.clientKeyList.length>0) {
+				var n=DZ1.clientKeyList[0];
+				DZ1.removeClient(n);
+				DZ2.addClient(n);
+				this.userMap[n].push(DZ2);
+			}
+			DZ2.refreshNode();
+			DZ1.container.DZ=null;
+			this.deleteDZ(DZ1);
+		}
+	},
+	
+	//lorsqu'une dropzone individuelle (qui se trouve dans la barre rétractable) est déplacée
+	droppedDZU: function(DZU, Container) {
+		var initContainer=DZU.container;
+		initContainer.DZ.removeClient(DZU.client);
+		aux=dojo.indexOf(this.userMap[DZU.client],initContainer.DZ);
+		if(aux!=-1) {
+			this.userMap[DZU.client].splice(aux,1);
+		}	
+		if(Container) {
+			if(Container.DZ) {
+				if(Container.DZ.addClient(DZU.client)) {
+					this.userMap[DZU.client].push(Container.DZ);
+				}
+				Container.DZ.refreshNode();
+			} else {	
+				var DZ=ether.cibleEnvoi(dojo.create("div"),{},Container,DZU.client,this);
+				MB=dojo.marginBox(Container.node);
+				MBObjet=dojo.marginBox(DZ.node);
+				this.userMap[DZU.client].push(Container.DZ);
+			}
+		}
+		if(initContainer.DZ.clientKeyList.length<=0) {	
+			this.deleteDZ(initContainer.DZ);
+		} else {
+			initContainer.DZ.refreshNode();
+		}
+		this.closeDZBar();
+	},
+	
+	//prepare et affiche la barre des DZ individuelles du container passé en argument
+	prepareAndShowDZBar: function(DZContainer, toggleDelete)
+	{	
+		var nbDZ = 0;
+		for(var i=0; i<this.DZBar.children.length;i++) {
+			dojo.destroy(this.DZBar.children[i]);
+		}
+		this.DZBarCurrentDZ = new Array();
+		nbDZ = DZContainer.DZ.clientKeyList.length;
+		var MB = dojo.position(DZContainer.node);
+		var parentMB = dojo.marginBox(DZContainer.node.parentNode);
+		var proposedWidth = Math.min(60*nbDZ, parentMB.w);
+		var proposedLeft = Math.max(0, MB.x+MB.w/2-proposedWidth/2);
+		this.DZBarCurrentContainer = DZContainer;
+		dojo.style(this.DZBar, { left: proposedLeft+"px", width: proposedWidth+"px", float: "left"});
+		dojo.fadeIn({ node:this.DZBar, duration:200 }).play();
+		for(var i=0; i<DZContainer.DZ.clientKeyList.length;i++) {
+			var node = dojo.create("div");
+			var DZU = ether.DZUnitaire(node,{},DZContainer,DZContainer.DZ.clientKeyList[i],this);
+			dojo.style(node, { float: "left" });
+			dojo.place(node, this.DZBar);
+			this.DZBarCurrentDZ.push(DZU);
+		}
+	},
+	
+	//masque cette barre réservée aux dropzones individuelles
+	closeDZBar:function() {
+		dojo.fadeOut({ node:this.DZBar, duration:400 }).play();
+		for(var i=0; i<this.DZBar.children.length;i++) {
+			dojo.destroy(this.DZBar.children[i]);
+		}
+		this.DZBarCurrentDZ=new Array();
+		if(this.DZBarCurrentContainer) {
+			this.DZBarCurrentContainer.open=false;
+		}
+		this.DZBarCurrentContainer=null;	
+	},
+	
+	//supprime la DZ n°X
+	deleteDZ:function(DZ) {	
+		//vérification : est-ce bien une DZ existante ?
+		var id=dojo.attr(DZ.node,"id");
+		//étape 1 : mettre à jour le tableau userMap. Un parcours complet est requis
+		var i=0;
+		while(i<=this.userMap.length) {
+			if(this.userMap[i]) {
+				aux=dojo.indexOf(this.userMap[i],DZ);
+				if(aux!=-1) {
+					this.userMap[i].splice(aux,1);
+				}
+			}
+			i++;
+		}
+		//etape 2 : on supprime effectivement la DZ
+		aux=dojo.indexOf(this.DZList,DZ);
+		if(aux!=-1) {
+			dojo.destroy(this.DZList[aux].node);
+			this.DZList[aux].supprimer();
+			this.DZList.splice(aux,1);
+		}
+	},
+	
+	
+	
+	/* -------------------------------------------------------------------------------------------------------------------------
+	   --  les fonctions suivantes assurent la gestion des post-its, groupe de post-it, post-its image, ainsi que leur envoi  --	
+	   ------------------------------------------------------------------------------------------------------------------------- */
+	
+	//pour charger un post-it préalablement sauvegardé ou supprimé dans la corbeille
+	chargementPostIt:function(objet, objetPred) {		
+		var ProtoPI=dojo.create('div',{innerHTML:objet.innerHTML, 
+		id: 'PI'+this.PICount, style:{position:"absolute"}}, dojo.byId(this.PISpawnZone));
+		dojo.attr(ProtoPI,"style",objet.style);
+		if(objet.type=="postIt") {
+			var PI=ether.postIt(ProtoPI,{},this, objetPred);	//on transforme notre noeud en post-it
+			this.PICount++;
+			this.PIList.push(PI);
+			if(objet.next) {
+				PI.next=this.chargementPostIt(objet.next, PI);
+			}
+			return PI;
+		}
+	},
+	
+	//fonction appelée lorsqu'un post-it (texte ou image) nous est envoyé par un autre participant
+	receptionPostIt:function(objet, cle_emetteur) {		
+		var listeDZ = this.userMap[cle_emetteur];
+		var ProtoPI=dojo.create('div',{innerHTML:objet.innerHTML, id: 'PI'+this.PICount, style:{position:"absolute"}}, dojo.byId(this.PISpawnZone));
+		dojo.attr(ProtoPI,"style",objet.style);
+		if(listeDZ.length > 0) {
+			var k = -1;
+			dojo.forEach(listeDZ, function(DZ, i) {
+				if(listeDZ[i].clientKeyList.length == 1) {
+					k = i;
+				}
+			});
+			if(k == -1) {
+			    k = listeDZ.length - 1;
+			}
+			var MBDZselect = dojo.position(listeDZ[k].node);
+			var MBapplicationCenterContainer = dojo.position(dojo.byId('applicationCenterContainer'));
+			dojo.style(ProtoPI, { top: (MBapplicationCenterContainer.h - dojo.position(ProtoPI.children[0]).h - 5) + "px", left: MBDZselect.x+"px"});
+			if(objet.type=="postIt") {
+				PI=ether.postIt(ProtoPI,{},this, null);	//on transforme notre noeud en post-it
+				this.PICount++;
+				this.PIList.push(PI);
+				if(objet.next) {
+					PI.next=this.chargementPostIt(objet.next, PI);
+				}
+				PI.refreshNextPosition();	
+			}
+		} else {
+			var MBselect = dojo.position(dojo.byId('selectionParticipants'));
+			dojo.style(ProtoPI, { top: 5-dojo.position(ProtoPI.children[0]).h-10+"px", left: MBselect.x+"px"});
+			fx.slideTo( { duration: 1000, node: ProtoPI, easing: easing.quadOut, top: 5, left: MBselect.x, onEnd: function() { 
+				if(objet.type=="postIt") {
+					PI=ether.postIt(ProtoPI,{},ether.manager, null);	//on transforme notre noeud en post-it
+					ether.manager.PICount++;
+					ether.manager.PIList.push(PI);
+					if(objet.next) {
+						PI.next=ether.manager.chargementPostIt(objet.next, PI);
+					}
+					PI.refreshNextPosition();	
+				}
+			} }).play();
+		}
+	},
+	
+	//fusionne deux postIt, repérés par leurs ID (ouPostItGroup). le premier est l'objet qui recoit le drop (au dessous)
+	fusionPI:function(PI1,PI2) {
+		var i=-1;						
+		var j=-1;
+		var k=-1;
+		var trouve1=false;
+		var trouve2=false;
+		//on recherche les deux éléments dans le tableau : &&!(trouve1&&trouve2)
+		while((k<this.PIList.length-1)) {
+			k++;
+			trouve1=(dojo.attr(this.PIList[k].node,"id")==PI1);
+			trouve2=(dojo.attr(this.PIList[k].node,"id")==PI2);
+			if(trouve1) {
+				i=k;
+			}
+			if(trouve2) {
+				j=k;
+			}
+		}
+		//l'element du dessous est un postItSimple : on crée un groupePostIt à la place, et on y ajoute l'objet droppe
+		if(this.PIList[i].isPostIt) {
+			this.PIList[i]=this.PIList[i].promote();
+			while(this.PIList[j].node.children.length>0) {
+				this.PIList[i].addNode(this.PIList[j].node.children[0]);
+			}
+			dojo.destroy(this.PIList[j].node);
+			this.PIList[j].supprimer();
+			this.PIList.splice(j,1);
+		} else { //sinon l'element du dessous est un postItGroup
+			while(this.PIList[j].node.children.length!=0) {
+				this.PIList[i].addNode(this.PIList[j].node.children[0]);
+			}
+			dojo.destroy(this.PIList[j].node);
+			this.PIList[j].supprimer();
+			this.PIList.splice(j,1);
+		}
+	},
+	
+	//creation de postIt à partir d'un JSON renvoyé par l'éditeur
+	createPI: function(objet) {
+		var innerNode = dojo.create("div", { class:"contenuPI", innerHTML:objet.texte, style: { backgroundColor: objet.couleur, width: objet.largeur+"px", height: objet.hauteur+"px", position:"absolute" } });
+		//on crée un noeud de texte (avec l'id qui va bien PI0,PI1, etc...)
+		var node=dojo.create("div",{id:"PI"+this.PICount}, this.PISpawnZone);
+		dojo.style(node, { position:"absolute", left: objet.left - dojo.position(dojo.byId("applicationCenter")).x + "px", top: objet.top  - dojo.position(dojo.byId("applicationCenter")).y + "px" });
+		dojo.place(innerNode,node,"first");
+		//on transforme notre noeud en post-it
+		PI = ether.postIt("PI"+this.PICount,{},this, null);
+		this.PICount++;
+		this.PIList.push(PI);
+	},
+	
+	//une image vient d'être uploadée, on crée donc un noeud dans le DOM pour l'afficher et on lance son chargement
+	createImagePostIt: function(imgpath, name, top, left) {
+		var node=dojo.create("div", { id:"PI"+this.PICount, innerHTML:'<img class="contenuPI" src="'+ imgpath +'" alt="'+ name +'" onload="ether.manager.finalizeImagePostIt(this,'+top+','+left+')"/>', style: { display:'none', position: 'absolute' } }, this.PISpawnZone);
+		this.PICount++;
+	},
+	
+	//une fois le chargement de la photo terminé, on transforme ce noeud en post-it
+	finalizeImagePostIt: function(image, topDefaut, leftDefaut) {
+		//on récupère le parent de l'image, qui sera passé au constructeur du post-it
 		var node = image.parentNode;
+		//on supprime l'appel à la fonction finalize lors du chargement de l'image pour éviter un nouvel appel si l'image venait à être rechargée
 		dojo.attr(image,"onload","");
-		//recupération du centre
-		marginBox=dojo.position(dojo.byId('uploadPhotos'));
 		dojo.style(node, "display", "block");
 		nodeMB = dojo.position(image);
 		var hauteur = nodeMB.h;
 		var largeur = nodeMB.w;
+		//on stocke le ratio de l'image pour un redimentionnement qui ne la déforme pas
 		var ratio = hauteur/largeur;
+		//si l'image est trop grande, on limite sa taille à 250px pour ne pas se faire envahir
 		if(nodeMB.h>250 || nodeMB.w>250) {
 			if(nodeMB.h>nodeMB.w) {
 				hauteur=250;
@@ -197,410 +502,59 @@ ether.manager={
 				largeur=250;
 			}
 		}
-		dojo.style(node,{		//en particulier, on précise la position ici
-				position:"absolute",
-				left: marginBox.x+"px",
-				top: "5px",
-					});
-		dojo.style(image,{		//en particulier, on précise la position ici
-				height: hauteur+"px",
-				width: largeur+"px"
-					});
-		PI = ether.postIt(dojo.attr(node, 'id'),{},this, null);	//on transforme notre noeud en post-it
-				this.PIList.push(PI);
+		//on applique la position et la taille calculée à notre noeud
+		dojo.style(image, {	top: "0px", left: "0px", height: hauteur+"px", width: largeur+"px" });
+		if(topDefaut==0 || leftDefaut==0) {
+			marginBox=dojo.position(dojo.byId('uploadPhotos'));
+			dojo.style(node, { left: marginBox.x+"px",	top: 5-hauteur-100+"px" });
+			fx.slideTo( { duration: 1000, node: node, easing: easing.quadOut, top: 5, left: marginBox.x, onEnd: function() { 
+				//on transforme notre noeud en post-it
+				PI = ether.postIt(dojo.attr(node, 'id'), {}, this, null);	
+				ether.manager.PIList.push(PI);
+			} }).play();
+		} else {
+			marginBox=dojo.position(dojo.byId("applicationCenterContainer"));
+			var newTop = topDefaut-marginBox.y-hauteur/2;
+			if(newTop < 5)
+				newTop = 5;
+			if(newTop + hauteur > marginBox.h)
+				newTop = marginBox.h-hauteur-5;
+			var newLeft = leftDefaut-marginBox.x-largeur/2;
+			if(newLeft < 5)
+				newLeft = 5;
+			if(newLeft + largeur > marginBox.w)
+				newLeft = marginBox.w-largeur-5;
+			dojo.style(node, { left: newLeft+"px",	top: newTop+"px" });
+			//on transforme notre noeud en post-it
+			PI = ether.postIt(dojo.attr(node, 'id'), {}, this, null);	
+			this.PIList.push(PI);
+		}
 	},
 	
-	deletePI: function(PI)	
-	{
-	
+	//supprime un noeud, à la fois du manager mais aussi du DOM
+	deletePI: function(PI) {
 		if(PI.next){this.deletePI(PI.next)};
 		var aux=dojo.indexOf(this.PIList,PI);
-
 		if(aux!=-1) {
 			dojo.destroy(this.PIList[aux].node);
 			this.PIList[aux].supprimer();
 			this.PIList.splice(aux,1);
 		}
-
-	},
-	createDZ:function (clientList)
-	{	
-		var clientArray;
-		if(clientList instanceof Array)
-		{
-		clientArray=clientList;
-		}
-		else 
-		{
-		clientArray=[clientList];
-		}
-		
-		//on récupere le premier container libre.
-		var i=0;
-		while(!this.DZContainerList[i].isFree())
-		{
-		i++;
-		}
-		console.log(clientArray);
-		dojo.create('div',{id:"DZ"+this.DZId,class:"DropZone"},this.DZContainerList[i].node);
-
-		var DZ=ether.cibleEnvoi(this.DZContainerList[i].node.children[0],{},this.DZContainerList[i], clientArray,this);
-		var k=0;
-		
-		while(k<clientArray.length)
-		{
-		if(this.userMap[clientArray[k]])
-		{
-		this.userMap[clientArray[k]].push(DZ);
-		}
-		k++;
-		}
-		
-		this.DZList[this.DZId]=DZ;
-		this.DZId++;
 	},
 	
-	fusionDZ:function(DZ1,DZ2)		//toujours dans l'ordre dessus/dessous
-	{
-		if(DZ1.isCibleEnvoi&&DZ2.isCibleEnvoi)
-		{
-			var i=-1;						
-			var j=-1;
-			var k=-1;
-			var trouve1=false;
-			var trouve2=false;
-			while((k<this.DZList.length-1))		//on recherche les deux éléments dans le tableau : &&!(trouve1&&trouve2)
-			{
-				k++;
-			
-			trouve1=(this.DZList[k]==DZ1);
-			trouve2=(this.DZList[k]==DZ2);
-		
-			if(trouve1)
-			{
-				i=k;
-			}
-			if(trouve2)
-			{
-				j=k;
-			}
-			}
-			
-			while(DZ1.clientKeyList.length>0)
-			{
-				var n=DZ1.clientKeyList[0];
-				DZ1.removeClient(n);
-				DZ2.addClient(n);
-				this.userMap[n].push(DZ2);
-			}
-			DZ2.refreshNode();
-			DZ1.container.DZ=null;
-			this.deleteDZ(DZ1);
-		
-		}
-	},
-	
-	droppedDZU:function(DZU,Container)
-	{
-		var initContainer=DZU.container;
-		
-		initContainer.DZ.removeClient(DZU.client);
-		
-		aux=dojo.indexOf(this.userMap[DZU.client],initContainer.DZ);
-				if(aux!=-1)
-				{
-					this.userMap[DZU.client].splice(aux,1);
-				}
-			
-		if(Container)
-		{
-			if(Container.DZ)
-			{
-				if(Container.DZ.addClient(DZU.client));
-				{
-				this.userMap[DZU.client].push(Container.DZ);
-				}
-				Container.DZ.refreshNode();
-			}
-			else
-			{	
-				var DZ=ether.cibleEnvoi(dojo.create("div"),{},Container,DZU.client,this);
-				MB=dojo.marginBox(Container.node);
-				MBObjet=dojo.marginBox(DZ.node);
-				this.userMap[DZU.client].push(Container.DZ);
-			}
-		}
-		
-		if(initContainer.DZ.clientKeyList.length<=0)
-		{	
-				this.deleteDZ(initContainer.DZ);
-		}
-		else
-		{
-				initContainer.DZ.refreshNode();
-		}
-		this.closeDZBar();
-	},
-	
-	prepareAndShowDZBar: function(DZContainer,toggleDelete)		//prepare et affiche la barre des DZ individuelles du container passé en argument
-	{	
-		var nbDZ=0;
-		for(var i=0; i<this.DZBar.children.length;i++)
-		{
-			dojo.destroy(this.DZBar.children[i]);
-		}
-		this.DZBarCurrentDZ=new Array();
-		nbDZ=DZContainer.DZ.clientKeyList.length;
-		var MB=dojo.position(DZContainer.node);
-		var parentMB=dojo.marginBox(DZContainer.node.parentNode);
-		var proposedWidth=Math.min(60*nbDZ,parentMB.w);
-		var proposedLeft=Math.max(0,MB.x+MB.w/2-proposedWidth/2);
-		this.DZBarCurrentContainer=DZContainer;
-		dojo.style(this.DZBar,{left:proposedLeft+"px",width:proposedWidth+"px",float:"left"});
-		dojo.fadeIn({node:this.DZBar,duration:200}).play();
-		for(var i=0; i<DZContainer.DZ.clientKeyList.length;i++)
-		{	var node=dojo.create("div");
-			var DZU=ether.DZUnitaire(node,{},DZContainer,DZContainer.DZ.clientKeyList[i],this);
-			dojo.style(node,{float:"left"});
-			dojo.place(node,this.DZBar);
-			
-			this.DZBarCurrentDZ.push(DZU);
-			
-		}
-		
-	},
-	
-	closeDZBar:function()
-	{	dojo.fadeOut({node:this.DZBar,duration:200}).play();
-		for(var i=0; i<this.DZBar.children.length;i++)
-		{
-			dojo.destroy(this.DZBar.children[i]);
-		}
-		this.DZBarCurrentDZ=new Array();
-		if(this.DZBarCurrentContainer)
-		{	//console.log(this.DZBarCurrentContainer);
-			this.DZBarCurrentContainer.open=false;
-		}
-		this.DZBarCurrentContainer=null;
-		
-	},
-	
-	
-	deleteDZ:function(DZ) //suppression de la DZ n°X. id est de la forme "DZn" à priori
-	{	
-	//vérification : est-ce bien une DZ existante
-	var id=dojo.attr(DZ.node,"id");
-	{
-	//étape 1 : mettre à jour le tableau userMap. Un parcours complet est requis
-		var i=0;
-		while(i<=this.userMap.length)
-		{
-			if(this.userMap[i])
-			{
-				aux=dojo.indexOf(this.userMap[i],DZ);
-				if(aux!=-1)
-				{
-					this.userMap[i].splice(aux,1);
-				}
-			}
-			i++;
-		}
-		
-		//etape 2 : on supprime effectivement la DZ
-		aux=dojo.indexOf(this.DZList,DZ);
-		if(aux!=-1)
-		{
-			dojo.destroy(this.DZList[aux].node);
-			this.DZList[aux].supprimer();
-			
-			this.DZList.splice(aux,1);
-		}
-		
-		
-	}
-	},
-
-	deleteParticipant: function(idParticipant)		//suppression de toutes les DZ associées...
-	{
-		//on le supprime de toutes les DZ auxquelles il est associé. D'abord on vérifie qu'il est effectivement associé à des DZ dans UserMap
-		if(this.userMap[idParticipant])
-		{
-		var j=0;
-		while(j<this.userMap[idParticipant].length)
-		{	
-			this.userMap[idParticipant][j].removeClient(idParticipant);
-			if(this.userMap[idParticipant][j].clientKeyList.length<=0)
-			{	
-				
-				this.deleteDZ(this.userMap[idParticipant][j]);
-			}
-			else
-			{
-				this.userMap[idParticipant][j].refreshNode();
-			////
-			}
-			
-			j++;
-		}
-		delete(this.userMap[idParticipant]);
-		delete(this.participants[idParticipant]);
-		}
-	},
-	
-	ajoutParticipant:function(idParticipant)
-	{
-		this.userMap[idParticipant]=new Array();
-	},
-		
-	chargementPostIt:function(objet, objetPred)
-	{		
-			
-			var ProtoPI=dojo.create('div',{innerHTML:objet.innerHTML, 
-			id: 'PI'+this.PICount, style:{position:"absolute"}}, dojo.byId(this.PISpawnZone));
-			dojo.attr(ProtoPI,"style",objet.style);
-			console.log(objet);
-			
-				if(objet.type=="postIt")
-				{
-					var PI=ether.postIt(ProtoPI,{},this, objetPred);	//on transforme notre noeud en post-it
-					this.PICount++;
-					this.PIList.push(PI);
-					if(objet.next)
-					{
-						PI.next=this.chargementPostIt(objet.next, PI);
-					}
-					
-					return PI;
-				}
-			
-			
-			
-	},
-	
-	receptionPostIt:function(objet, cle_emetteur)
-	{		
-			var listeDZ = this.userMap[cle_emetteur];
-			
-			
-			var ProtoPI=dojo.create('div',{innerHTML:objet.innerHTML, id: 'PI'+this.PICount, style:{position:"absolute"}}, dojo.byId(this.PISpawnZone));
-			dojo.attr(ProtoPI,"style",objet.style);
-			
-			if(listeDZ.length > 0){
-			  var k = -1;
-			  dojo.forEach(listeDZ, function(DZ, i){
-			    if(listeDZ[i].clientKeyList.length == 1){
-			      k = i;
-			    }
-			  });
-			  if(k == -1){
-			    k = listeDZ.length - 1;
-			  }
-			  var MBDZselect = dojo.position(listeDZ[k].node);
-			  var MBapplicationCenterContainer = dojo.position(dojo.byId('applicationCenterContainer'));
-			  dojo.style(ProtoPI, { top: (MBapplicationCenterContainer.h - dojo.position(ProtoPI.children[0]).h - 5) + "px", left: MBDZselect.x+"px"});
-			}
-			else{
-			  var MBselect = dojo.position(dojo.byId('selectionParticipants'));
-			  dojo.style(ProtoPI, { top: "5px", left: MBselect.x+"px"});
-			}
-			
-			
-				if(objet.type=="postIt")
-				{
-					PI=ether.postIt(ProtoPI,{},this, null);	//on transforme notre noeud en post-it
-					this.PICount++;
-					this.PIList.push(PI);
-						if(objet.next)
-					{
-						PI.next=this.chargementPostIt(objet.next, PI);
-					}
-					PI.refreshNextPosition();
-					
-				}
-			
-	},
-	
-	fusionPI:function(PI1,PI2)		//fusionne deux postIt, repérés par leurs ID (ouPostItGroup). le premier est l'objet qui recoit le drop (au dessous)
-	{
-		var i=-1;						
-		var j=-1;
-		var k=-1;
-		var trouve1=false;
-		var trouve2=false;
-		while((k<this.PIList.length-1))		//on recherche les deux éléments dans le tableau : &&!(trouve1&&trouve2)
-		{
-			k++;
-			console.log(k);
-		trouve1=(dojo.attr(this.PIList[k].node,"id")==PI1);
-		trouve2=(dojo.attr(this.PIList[k].node,"id")==PI2);
-		
-			if(trouve1)
-			{
-				i=k;
-			}
-			if(trouve2)
-			{
-				j=k;
-			}
-		}
-		if(this.PIList[i].isPostIt)		//l'element du dessous est un postItSimple : on crée un groupePostIt à la place, et on y ajoute l'objet droppe
-		{
-			
-
-			this.PIList[i]=this.PIList[i].promote();
-			
-			console.log(this.PIList[j]);
-			while(this.PIList[j].node.children.length>0)
-			{	console.log(this.PIList[j].node.children[0]);
-				this.PIList[i].addNode(this.PIList[j].node.children[0]);
-			}
-			
-			dojo.destroy(this.PIList[j].node);
-			this.PIList[j].supprimer();
-			
-			this.PIList.splice(j,1);
-		}
-		else					//l'element du dessous est un postItGroup
-		{
-			
-			while(this.PIList[j].node.children.length!=0)
-			{
-				this.PIList[i].addNode(this.PIList[j].node.children[0]);
-			}
-			
-			dojo.destroy(this.PIList[j].node);
-			this.PIList[j].supprimer();
-		
-			this.PIList.splice(j,1);
-		}
-	},
-	
-	
-	
-	createPI: function(objet)		//creation de postIt à partir d'un JSON renvoyé par l'éditeur
-	{
-	var innerNode = dojo.create("div",{class:"contenuPI", innerHTML:objet.texte,style:{backgroundColor: objet.couleur, width: objet.largeur+"px", height: objet.hauteur+"px", position:"absolute"}});
-	
-	var node=dojo.create("div",{id:"PI"+this.PICount}, this.PISpawnZone);	//on crée un noeud de texte (avec l'id qui va bien PI0,PI1, etc...)
-					dojo.style(node,{		//en particulier, on précise la position ici
-					position:"absolute",
-					left: objet.left - dojo.position(dojo.byId("applicationCenter")).x + "px",
-					top: objet.top  - dojo.position(dojo.byId("applicationCenter")).y + "px"
-									});
-	dojo.place(innerNode,node,"first");
-	PI= ether.postIt("PI"+this.PICount,{},this, null);	//on transforme notre noeud en post-it
-				this.PICount++;
-				this.PIList.push(PI);
-	},
-	
+	//envoi un post-it qui a été laché sur une dropzone à son destinataire
 	sendPI: function(objet, cles_destinataires) {
+		//on vérifie qu'on est bien connecté au serveur, sinon on affiche un message d'erreur
 		if(objet.isPostIt && socket && socket.socket.connected) {
+			//on crée un ID unique pour pouvoir suivre notre message jusqu'au serveur
 			var msg_id = MA_CLE + '_' + this.COMPTEUR;
 			this.COMPTEUR++;
+			//on transforme le post-it (ou le groupe de post-its) en JSON
 			var m = new msg(msg_id, objet.getContent());
+			//on fait appel à socket.io pour le transmettre au serveur
 			socket.emit('envoi', m, cles_destinataires);
-			if(this.SUPPRESSION_POSTIT)
-			{
+			//si les paramètres sont régler sur "suppression des post-its après envoi" alors on les supprime
+			if(this.SUPPRESSION_POSTIT) {
 				this.deletePI(objet);
 			}
 			return msg_id;
@@ -612,9 +566,9 @@ ether.manager={
 
 
 
-	/* ------------------------------------------------------------
-	   --  on initialise les variables globales de l'application  --	
-	   ------------------------------------------------------------ */
+	/* ------------------------------------------------------------------------------------------------------------------
+	   --  fin du manager, ici démarre le script "normal" par l'nitialisation des variables globales de l'application  --	
+	   ------------------------------------------------------------------------------------------------------------------ */
 
 	//la taille maximale autorisée pour l'upload de photos : ici 1Mo
 	var tailleMaxUpload = 1000000;
@@ -637,23 +591,23 @@ ether.manager={
 	var DATE_SAUVEGARDE = undefined;
 	
 	// Types acceptés pour les uploads
-  var allowedTypes = {
-    'image/png':       'png',
-    'image/jpeg':      'jpg',
-    'image/gif':       'gif',
-    'image/bmp':       'bmp'
-  };
+	var allowedTypes = {
+		'image/png':       'png',
+		'image/jpeg':      'jpg',
+		'image/gif':       'gif',
+		'image/bmp':       'bmp'
+	};
 
-  // Extensions acceptées pour les uploads
-  var allowedExtensions = [];
-  // tableau inverse de allowedTypes
-  var contentTypes      = {};
+	// Extensions acceptées pour les uploads
+	var allowedExtensions = [];
+	// tableau inverse de allowedTypes
+	var contentTypes      = {};
 
-  // construction des deux derniers tableaux
-  for(ct in allowedTypes){
-    allowedExtensions[allowedExtensions.length] = allowedTypes[ct];
-    contentTypes[allowedTypes[ct]] = ct;
-  }
+	// construction des deux derniers tableaux
+	for(ct in allowedTypes){
+		allowedExtensions[allowedExtensions.length] = allowedTypes[ct];
+		contentTypes[allowedTypes[ct]] = ct;
+	}
 		
 	/* ----------------------------------------------------------
 	   --  on définit les fonctions globales de l'application  --	
@@ -675,7 +629,7 @@ ether.manager={
 	
 	//cette fonction effectue une transition entre le div "anciennePage" (qu'elle masque progressivement) et le div "nouvellePage" (qu'elle affiche à l'écran)
 	function changementPage(anciennePage, nouvellePage) {
-		dojo.fadeOut({
+		baseFx.fadeOut({
 			node: anciennePage,
 			duration: 1000,
 			beforeBegin: function() {
@@ -683,7 +637,7 @@ ether.manager={
 			},
 			onEnd: function() {
 				dojo.setStyle(dojo.byId(anciennePage), { display: "none" } );
-				dojo.fadeIn({ node: nouvellePage, duration: 1000 }).play();
+				baseFx.fadeIn({ node: nouvellePage, duration: 1000 }).play();
 			}
 		}).play();
 	}
@@ -754,11 +708,6 @@ ether.manager={
 		listeParticipants.close();
 	}
 	
-	//cette fonction permet de créer des post-it et de les ajouter à l'application
-	function ajouterMessage(message, id_emetteur) {
-		//à remplacer par la fonction de David
-	}
-	
 	//cette fonction prend en charge le "drag" d'objets depuis le bureau vers le navigateur
 	function handleDragOver(evt) {
 		if(evt.preventDefault) evt.preventDefault();
@@ -775,7 +724,7 @@ ether.manager={
 		//une fois le(s) objet(s) lachés dans le navigateur, on regarde si il s'agit de fichier
 		if(evt.dataTransfer.files) {
 			//si c'est le cas, on les upload
-			handleUploadFiles(evt.dataTransfer.files);
+			handleUploadFiles(evt.dataTransfer.files, evt.clientY, evt.clientX);
 		}
 		//une fois le(s) objet(s) lachés dans le navigateur, on regarde si il s'agit simplement d'un bout de texte
 		if(evt.dataTransfer.types) {
@@ -790,7 +739,8 @@ ether.manager={
 		return false;
 	}
 	
-	function handleUploadFiles(files) {
+	function handleUploadFiles(files, top, left) {
+		//on vérifie qu'on est bien connecté au serveur, sinon on affiche un message d'erreur
 		if(socket && socket.socket.connected) {
 			//pour chaque photo sélectionnées, on lui attribut un FileReader
 			for (var i = 0; i < files.length; i++) {
@@ -816,7 +766,7 @@ ether.manager={
 				reader.onload = function(d) {
 					if(ether.manager.POPUP)
 						dijit.showTooltip('Lecture de ' + nomUpload + 'réussie', 'uploadPhotos', ['below']);
-					socket.emit('upload', nomUpload, d.target.result);
+					socket.emit('upload', nomUpload, d.target.result, top, left);
 				};
 				//si la taille du fichier est inférieure à la taille max, on démarre la lecture
 				if(files[i].size < tailleMaxUpload) {
@@ -832,8 +782,8 @@ ether.manager={
 				}
 			}
 		} else {
-			dojo.addClass(dijit.byId('uploadPhotos').domNode,'uploadPhotosErreur');
-			setTimeout("dojo.removeClass(dijit.byId('uploadPhotos').domNode,'uploadPhotosErreur')", 2000);
+			dojo.addClass(dijit.byId('uploadPhotos').domNode, 'uploadPhotosErreur');
+			setTimeout("dojo.removeClass(dijit.byId('uploadPhotos').domNode, 'uploadPhotosErreur')", 2000);
 			if(ether.manager.POPUP) {
 				dijit.showTooltip('<img src="images/erreur.png" /> Impossible d\'uploader le fichier car vous n\'êtes plus connecté au serveur', 'uploadPhotos', ['below']);
 				setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
@@ -999,7 +949,7 @@ ether.manager={
 		//on met à jour la liste des participants (le widget FilteringSelect)
 		majParticipants();
 		//on initialise le manager de post-it
-		ether.manager.initialize(dojo.byId("applicationCenter"),dojo.byId("DZRow"));
+		ether.manager.initialize(dojo.byId("applicationCenter"), dojo.byId("DZRow"));
 		//on masque le formulaire de connexion pour afficher l'application à l'écran
 		changementPage("connexion", "application");
 		//on effectue un "resize" pour être sûr qu'elle prenne bien toute la page
@@ -1379,7 +1329,7 @@ ether.manager={
 	dijit.byId("uploadPhotos").onChange = function() {
 		//on vérifie la compatibilité du navigateur avec l'upload multiple (en gros on élimine Internet Explorer)
 		if(dijit.byId("uploadPhotos")._files) {
-			handleUploadFiles(dijit.byId("uploadPhotos")._files);
+			handleUploadFiles(dijit.byId("uploadPhotos")._files, 0, 0);
 		} else {
 			dojo.addClass(dijit.byId('uploadPhotos').domNode,'uploadPhotosErreur');
 			setTimeout("dojo.removeClass(dijit.byId('uploadPhotos').domNode,'uploadPhotosErreur')", 2000);
@@ -1401,13 +1351,13 @@ ether.manager={
 	});	
 	
 	//si l'upload a réussi, on ajoute la photo (dans un post-it) à l'application et on affiche (pendant 2 secondes) une pop-up de confirmation
-	socket.on('upload reussi', function(nom, chemin) {
+	socket.on('upload reussi', function(nom, chemin, top, left) {
 		if(MA_CLE!=undefined) {
 			if(ether.manager.POPUP) {
 				dijit.showTooltip('<img src="images/ok.png" /> Upload de l\'image réussi !', 'uploadPhotos', ['below']);
 				setTimeout("dijit.hideTooltip('uploadPhotos')", 2000);
 			}
-			ether.manager.createImagePostIt(chemin, nom);
+			ether.manager.createImagePostIt(chemin, nom, top, left);
 		}
 	});
 	
@@ -1521,15 +1471,12 @@ ether.manager={
 	
 	//si par contre il y a une erreur de transmission, on le précise à l'expéditeur en faisant devenir rouge la dropzone associée à l'envoi
 	socket.on('envoi echoue', function(msg_id) {
-
-
 		if(MA_CLE!=undefined) {
 			dojo.forEach(this.manager.DZList.concat([this.manager.DZCorbeille,this.manager.DZTous,this.manager.DZAnim,this.manager.DZNonAnim]), function(item){
 				if(item.dernierEnvoye==msg_id)
 					item.envoiEchoue();
 			});
 		}
-
 	});
 	
 	//lorsqu'un post-it est reçu, on le recrée, puis on l'affiche sur l'écran à côté de la dropzone de l'emmeteur
@@ -1549,7 +1496,7 @@ ether.manager={
 	   ---------------------------------------------------------------------- */
 	
 	//lorsqu'on double tap dans le corps de l'application, on crée un éditeur de post-it qui va nous permettre d'écrire du texte
-	on(dojo.byId("applicationCenter"), tap.doubletap, function(event) {
+	on(dojo.byId("applicationCenterContainer"), tap.doubletap, function(event) {
 		new ether.editeur(dojo.byId("applicationCenter"), event.target.tapX, event.target.tapY);
 	});
 	

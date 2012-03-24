@@ -233,8 +233,6 @@ img.couleur1, img.couleur2, img.couleur3, img.couleur4, img.couleur5 {
 	height: 100px;
 	border:  2px rgb(181,188,199) solid;
 	overflow: visible;
-
-	opacity:0;
 }
 
 .dijitBorderContainer, .dijitBorderContainerNoGutter {
@@ -242,28 +240,22 @@ img.couleur1, img.couleur2, img.couleur3, img.couleur4, img.couleur5 {
 	z-index:4;
 }
 
-#dijit_MenuBar_0_splitter {
-	display: none;
-}
-
-#applicationBottom_splitter {
+#dijit_MenuBar_0_splitter, #applicationBottom_splitter, #DZBar_splitter {
 	display: none;
 }
 
 #applicationBottom {
 	overflow:visible;
-	
 }
 
 .DropZone {
 	font-family:Arial;
 }
 
-.DropZone.hover
-{
-	background-color:rgb(153,217,237);
+.DropZone.hover {
+	background-color: rgb(153,217,237);
 }
-.hidden
-{
-	display:none;
+
+.hidden {
+	display: none;
 }

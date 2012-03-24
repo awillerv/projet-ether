@@ -388,7 +388,7 @@ io.sockets.on('connection', function (socket) {
   }
   
   // lorsque l'utilisateur uploade une image au serveur
-  socket.on('upload', function(nomOriginal, data){
+  socket.on('upload', function(nomOriginal, data, top, left){
     console.log('image reçue : ' + data.substr(0,40));
     console.log('data length : ' + data.length);
     // data est une URL data scheme avec un encodage en base64 (http://tools.ietf.org/html/rfc2397)
@@ -408,7 +408,7 @@ io.sockets.on('connection', function (socket) {
     }
     else{
       // On renvoie le chemin de l'image et le nom original
-      socket.emit('upload reussi', nomOriginal, chemin);
+      socket.emit('upload reussi', nomOriginal, chemin, top, left);
     }
   });
   
