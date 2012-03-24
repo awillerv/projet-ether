@@ -78,7 +78,7 @@ ether.manager={
 					var message = "Corbeille<br /><br/>Voulez-vous restaurer le dernier élément supprimé ?<br /><input id=\"boutonRestaurer\" value=\"oui\" type=\"button\"/> <input id=\"boutonNePasRestaurer\" value=\"non\" type=\"button\"/>";
 					dijit.showTooltip(message, 'corbeille', ['below']);
 
-					new dijit.form.Button({ label: "Oui", onClick: function() { dijit.byId("boutonRestaurer").destroy(); dijit.byId("boutonNePasRestaurer").destroy(); var corbeille = ether.manager.DZCorbeille; corbeille.manager.chargementPostIt(corbeille.dernierEnvoye); corbeille.dernierEnvoye=null; dijit.hideTooltip('corbeille'); } }, "boutonRestaurer");
+					new dijit.form.Button({ label: "Oui", onClick: function() { dijit.byId("boutonRestaurer").destroy(); dijit.byId("boutonNePasRestaurer").destroy(); var corbeille = ether.manager.DZCorbeille; ether.manager.chargementPostIt(eval("(" + corbeille.dernierEnvoye + ")"), null); corbeille.dernierEnvoye=null; dijit.hideTooltip('corbeille'); } }, "boutonRestaurer");
 					new dijit.form.Button({ label: "Non", onClick: function() { dijit.byId("boutonRestaurer").destroy(); dijit.byId("boutonNePasRestaurer").destroy(); dijit.hideTooltip('corbeille'); } }, "boutonNePasRestaurer");
 
 				} else {
@@ -206,7 +206,7 @@ ether.manager={
 				height: hauteur+"px",
 				width: largeur+"px"
 					});
-		PI = ether.postIt(dojo.attr(node, 'id'),{},this);	//on transforme notre noeud en post-it
+		PI = ether.postIt(dojo.attr(node, 'id'),{},this, null);	//on transforme notre noeud en post-it
 				this.PIList.push(PI);
 	},
 	
@@ -452,7 +452,7 @@ ether.manager={
 		this.userMap[idParticipant]=new Array();
 	},
 		
-	chargementPostIt:function(objet)
+	chargementPostIt:function(objet, objetPred)
 	{		
 			
 			var ProtoPI=dojo.create('div',{innerHTML:objet.innerHTML, 
@@ -462,12 +462,12 @@ ether.manager={
 			
 				if(objet.type=="postIt")
 				{
-					var PI=ether.postIt(ProtoPI,{},this);	//on transforme notre noeud en post-it
+					var PI=ether.postIt(ProtoPI,{},this, objetPred);	//on transforme notre noeud en post-it
 					this.PICount++;
 					this.PIList.push(PI);
 					if(objet.next)
 					{
-						PI.next=this.chargementPostIt(objet.next);
+						PI.next=this.chargementPostIt(objet.next, PI);
 					}
 					
 					return PI;
@@ -497,9 +497,6 @@ ether.manager={
 			  }
 			  var MBDZselect = dojo.position(listeDZ[k].node);
 			  var MBapplicationCenterContainer = dojo.position(dojo.byId('applicationCenterContainer'));
-			  console.log(objet.style);
-			  console.log(dojo.position(ProtoPI));
-			  console.log(dojo.position(ProtoPI.children[0]));
 			  dojo.style(ProtoPI, { top: (MBapplicationCenterContainer.h - dojo.position(ProtoPI.children[0]).h - 5) + "px", left: MBDZselect.x+"px"});
 			}
 			else{
@@ -510,15 +507,15 @@ ether.manager={
 			
 				if(objet.type=="postIt")
 				{
-					PI=ether.postIt(ProtoPI,{},this);	//on transforme notre noeud en post-it
-					
-						if(objet.next)
-					{
-						PI.next=this.chargementPostIt(objet.next);
-					}
-					PI.refreshNextPosition();
+					PI=ether.postIt(ProtoPI,{},this, null);	//on transforme notre noeud en post-it
 					this.PICount++;
 					this.PIList.push(PI);
+						if(objet.next)
+					{
+						PI.next=this.chargementPostIt(objet.next, PI);
+					}
+					PI.refreshNextPosition();
+					
 				}
 			
 	},
@@ -591,7 +588,7 @@ ether.manager={
 					top: objet.top  - dojo.position(dojo.byId("applicationCenter")).y + "px"
 									});
 	dojo.place(innerNode,node,"first");
-	PI= ether.postIt("PI"+this.PICount,{},this);	//on transforme notre noeud en post-it
+	PI= ether.postIt("PI"+this.PICount,{},this, null);	//on transforme notre noeud en post-it
 				this.PICount++;
 				this.PIList.push(PI);
 	},
@@ -639,6 +636,24 @@ ether.manager={
 	//la date (inconnue pour l'instant) d'une éventuelle sauvegarde de session en local
 	var DATE_SAUVEGARDE = undefined;
 	
+	// Types acceptés pour les uploads
+  var allowedTypes = {
+    'image/png':       'png',
+    'image/jpeg':      'jpg',
+    'image/gif':       'gif',
+    'image/bmp':       'bmp'
+  };
+
+  // Extensions acceptées pour les uploads
+  var allowedExtensions = [];
+  // tableau inverse de allowedTypes
+  var contentTypes      = {};
+
+  // construction des deux derniers tableaux
+  for(ct in allowedTypes){
+    allowedExtensions[allowedExtensions.length] = allowedTypes[ct];
+    contentTypes[allowedTypes[ct]] = ct;
+  }
 		
 	/* ----------------------------------------------------------
 	   --  on définit les fonctions globales de l'application  --	
@@ -1093,7 +1108,7 @@ ether.manager={
 	    // on le transforme en JSON
 	    //content = JSON.parse(content);
 	    // on recrée le post-it
-	    ether.manager.chargementPostIt(eval("(" + content + ")"));
+	    ether.manager.chargementPostIt(eval("(" + content + ")"), null);
 	  }
 	  // notre PIList est maintenant complète, il n'y a plus qu'à décoder/enregistrer les images et les afficher
 	  var k = 0;
@@ -1102,7 +1117,7 @@ ether.manager={
 	  dojo.forEach(ether.manager.PIList, function(pi, i){
 	    // on vérifie si c'est un pi de tête
 	    if(!pi.pred){
-	      // si oui ses pi précédecesseurs sont ceux contenu entre cleTete(ancienne) + 1 et i y compris
+	      // on travaille alors récursivement sur lui et ses prédécesseurs
 	      // on decode/enregistre l'image et on remplace l'ancienne url de notre pi par la nouvelle
 	      // il faut aussi penser que les images sont enregistrées dans l'ordre inverse 
 	      temp = pi;
@@ -1110,10 +1125,8 @@ ether.manager={
 	      while(temp){ 
 	        // on affiche maintenant l'image éventuelle associé à ce pi
 		      // on commence par vérifier l'existence d'une éventuelle url
-		      url = domAttr.get(temp.node.children[0], 'src');
-		      console.log(url);
 		      // s'il s'agit bien d'une image et non d'un texte on encode celle-ci
-		      if(url != null){
+		      if(domAttr.get(temp.node.children[0], 'src') != null){
 		        // si le contenu de l'image est stocké ailleurs on va chercher cette valeur
 	          if(localStorage.getItem(reverseListePITeteId[k] + 'IMG' + j).split('|').length < 2){
 	            img = localStorage.getItem(localStorage.getItem(reverseListePITeteId[k] + 'IMG' + j));
@@ -1136,11 +1149,12 @@ ether.manager={
 		        // si l'image n'a pas encore été décodée/enregistrée
 		        if(isUnique){
 		          imgsUniques.push(new Array(img));
-		          socket.emit('data decode request', temp, imgsUniques.length - 1, img.split('|'));
+		          console.log(domAttr.get(temp.node, 'id'));
+		          socket.emit('data decode request', domAttr.get(temp.node, 'id'), imgsUniques.length - 1, img.split('|'));
 		        }
 		        else{
 		          // il faut bien penser que l'ordre dans PIList est inverse à celui de localStorage
-		          domAttr(temp.node.children[0], 'src', imgsUniques[cpt][1]);
+		          domAttr.set(temp.node.children[0], 'src', imgsUniques[cpt][1]);
 		        }
 		        j++;
 		      }
@@ -1150,10 +1164,12 @@ ether.manager={
 	    }
 	  });
 	  // lorsqu'une image a été décodée/enregistrée
-	  socket.on('data decode response', function(temp, cleUnique, chemin){
+	  socket.on('data decode response', function(id_tempnode, cleUnique, chemin){
 		  if(MA_CLE!=undefined) {
 			  // il faut bien penser que l'ordre dans PIList est inverse à celui de localStorage
-			  domAttr(temp.node.children[0], 'src', chemin);
+			  var tempnode = dojo.byId(id_tempnode);
+			  console.log(tempnode);
+			  domAttr.set(tempnode.children[0], 'src', chemin);
 			  imgsUniques[cleUnique].push(chemin);
 		  }
 	  });
@@ -1201,14 +1217,20 @@ ether.manager={
 		var imgContenu = null;
 		var j = 0;
 		var temp = null;
+		// var srcRE = new RegExp('\/uploads\/[0-9]+\.('+allowedExtensions.join('|')+')', 'g');
 		// on parcoure le tableau à l'envers pour sauver d'abord les pi/groupes pi les plus récents
 		var reversePIList = ether.manager.PIList.reverse();
 		dojo.forEach(reversePIList, function(pi, i){
 		  // on vérifie s'il s'agit d'un pi en tête de groupe (auquel cas il contient toutes les infos
 		  // des autres pi du groupe et on le sauvegarde)
 		  if(!pi.pred){
+		    // on enregistre maintenant le contenu du pi de tete
 		    // contenu du pi/groupe pi sous forme de JSON "stringifié
 		    content = pi.getContent();
+		    // on met tous les src à '' car ceux ci ne seront plus bons au chargement
+		    // console.log(content);
+		    // content = content.replace(srcRE, '');
+		    // console.log(content);	    
 		    // on utilise un try/catch au cas où on aurait plus de place
 		    try{
 		      // on essaie d'enregistrer le pi/groupe pi
@@ -1269,9 +1291,10 @@ ether.manager={
                 console.log('impossible d\'enregistrer l\'image ' + j + ' du pi/groupe pi ' + i);
               }
             }
-            // on passe au pi suivant du groupe (s'il y en a un)
+            // on passe à l'enregistrement de l'image suivante s'il y en a une
 		        j++;
 		      }
+		      // on passe au pi suivant du groupe (s'il y en a un)
 		      temp = temp.next;
 		    }
 		  }
