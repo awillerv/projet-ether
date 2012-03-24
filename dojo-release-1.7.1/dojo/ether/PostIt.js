@@ -61,7 +61,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 	{
 	
 		isPostIt:true,		//artefact pour un test
-		constructor: function(node, params,manager)
+		constructor: function(node, params,manager, pred)
 		{	
 			this.isPostItImage = false;
 			if(this.node.children[0].tagName=="IMG") {
@@ -72,7 +72,7 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','dojo/dnd/Mover'
 			this.offset = 13;
 			this.manager=manager;
 			this.next=null;
-			this.pred=null;
+			this.pred=pred;
 			this.resizeHandleNode=dojo.place('<div class="resizeHandle" style="visibility:visible;"></div>', this.node, "after");
 
 			this.updatePositionResizeHandler();
