@@ -14,6 +14,10 @@ var fs = require('fs'),
 		, 'xhr-polling'
 		, 'jsonp-polling'
 		]);
+		// on précise à socket.io qu'on ne veut pas qu'il essaie de reconnecter automatiquement
+		// des clients déconnectés, sinon ils pourront etre connectés à ether sans être
+		// proprement identifiés
+		io.set('reconnect', false);
 	});
 
 // mot de passe pour être animateur
@@ -169,13 +173,18 @@ io.sockets.on('connection', function (socket) {
           // on renvoie tout le tableau des participants à notre client propre
           socket.emit('identification reussie', participants, maCle);
           // et on envoie juste notre participant aux autres clients pour qu'il mettent à jour leur tableau
-          socket.broadcast.emit('connexion nouveau participant', participant, maCle);
+          for(var k in participants){
+            if(participants[k] != null && k != maCle){
+              // on transmet notre clé pour pouvoir repérer l'émetteur
+              io.sockets.socket(participants[k].socketID).emit('connexion nouveau participant', participant, maCle);
+            }
+          }
           console.log(
             'identification reussie pour ' + participant.prenom + ' ' + participant.nom +
             ' qui ' + ((participant.estAnimateur) ? 'est' : "n'est pas") +
             ' animateur avec le socket id = ' + socket.id +
             ' et dont la cle vaut ' + maCle
-          );      
+          );     
         }
         // si le mot de passe n'est pas bon, en renvoie une erreur
         else{
@@ -238,9 +247,13 @@ io.sockets.on('connection', function (socket) {
         switch(cles[i]){
           // si on s'adresse à tous
           case TOUS:
-            // on broadcaste
             // on transmet notre clé pour pouvoir repérer l'émetteur
-            socket.broadcast.emit('reception', m, maCle);
+            for(var k in participants){
+              if(participants[k] != null && k != maCle){
+                // on transmet notre clé pour pouvoir repérer l'émetteur
+                io.sockets.socket(participants[k].socketID).emit('reception', m, maCle);
+              }
+            }
             console.log(
               "envoi d'un message " + m.id + " de contenu " + '"' + m.contenu +
               '"' + " à tous de la part de " +
@@ -251,7 +264,7 @@ io.sockets.on('connection', function (socket) {
           // si on s'adresse à tous les animateurs
           case ANIMATEURS:
             // on fait une boucle sur les participants
-            for(k in  participants){
+            for(k in participants){
               if(participants[k] != null && participants[k].estAnimateur && k != maCle){
                 // on transmet notre clé pour pouvoir repérer l'émetteur
                 io.sockets.socket(participants[k].socketID).emit('reception', m, maCle);
@@ -410,7 +423,12 @@ io.sockets.on('connection', function (socket) {
     participants[maCle].nom = participant.nom;
     
     // et les listes des autres utilisateurs
-    socket.broadcast.emit('changement id participant', participant, maCle);
+    for(var k in participants){
+      if(participants[k] != null && k != maCle){
+        // on transmet notre clé pour pouvoir repérer l'émetteur
+        io.sockets.socket(participants[k].socketID).emit('changement id participant', participant, maCle);
+      }
+    }
   });
   
   // on retrouve l'extension à partir d'une
@@ -452,11 +470,11 @@ io.sockets.on('connection', function (socket) {
   
   // lorsqu'on charge une "session" le serveur décode et enregistre à la volée
   // les images précédemment sauvés localement chez notre client en string (base 64)
-  socket.on('data decode request', function(i, j, cleUnique, img) {
+  socket.on('data decode request', function(temp, cleUnique, img) {
     // la fonction d'enregistrement renvoie le chemin
     console.log('data decode request');
     var url = enregistrerImage(img[0], img[1]);
-    socket.emit('data decode response', i, j, cleUnique, url);
+    socket.emit('data decode response', temp, cleUnique, url);
   });
   
   // lorsque notre client se déconnecte
@@ -483,7 +501,12 @@ io.sockets.on('connection', function (socket) {
 			
 			// s'il en reste, on les informe de la déconnexion de notre client
 			if(resteUtilisateurs){
-			  socket.broadcast.emit('deconnexion participant', maCle);
+			  for(var k in participants){
+          if(participants[k] != null && k != maCle){
+            // on transmet notre clé pour pouvoir repérer l'émetteur
+            io.sockets.socket(participants[k].socketID).emit('deconnexion participant', maCle);
+          }
+        }
 			}
 			// s'il n'y en a plus
 			else{

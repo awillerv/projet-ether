@@ -463,12 +463,12 @@ ether.manager={
 				if(objet.type=="postIt")
 				{
 					var PI=ether.postIt(ProtoPI,{},this);	//on transforme notre noeud en post-it
+					this.PICount++;
+					this.PIList.push(PI);
 					if(objet.next)
 					{
 						PI.next=this.chargementPostIt(objet.next);
 					}
-					this.PICount++;
-					this.PIList.push(PI);
 					
 					return PI;
 				}
@@ -1061,10 +1061,9 @@ ether.manager={
 		socket.emit('changement id', moi);
 	  // on va recréer les post its enregistrés et les ajouter dans la PIList
 	  // on commence par détruire tous les pi/groupes pi
-	  dojo.forEach(ether.manager.PIList, function(pi, index){
-	    pi.supprimer();
-	  });
-	  ether.manager.PIList.splice(0, ether.manager.PIList.length);
+	  while(ether.manager.PIList.length > 0){
+	    ether.manager.deletePI(ether.manager.PIList[0]);
+	  }
 	  // puis on PICount à 0
 	  ether.manager.PICount = 0;
 	  // on ajoute les pi/groupes pi à la volée
@@ -1076,66 +1075,87 @@ ether.manager={
 	  var isUnique = true;
 	  var cpt = 0;
 	  var id = 0;
-	  // on commence par calculer le nombre de pi/groupes pi
-	  while(localStorage.getItem('PI' + PIlength) !== null){
-	    PIlength++;
+	  var listePITeteId = new Array();
+	  var key = 0;
+	  var testRegExp = /^PI[0-9]+$/;
+	  // on va retrouver la liste des id des PI de tête
+	  while(key < localStorage.length){
+	    if(testRegExp.test(localStorage.key(key))){
+	      listePITeteId.push(localStorage.key(key));
+	    }
+	    key++;
 	  }
-	  // on ajoute les pi/groupes pi du plus ancien enregistré au plus récent
-	  for(var k = PIlength - 1 ; k >= 0 ; k--){
+	  // on ajoute les pi du plus ancien enregistré au plus récent
+	  var reverseListePITeteId = listePITeteId.reverse();
+	  for(var key2 in reverseListePITeteId){
 	    // on récupère le string
-	    content = localStorage.getItem('PI' + k);
+	    content = localStorage.getItem(reverseListePITeteId[key2]);
 	    // on le transforme en JSON
-	    content = JSON.parse(content);
+	    //content = JSON.parse(content);
 	    // on recrée le post-it
-	    ether.manager.chargementPostIt(eval("(" + content + ")" ));
+	    ether.manager.chargementPostIt(eval("(" + content + ")"));
 	  }
 	  // notre PIList est maintenant complète, il n'y a plus qu'à décoder/enregistrer les images et les afficher
-	  var reversePIList = ether.manager.PIList.reverse();
-	  dojo.forEach(reversePIList, function(pi, i){
-	    // on calcule le nombre d'images associées à notre pi/goupe pi
-	    PIIMGlength = 0;
-	    while(localStorage.getItem('PI' + i + 'IMG' + PIIMGlength) !== null){
-	      PIIMGlength++;
-	    }
-	    // on decode/enregistre les images et on remplace les anciennes urls de notre pi/groupe pi par les nouvelles
-	    for(var j = 0 ; j < PIIMGlength ; j++){
-	      // si le contenu de l'image est stocké ailleurs on va chercher cette valeur
-	      if(localStorage.getItem('PI' + i + 'IMG' + j).split('|').length < 2){
-	        img = localStorage.getItem(localStorage.getItem('PI' + i + 'IMG' + j));
-	      }
-	      else{
-	        img = localStorage.getItem('PI' + i + 'IMG' + j);
-	      }
-	      // on vérifie si l'image courante est déjà décodée/enregistrée
-	      cpt = 0;
-	      isUnique = true;
-	      while(cpt < imgsUniques.length && isUnique == true){
-		      // imgsUniques[0] -> id dans localStorage ; imgsUniques[1] -> img
-		      if(img == imgsUniques[cpt][1]){
-		        isUnique = false;
+	  var k = 0;
+	  var j = 0;
+	  var temp = null;
+	  dojo.forEach(ether.manager.PIList, function(pi, i){
+	    // on vérifie si c'est un pi de tête
+	    if(!pi.pred){
+	      // si oui ses pi précédecesseurs sont ceux contenu entre cleTete(ancienne) + 1 et i y compris
+	      // on decode/enregistre l'image et on remplace l'ancienne url de notre pi par la nouvelle
+	      // il faut aussi penser que les images sont enregistrées dans l'ordre inverse 
+	      temp = pi;
+	      j = 0;
+	      while(temp){ 
+	        // on affiche maintenant l'image éventuelle associé à ce pi
+		      // on commence par vérifier l'existence d'une éventuelle url
+		      url = domAttr.get(temp.node.children[0], 'src');
+		      console.log(url);
+		      // s'il s'agit bien d'une image et non d'un texte on encode celle-ci
+		      if(url != null){
+		        // si le contenu de l'image est stocké ailleurs on va chercher cette valeur
+	          if(localStorage.getItem(reverseListePITeteId[k] + 'IMG' + j).split('|').length < 2){
+	            img = localStorage.getItem(localStorage.getItem(reverseListePITeteId[k] + 'IMG' + j));
+	          }
+	          else{
+	            img = localStorage.getItem(reverseListePITeteId[k] + 'IMG' + j);
+	          }
+	          // on vérifie si l'image courante est déjà décodée/enregistrée
+	          cpt = 0;
+	          isUnique = true;
+	          while(cpt < imgsUniques.length && isUnique == true){
+		          // imgsUniques[0] -> id dans localStorage ; imgsUniques[1] -> img
+		          if(img == imgsUniques[cpt][1]){
+		            isUnique = false;
+		          }
+		          else{
+		            cpt++;
+		          }
+		        }
+		        // si l'image n'a pas encore été décodée/enregistrée
+		        if(isUnique){
+		          imgsUniques.push(new Array(img));
+		          socket.emit('data decode request', temp, imgsUniques.length - 1, img.split('|'));
+		        }
+		        else{
+		          // il faut bien penser que l'ordre dans PIList est inverse à celui de localStorage
+		          domAttr(temp.node.children[0], 'src', imgsUniques[cpt][1]);
+		        }
+		        j++;
 		      }
-		      else{
-		        cpt++;
-		      }
-		    }
-		    // si l'image n'a pas encore été décodée/enregistrée
-		    if(isUnique){
-		      imgsUniques.push(new Array(img));
-		      socket.emit('data decode request', i, j, imgsUniques.length - 1, img.split('|'));
-		    }
-		    else{
-		      // il faut bien penser que l'ordre dans PIList est inverse à celui de localStorage
-		      dojo.query("img", pi.node)[j].src = imgsUniques[cpt][1];
-		    }
+	        temp = temp.next;
+	      }
+	      k++;
 	    }
 	  });
 	  // lorsqu'une image a été décodée/enregistrée
-	  socket.on('data decode response', function(i, j, cleUnique, chemin){
-		if(MA_CLE!=undefined) {
-			// il faut bien penser que l'ordre dans PIList est inverse à celui de localStorage 
-			dojo.query("img", reversePIList[i].node)[j].src = chemin;
-			imgsUniques[cleUnique].push(chemin);
-		}
+	  socket.on('data decode response', function(temp, cleUnique, chemin){
+		  if(MA_CLE!=undefined) {
+			  // il faut bien penser que l'ordre dans PIList est inverse à celui de localStorage
+			  domAttr(temp.node.children[0], 'src', chemin);
+			  imgsUniques[cleUnique].push(chemin);
+		  }
 	  });
 	};
 	
@@ -1174,76 +1194,87 @@ ether.manager={
 		}
 		// on va enregistrer les pi/groupes pi à la volée
 		var content = null;
-		var urls = new Array();
+		var url = null;
 		var urlsUniques = new Array();
 		var isUnique = true;
 		var cpt = 0;
 		var imgContenu = null;
+		var j = 0;
+		var temp = null;
 		// on parcoure le tableau à l'envers pour sauver d'abord les pi/groupes pi les plus récents
 		var reversePIList = ether.manager.PIList.reverse();
 		dojo.forEach(reversePIList, function(pi, i){
-		  // contenu du pi/groupe pi sous forme de JSON
-		  content = pi.getContent();
-		  // on transforme le JSON en string
-		  content = JSON.stringify(content);
-		  // on utilise un try/catch au cas où on aurait plus de place
-		  try{
-		    // on essaie d'enregistrer le pi/groupe pi
-		    localStorage.setItem('PI' + i, content);
-		    console.log('enregistrement du pi/groupe pi ' + i);
-		  } catch(e) {
-		    // si on a plus de place on informe l'utilisateur
-			  if (e == QUOTA_EXCEEDED_ERR){
-					alert(
-					  'L\'espace de sauvegarde est plein. ' +
-					  'Vos ' + (i + 1) + ' post-its les plus récents ont toutefois été enregistrés'
-					);
-				}
-				console.log('erreur lors de l\'enregistrement du post-it ' + i);
-		  }
-		  // on stocke maintenant les images associés à ce pi/groupe pi
-		  // on commence par récupérer les url
-		  urls.splice(0, urls.length);
-		  dojo.forEach(dojo.query("img", pi.node), function(image, index){
-		    urls.push(dojo.attr(image, "src"));
-		  });
-		  console.log(urls);
-		  dojo.forEach(urls, function(url, j){
-		    // on vérifie si l'url courante a déjà été décodée/enregistrée
-		    cpt = 0;
-		    isUnique = true;
-		    while(cpt < urlsUniques.length && isUnique == true){
-		      // urlsUniques[0] -> id dans localStorage ; urlsUniques[1] -> url
-		      if(url == urlsUniques[cpt][1]){
-		        isUnique = false;
-		      }
-		      else{
-		        cpt++;
-		      }
+		  // on vérifie s'il s'agit d'un pi en tête de groupe (auquel cas il contient toutes les infos
+		  // des autres pi du groupe et on le sauvegarde)
+		  if(!pi.pred){
+		    // contenu du pi/groupe pi sous forme de JSON "stringifié
+		    content = pi.getContent();
+		    // on utilise un try/catch au cas où on aurait plus de place
+		    try{
+		      // on essaie d'enregistrer le pi/groupe pi
+		      localStorage.setItem('PI' + i, content);
+		      console.log('enregistrement du pi/groupe pi ' + i);
+		    } catch(e) {
+		      // si on a plus de place on informe l'utilisateur
+			    if (e == QUOTA_EXCEEDED_ERR){
+					  alert(
+					    'L\'espace de sauvegarde est plein. ' +
+					    'Vos ' + (i + 1) + ' post-its les plus récents ont toutefois été enregistrés'
+					  );
+				  }
+				  console.log('erreur lors de l\'enregistrement du post-it ' + i);
 		    }
-		    console.log('isUnique vaut ' + isUnique);
-		    // si l'url courante n'a pas encore été décodée / enregistrée
-		    if(isUnique){
-		      socket.emit('data encode request', i, j, url);
-        }
-        else{
-          // on utilise un try/catch au cas où on aurait plus de place
-          try{
-            // on enregistre une référence vers une autre entrée qui a la même image
-            localStorage.setItem('PI' + i + 'IMG' + j, urlsUniques[cpt][0]);
-            console.log('image ' + j + ' du pi/groupe pi ' + i + ' enregistrée');
-          }
-          catch(e){
-            if (e == QUOTA_EXCEEDED_ERR){
-              alert(
-					      'L\'espace de sauvegarde est plein. ' +
-					      'Vos ' + (i + 1) + ' post-its les plus récents ont toutefois été enregistrés'
-					    );
+		    // en partant du pi de tête, on encode les images de tous les pi du groupes successivement
+		    // et on les enregistre en les liant au numéro du post it de tete
+		    j = 0;
+		    temp = pi;
+		    while(temp){
+		      // on stocke maintenant l'image éventuelle associé à ce pi
+		      // on commence par récupérer l'url
+		      url = domAttr.get(temp.node.children[0], 'src');
+		      console.log(url);
+		      // s'il s'agit bien d'une image et non d'un texte on encode celle-ci
+		      if(url != null){
+		        // on vérifie si l'url courante a déjà été décodée/enregistrée
+		        cpt = 0;
+		        isUnique = true;
+		        while(cpt < urlsUniques.length && isUnique == true){
+		          // urlsUniques[0] -> id dans localStorage ; urlsUniques[1] -> url
+		          if(url == urlsUniques[cpt][1]){
+		            isUnique = false;
+		          }
+		          else{
+		            cpt++;
+		          }
+		        }
+		        console.log('isUnique vaut ' + isUnique);
+		        // si l'url courante n'a pas encore été décodée / enregistrée
+		        if(isUnique){
+		          socket.emit('data encode request', i, j, url);
             }
-            console.log('impossible d\'enregistrer l\'image ' + j + ' du pi/groupe pi ' + i);
-          }
-        }
-		  });
+            else{
+              // on utilise un try/catch au cas où on aurait plus de place
+              try{
+                // on enregistre une référence vers une autre entrée qui a la même image
+                localStorage.setItem('PI' + i + 'IMG' + j, urlsUniques[cpt][0]);
+                console.log('image ' + j + ' du pi/groupe pi ' + i + ' enregistrée');
+              }
+              catch(e){
+                if (e == QUOTA_EXCEEDED_ERR){
+                  alert(
+					          'L\'espace de sauvegarde est plein. ' +
+					          'Vos ' + (i + 1) + ' post-its les plus récents ont toutefois été enregistrés'
+					        );
+                }
+                console.log('impossible d\'enregistrer l\'image ' + j + ' du pi/groupe pi ' + i);
+              }
+            }
+            // on passe au pi suivant du groupe (s'il y en a un)
+		        j++;
+		      }
+		      temp = temp.next;
+		    }
+		  }
 		});
 		socket.on('data encode response', function(i, j, url, data, ext){
 		  if(MA_CLE!=undefined) {
@@ -1253,18 +1284,18 @@ ether.manager={
 			  imgContenu = imgContenu.join('|');
 			  // on utilise un try/catch au cas où on aurait plus de place
 			  try{
-				// on enregistre l'image avec une clé référençant le pi/groupe pi auquel appartient l'image
-				localStorage.setItem('PI' + i + 'IMG' + j, imgContenu);
-				console.log('image ' + j + ' du pi/groupe pi ' + i + ' enregistrée');
+				  // on enregistre l'image avec une clé référençant le pi/groupe pi auquel appartient l'image
+				  localStorage.setItem('PI' + i + 'IMG' + j, imgContenu);
+				  console.log('image ' + j + ' du pi/groupe pi ' + i + ' enregistrée');
 			  }
 			  catch(e){
-				if (e == QUOTA_EXCEEDED_ERR){
-				  alert(
-						'L\'espace de sauvegarde est plein. ' +
-						'Vos ' + (i + 1) + ' post-its les plus récents ont toutefois été enregistrés'
-					  );
-				}
-				console.log('impossible d\'enregistrer l\'image ' + j + ' du pi/groupe pi ' + i);
+				  if (e == QUOTA_EXCEEDED_ERR){
+				    alert(
+						  'L\'espace de sauvegarde est plein. ' +
+						  'Vos ' + (i + 1) + ' post-its les plus récents ont toutefois été enregistrés'
+					    );
+				  }
+				  console.log('impossible d\'enregistrer l\'image ' + j + ' du pi/groupe pi ' + i);
 			  }
 			  // on rajoute l'url à la liste urlsUniques
 			  // urlsUniques[0] -> id dans localStorage ; urlsUniques[1] -> url
