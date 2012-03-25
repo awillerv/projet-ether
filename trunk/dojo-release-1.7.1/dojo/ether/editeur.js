@@ -1,4 +1,4 @@
-require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo/dom-geometry', 'dojo/dom-style', 'dojo/dom-attr', 'ether/tap', 'dijit/form/Textarea', 'dijit/form/Button'], function(declare, connect, domConstruct, domGeom, domStyle, domAttr, tap, Textarea, Button)
+require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo/dom-geometry', 'dojo/dom-style', 'dojo/dom-attr', 'dijit/form/Textarea', 'dijit/form/Button', 'ether/tap'], function(declare, connect, domConstruct, domGeom, domStyle, domAttr, Textarea, Button, tap)
 {
 	return declare("ether.editeur", null,
 	{
@@ -11,7 +11,7 @@ require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo
 	  constructor: function(node, x, y, h, w, ancienTexte){
 		
 		var edition = false;
-		
+
 		if(node.isPostIt) {
 			edition = true;
 			var postIt = node;
@@ -48,7 +48,7 @@ require(['dojo/_base/declare', 'dojo/_base/connect', 'dojo/dom-construct', 'dojo
 				topCorner = positionParent.h-h-70;
 		}
 
-		  // div principal
+		// div principal
 	    if(domAttr.get(node,"id")=="menuEcrirePostit") {
 		    var div = domConstruct.create('div', { id: 'editeur'+this.statics.counter }, node);
 		  } else {

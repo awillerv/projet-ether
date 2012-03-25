@@ -34,6 +34,7 @@
 	
 	<!-- page de connexion à ETHER : contient deux widget "Dialog", le logo et le formulaire de connexion (avec les champs "prenom", "nom", "estAnimateur" et "motDePasse") -->
 	<div id="connexion" style="display: none;">
+	
 		<!-- le 1er widget Dialog est destiné aux utilisateurs de Internet Explorer : on les prévient que leur navigateur n'est pas complétement compatible -->
 		<div id="alerteIE" data-dojo-type="dijit.Dialog" title="Attention"><div class="alerte">
 			Vous utilisez actuellement le navigateur Internet Explorer<span id="versionIE"></span>.<br/><br />
@@ -42,6 +43,15 @@
 			Pour une expérience plus complète, essayez <a href="http://www.mozilla.org/fr/firefox/">Mozilla Firefox</a> ou <a href="http://www.google.fr/chrome?hl=fr">Google Chrome</a> par exemple.<br /><br />
 			<input type="button" value="OK" label="OK" id="boutonAlerteIE" data-dojo-type="dijit.form.Button" />
 		</div></div>
+		
+		<!-- le 2nd widget Dialog est destiné aux navigateurs qui ne supportent pas socket.io -->
+		<div id="alerteConnexion" data-dojo-type="dijit.Dialog" title="ERREUR"><div class="alerte">
+			Désolé mais il est impossible de connecter votre navigateur à ETHER.<br/><br />
+			Si votre connection internet est bien active, c'est que votre navigateur n'est pas compatible avec Socket.io.<br /><br />
+			<a href="http://www.mozilla.org/fr/firefox/">Mozilla Firefox</a> ou <a href="http://www.google.fr/chrome?hl=fr">Google Chrome</a> sont par exemple deux navigateurs compatibles.<br /><br />
+			<input type="button" value="OK" label="OK" id="boutonAlerteConnexion" data-dojo-type="dijit.form.Button" />
+		</div></div>
+		
 		<img src="images/logo_ether.png" alt="logo Ether"/>
 		<h1 id="titre">Connexion à ETHER</h1>
 		<form id="formulaireConnexion" data-dojo-type="dijit.form.Form">
@@ -68,19 +78,30 @@
 			</table>
 			<input type="button" value="Se connecter" label="Se connecter" id="boutonConnexion" data-dojo-type="dijit.form.Button" />
 		</form>
-		<!-- le 2nd widget Dialog est destiné aux navigateurs qui ne supportent pas socket.io -->
-		<div id="alerteConnexion" data-dojo-type="dijit.Dialog" title="ERREUR"><div class="alerte">
-			Désolé mais il est impossible de connecter votre navigateur à ETHER.<br/><br />
-			Si votre connection internet est bien active, c'est que votre navigateur n'est pas compatible avec Socket.io.<br /><br />
-			<a href="http://www.mozilla.org/fr/firefox/">Mozilla Firefox</a> ou <a href="http://www.google.fr/chrome?hl=fr">Google Chrome</a> sont par exemple deux navigateurs compatibles.<br /><br />
-			<input type="button" value="OK" label="OK" id="boutonAlerteConnexion" data-dojo-type="dijit.form.Button" />
-		</div></div>
 	</div>
 	
 	<!-- page de l'application ETHER proprement dite : contient une barre de menu, le corps de l'application, et la barre contenant les cibles (en bas) -->
 	<div id="application" style="display: none;" data-dojo-type="dijit.layout.BorderContainer">
+	
+		<!-- le 3ème widget Dialog prévient de la perte des données lors de la déconnexion -->
+		<div id="alerteDeconnexion" data-dojo-type="dijit.Dialog" title="Déconnexion"><div class="alerte">
+			Etes-vous sûr de vouloir vous déconnecter ?<br /><br />
+			(Attention : toutes les données non sauvegardées seront perdues)<br /><br/>
+			<input type="button" value="Me déconnecter" label="Me déconnecter" id="boutonDeconnexionOK" data-dojo-type="dijit.form.Button" /><input type="button" value="Annuler" label="Annuler" id="boutonDeconnexionAnnuler" data-dojo-type="dijit.form.Button" />
+		</div></div>
+		
+		<!-- le 4ème widget Dialog prévient de la rupture de la connexion entre client et serveur, et invite le participant à se reconnecter -->
+		<div id="alerteRuptureConnexion" data-dojo-type="dijit.Dialog" title="Rupture de la connexion"><div class="alerte">
+			Vous n'êtes plus connecté au serveur car votre connection internet a été coupée ou une erreur s'est produite sur le serveur.<br /><br />
+			Nous sommes désolés pour ce désagrément et nous vous invitons donc à vous reconnecter à ETHER.<br />
+			(Attention, toutes vos données non sauvegardées seront perdues)<br/><br />
+			Si vous désirez vous reconnecter immédiatement, cliquez sur "Se reconnecter",<br />
+			sinon cliquez sur "Annuler" pour retourner sur l'application et sauvegarder vos données par exemple.<br/><br />
+			<input type="button" value="Me reconnecter" label="Me reconnecter" id="boutonReconnexionOK" data-dojo-type="dijit.form.Button" /><input type="button" value="Annuler" label="Annuler" id="boutonReconnexionAnnuler" data-dojo-type="dijit.form.Button" />
+		</div></div>
+		
 		<!-- début de la déclaration de la barre de menu, de ses onglets et des sous-menus associés, situé en haut de l'application (bien sur) -->
-		<div data-dojo-type="dijit.MenuBar" data-dojo-props="region:'top'">
+		<div id="applicationTop" data-dojo-type="dijit.MenuBar" data-dojo-props="region:'top'">
 			<div id="menuETHER" data-dojo-type="dijit.PopupMenuBarItem">
 				<span>ETHER</span>
 				<div data-dojo-type="dijit.DropDownMenu">
@@ -110,6 +131,7 @@
 							<div id="menuParametresATous" data-dojo-type="dijit.CheckedMenuItem" data-dojo-props="checked:true, disabled:true">Afficher l'envoi à tous</div>
 							<div id="menuParametresAuxAnimateurs" data-dojo-type="dijit.CheckedMenuItem" data-dojo-props="checked:true, disabled:true">Afficher l'envoi aux animateurs</div>
 							<div id="menuParametresAuxNonAnimateurs" data-dojo-type="dijit.CheckedMenuItem" data-dojo-props="checked:true, disabled:true">Afficher l'envoi aux participants</div>
+							<div id="menuParametresBarreMenu" data-dojo-type="dijit.CheckedMenuItem" data-dojo-props="checked:true">Afficher la barre de menu</div>
 						</div>
 					</div>
 					<div data-dojo-type="dijit.PopupMenuItem">
@@ -167,9 +189,11 @@
 		<div id="applicationCenterContainer" data-dojo-type="dijit.layout.BorderContainer" data-dojo-props="region:'center'">
 			<div id="applicationCenter" data-dojo-type="dijit.layout.ContentPane" data-dojo-props="region:'center'">
 				<img id="corbeille" class="ciblePrincipale" src="images/corbeille.png" alt="corbeille" />
-				<img id="envoiAuxAnimateurs" class="ciblePrincipale" src="images/envoiAuxAnimateurs.png" alt="envoiAuxAnimateurs" />
-				<img id="envoiAuxNonAnimateurs" class="ciblePrincipale" src="images/envoiAuxNonAnimateurs.png" alt="envoiAuxNonAnimateurs" />
-				<img id="envoiATous" class="ciblePrincipale" src="images/envoiATous.png" alt="envoiATous" />
+				<img id="envoiAuxAnimateurs" class="ciblePrincipale" src="images/envoiAuxAnimateurs.png" alt="envoi aux animateurs" />
+				<img id="envoiAuxNonAnimateurs" class="ciblePrincipale" src="images/envoiAuxNonAnimateurs.png" alt="envoi aux non-animateurs" />
+				<img id="envoiATous" class="ciblePrincipale" src="images/envoiATous.png" alt="envoi à tous" />
+				<img id="afficherMenu1" src="images/afficher_menu.png" alt="afficher le menu" />
+				<img id="afficherMenu2" src="images/afficher_menu.png" alt="afficher le menu" />
 			
 				<div id="divBienvenue">
 					<h3>Bienvenue dans ETHER !</h3>

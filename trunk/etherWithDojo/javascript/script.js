@@ -47,6 +47,8 @@ ether.manager={
 	SUPPRESSION_POSTIT: true,
 	//un compteur de post its envoyés
 	COMPTEUR: 0,
+	//un compteur d'erreur de connections au serveur
+	NB_ERREURS: 0,
 	
 	
 	
@@ -394,6 +396,7 @@ ether.manager={
 			if(k == -1) {
 			    k = listeDZ.length - 1;
 			}
+			listeDZ[k].reception();
 			var MBDZselect = dojo.position(listeDZ[k].node);
 			var MBapplicationCenterContainer = dojo.position(dojo.byId('applicationCenterContainer'));
 			dojo.style(ProtoPI, { top: (MBapplicationCenterContainer.h - dojo.position(ProtoPI.children[0]).h - 5) + "px", left: MBDZselect.x+"px"});
@@ -507,9 +510,10 @@ ether.manager={
 		if(topDefaut==0 || leftDefaut==0) {
 			marginBox=dojo.position(dojo.byId('uploadPhotos'));
 			dojo.style(node, { left: marginBox.x+"px",	top: 5-hauteur-100+"px" });
+			var id = dojo.attr(node, 'id')
 			fx.slideTo( { duration: 1000, node: node, easing: easing.quadOut, top: 5, left: marginBox.x, onEnd: function() { 
 				//on transforme notre noeud en post-it
-				PI = ether.postIt(dojo.attr(node, 'id'), {}, this, null);	
+				PI = ether.postIt(id, {}, ether.manager, null);	
 				ether.manager.PIList.push(PI);
 			} }).play();
 		} else {
@@ -559,7 +563,15 @@ ether.manager={
 			}
 			return msg_id;
 		} else {
+			this.addError();
 			return undefined;
+		}
+	},
+	
+	addError: function() {
+		this.NB_ERREURS++;
+		if(this.NB_ERREURS>3) {
+			dijit.byId('alerteRuptureConnexion').show();
 		}
 	}
 }
@@ -782,6 +794,7 @@ ether.manager={
 				}
 			}
 		} else {
+			ether.manager.addError();
 			dojo.addClass(dijit.byId('uploadPhotos').domNode, 'uploadPhotosErreur');
 			setTimeout("dojo.removeClass(dijit.byId('uploadPhotos').domNode, 'uploadPhotosErreur')", 2000);
 			if(ether.manager.POPUP) {
@@ -862,12 +875,12 @@ ether.manager={
 		dojo.setStyle(dojo.byId("champMotDePasse"), { display: "none" });
 	});
 	
-	//
+	//lorsque l'utilisateur clique sur le bouton "ok" de la boite de dialogue "internet explorer"
 	on(dijit.byId("boutonAlerteIE"), "click", function(event) {
 		dijit.byId('alerteIE').hide(); 
 	});
 	
-	//
+	//lorsque l'utilisateur clique sur le bouton "ok" de la boite de dialogue "impossible de se connecter"
 	on(dijit.byId("boutonAlerteConnexion"), "click", function(event) {
 		dijit.byId('alerteConnexion').hide();
 	});
@@ -999,27 +1012,45 @@ ether.manager={
 	    dijit.byId("menuParametresAuxNonAnimateurs").checked = ((p[5] == 'true') ? true : false);
 	    dijit.byId("menuParametresAuxNonAnimateurs")._applyAttributes();
 	  }
+	  //affichage de la barre de menu
+	  if(p[6] == 'false'){
+		dijit.byId("menuParametresBarreMenu").checked = false;
+		dijit.byId("menuParametresBarreMenu")._applyAttributes();
+	    domStyle.set(dojo.byId('afficherMenu1'), "display", "block");
+		domStyle.set(dojo.byId('afficherMenu2'), "display", "block");
+		domStyle.set(dojo.byId('applicationTop'), "display", "none");
+		dijit.byId('application').resize();
+	  } else {
+		dijit.byId("menuParametresBarreMenu").checked = true;
+		dijit.byId("menuParametresBarreMenu")._applyAttributes();
+		domStyle.set(dojo.byId('afficherMenu1'), "display", "none");
+		domStyle.set(dojo.byId('afficherMenu2'), "display", "none");
+		domStyle.set(dojo.byId('applicationTop'), "display", "");
+		dijit.byId('application').resize();
+	  }
 	  // affichage Popups
-	  dijit.byId("menuParametresPopup").checked = ((p[6] == 'true') ? true : false);
+	  dijit.byId("menuParametresPopup").checked = ((p[7] == 'true') ? true : false);
 	  dijit.byId("menuParametresPopup")._applyAttributes();
+	  ether.manager.POPUP= ((p[7] == 'true') ? true : false);
 	  // suppression ou non des pi
-	  dijit.byId("menuParametresSuppressionPostit").checked = ((p[7] == 'true') ? true : false);
+	  dijit.byId("menuParametresSuppressionPostit").checked = ((p[8] == 'true') ? true : false);
 	  dijit.byId("menuParametresSuppressionPostit")._applyAttributes();
+	  ether.manager.SUPPRESSION_POSTIT = ((p[8] == 'true') ? true : false);
 	  // on met à jours les l'affichage du menu et les différents éléments concernés(corbeille, etc)
 	  majParticipants();
 	  // couleurs d'édition
 	  //on affiche les couleurs par défaut de l'éditeur dans le menu "Paramètres / Couleurs des post-it"
-	  query(".couleur1").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", p[8]); });
-	  query(".couleur2").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", p[9]); });
-	  query(".couleur3").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", p[10]); });
-	  query(".couleur4").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", p[11]); });
-	  query(".couleur5").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", p[12]); });
+	  query(".couleur1").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", p[9]); });
+	  query(".couleur2").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", p[10]); });
+	  query(".couleur3").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", p[11]); });
+	  query(".couleur4").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", p[12]); });
+	  query(".couleur5").forEach(function(node, index, arr) { domStyle.set(node, "backgroundColor", p[13]); });
 	  // on remplace les couleurs dans l'éditeur
-	  editeurPI.statics.couleur1 = p[8];
-	  editeurPI.statics.couleur2 = p[9];
-	  editeurPI.statics.couleur3 = p[10];
-	  editeurPI.statics.couleur4 = p[11];
-	  editeurPI.statics.couleur5 = p[12];
+	  editeurPI.statics.couleur1 = p[9];
+	  editeurPI.statics.couleur2 = p[10];
+	  editeurPI.statics.couleur3 = p[11];
+	  editeurPI.statics.couleur4 = p[12];
+	  editeurPI.statics.couleur5 = p[13];
 	  // on change le 'connecté en tant que' avec le nouvel id
 		dojo.byId("moi").innerHTML = moi.prenom+" "+moi.nom+((moi.estAnimateur) ? "<br />(animateur)" : '');
 		// on indique aux autres clients de se mettre à jour
@@ -1031,6 +1062,8 @@ ether.manager={
 	  }
 	  // puis on PICount à 0
 	  ether.manager.PICount = 0;
+	  ether.manager.COMPTEUR = 0;
+	  ether.manager.NB_ERREURS = 0;
 	  // on ajoute les pi/groupes pi à la volée
 	  var PIlength = 0;
 	  var PIIMGlength = 0;
@@ -1137,18 +1170,20 @@ ether.manager={
 		// affichage Corbeille/Tous/Animateurs/NonAnimateurs
 		p.push(dijit.byId("menuParametresCorbeille").checked);
 		p.push(dijit.byId("menuParametresATous").checked);
-	  p.push(dijit.byId("menuParametresAuxAnimateurs").checked);
-	  p.push(dijit.byId("menuParametresAuxNonAnimateurs").checked);
-	  // affichage Popups
-	  p.push(dijit.byId("menuParametresPopup").checked);
-	  // suppression ou non des pi
-	  p.push(dijit.byId("menuParametresSuppressionPostit").checked);
-	  // couleurs d'édition
-	  p.push(editeurPI.statics.couleur1);
-	  p.push(editeurPI.statics.couleur2);
-	  p.push(editeurPI.statics.couleur3);
-	  p.push(editeurPI.statics.couleur4);
-	  p.push(editeurPI.statics.couleur5);
+	    p.push(dijit.byId("menuParametresAuxAnimateurs").checked);
+	    p.push(dijit.byId("menuParametresAuxNonAnimateurs").checked);
+	    //affichage barre de menu
+	    p.push(dijit.byId("menuParametresBarreMenu").checked);
+	    // affichage Popups
+	    p.push(dijit.byId("menuParametresPopup").checked);
+	    // suppression ou non des pi
+	    p.push(dijit.byId("menuParametresSuppressionPostit").checked);
+	    // couleurs d'édition
+	    p.push(editeurPI.statics.couleur1);
+	    p.push(editeurPI.statics.couleur2);
+	    p.push(editeurPI.statics.couleur3);
+	    p.push(editeurPI.statics.couleur4);
+	    p.push(editeurPI.statics.couleur5);
 		// on utilise un try/catch au cas où on aurait plus de place
 		try {
 			localStorage.setItem('id', p.join('|'));
@@ -1248,6 +1283,10 @@ ether.manager={
 		      temp = temp.next;
 		    }
 		  }
+		  if(ether.manager.POPUP) {
+			dijit.showTooltip('<img src="images/ok.png" /> Session sauvegardée !', 'menuETHER', ['below']);
+			setTimeout("dijit.hideTooltip('menuETHER')", 2000);
+		  }
 		});
 		socket.on('data encode response', function(i, j, url, data, ext){
 		  if(MA_CLE!=undefined) {
@@ -1280,15 +1319,24 @@ ether.manager={
 	//lors du click sur "déconnexion" :
 	dijit.byId("menuDeconnexion").onClick = function() {
 		//on demande confirmation
-		if(confirm("Etes-vous sûr de vouloir vous déconnecter ?\n(Attention : toutes les données non sauvegardées seront perdues)")) {
-			//on coupe la connexion avec le serveur (ça permet au serveur de prévenir tous les autres participants que l'on s'est déconnecté)
-			socket.disconnect();
-			//on masque l'application et on affiche la page de chargement initiale
-			changementPage("application", "chargement");
-			//après 2 secondes (le temps d'afficher complétement la page de chargement), on actualise la page pour réinitialiser complétement ETHER
-			setTimeout("location.reload()", 2000);
-		}
+		dijit.byId('alerteDeconnexion').show();
 	}
+	
+	//lorsque l'utilisateur clique sur le bouton "ok" de la boite de dialogue "etes vous sur de vous déconnecter"
+	on(dijit.byId("boutonDeconnexionOK"), "click", function(event) {
+		dijit.byId('alerteDeconnexion').hide();
+		//on coupe la connexion avec le serveur (ça permet au serveur de prévenir tous les autres participants que l'on s'est déconnecté)
+		socket.disconnect();
+		//on masque l'application et on affiche la page de chargement initiale
+		changementPage("application", "chargement");
+		//après 2 secondes (le temps d'afficher complétement la page de chargement), on actualise la page pour réinitialiser complétement ETHER
+		setTimeout("location.reload()", 2000);
+	});
+	
+	//lorsque l'utilisateur clique sur le bouton "annuler" de la boite de dialogue "etes vous sur de vous déconnecter"
+	on(dijit.byId("boutonDeconnexionAnnuler"), "click", function(event) {
+		dijit.byId('alerteDeconnexion').hide();
+	});
 	
 	//lors que l'on ferme le navigateur, on prévient le serveur de notre déconnexion (pour pouvoir le signaler à tous les autres participants)
 	unload.addOnUnload(window, function(){ socket.disconnect(); });
@@ -1413,6 +1461,14 @@ ether.manager={
 		domStyle.set(dojo.byId("envoiAuxNonAnimateurs"), "display", display);
 	}
 	
+	//lors du click sur "Afficher la barre de menu" :
+	dijit.byId("menuParametresBarreMenu").onChange = function(checked) {
+		domStyle.set(dojo.byId('afficherMenu1'), "display", "block");
+		domStyle.set(dojo.byId('afficherMenu2'), "display", "block");
+		domStyle.set(dojo.byId('applicationTop'), "display", "none");
+		dijit.byId('application').resize();
+	}
+	
 	//lors du click sur "Autoriser les pop-up d'information" :
 	dijit.byId("menuParametresPopup").onChange = function(checked) {
 		ether.manager.POPUP = checked;
@@ -1422,6 +1478,33 @@ ether.manager={
 	dijit.byId("menuParametresSuppressionPostit").onChange = function(checked) {
 		ether.manager.SUPPRESSION_POSTIT = checked;
 	}
+	
+	
+	
+	/* ---------------------------------------------------------------------------------------------
+	   --  on associe une fonction sur les flèches qui permettent de réafficher la barre de menu  --	
+	   --------------------------------------------------------------------------------------------- */
+	
+	//lors du click sur la flèche de gauche :
+	on(dojo.byId('afficherMenu1'), tap, function() {
+		dijit.byId("menuParametresBarreMenu").checked = true;
+		dijit.byId("menuParametresBarreMenu")._applyAttributes();
+		domStyle.set(dojo.byId('afficherMenu1'), "display", "none");
+		domStyle.set(dojo.byId('afficherMenu2'), "display", "none");
+		domStyle.set(dojo.byId('applicationTop'), "display", "");
+		dijit.byId('application').resize();
+	});
+	
+	//lors du click sur la flèche de droite :
+	on(dojo.byId('afficherMenu2'), tap, function() {
+		dijit.byId("menuParametresBarreMenu").checked = true;
+		dijit.byId("menuParametresBarreMenu")._applyAttributes();
+		domStyle.set(dojo.byId('afficherMenu1'), "display", "none");
+		domStyle.set(dojo.byId('afficherMenu2'), "display", "none");
+		domStyle.set(dojo.byId('applicationTop'), "display", "");
+		dijit.byId('application').resize();
+	});
+	
 	
 	
 	/* --------------------------------------------------------------------------------------------
@@ -1510,6 +1593,28 @@ ether.manager={
 	dojo.byId("application").addEventListener('dragover', handleDragOver, false);
 	//on prend en compte le "drop" des objets depuis le bureau partout au-dessus de l'application
 	dojo.byId("application").addEventListener('drop', handleFileSelect, false);
+	
+	
+	
+	/* ---------------------------------------------------------------------------------------------------------------------------------------------------------------
+	   --  en cas d'erreurs répétées, on suppose que l'on est déconnecté du serveur et l'on afficher une boite de diaogue à l'écran pour en informer l'utilisateur  --	
+	   --------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+	
+	//lorsque l'utilisateur clique sur le bouton "ok" de la boite de dialogue
+	on(dijit.byId("boutonReconnexionOK"), "click", function(event) {
+		dijit.byId('alerteRuptureConnexion').hide();
+		//on coupe la connexion avec le serveur (ça permet au serveur de prévenir tous les autres participants que l'on s'est déconnecté)
+		socket.disconnect();
+		//on masque l'application et on affiche la page de chargement initiale
+		changementPage("application", "chargement");
+		//après 2 secondes (le temps d'afficher complétement la page de chargement), on actualise la page pour réinitialiser complétement ETHER
+		setTimeout("location.reload()", 2000);
+	});
+	
+	//lorsque l'utilisateur clique sur le bouton "annuler" de la boite de dialogue
+	on(dijit.byId("boutonReconnexionAnnuler"), "click", function(event) {
+		dijit.byId('alerteRuptureConnexion').hide();
+	});
 });
 
 

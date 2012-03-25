@@ -213,15 +213,13 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 			
 		},
 		
-		envoiReussi : function()
-		{
+		envoiReussi: function() {
 			dojo.addClass(this.node,'cibleEnvoiReussi');
 			var id = dojo.attr(this.node, 'id');
 			setTimeout("dojo.removeClass(dojo.byId('"+id+"'), 'cibleEnvoiReussi')",2000);
 		},
 		
-		envoiEchoue : function()
-		{
+		envoiEchoue: function() {
 			dojo.addClass(this.node,'cibleEnvoiEchoue');
 			var id = dojo.attr(this.node, 'id');
 			setTimeout("dojo.removeClass(dojo.byId('"+id+"'), 'cibleEnvoiEchoue')",2000);
@@ -231,10 +229,14 @@ require(['dojo/_base/declare','dojo/dom-construct','dojo/dom-geometry','dojo/dnd
 			}
 		},
 		
-		hasClient:function(key)
-		{
+		reception: function () {
+			dojo.addClass(this.node,'cibleReception');
+			var id = dojo.attr(this.node, 'id');
+			setTimeout("dojo.removeClass(dojo.byId('"+id+"'), 'cibleReception')",2000);
+		},
+		
+		hasClient:function(key) {
 			return (dojo.indexOf(this.clientKeyList,key)!=-1);
 		}
-		
 	});
 });
