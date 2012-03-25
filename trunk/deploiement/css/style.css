@@ -1,0 +1,290 @@
+html, body, #application, #applicationContainer {
+	margin: 0px;
+	padding: 0px;
+	border: 0px;
+	font-family: arial;
+	overflow: hidden;
+	width: 100%;
+	height: 100%;
+}
+
+noscript p {
+	margin-left: 20px;
+}
+
+noscript p.rouge {
+	color: red;
+	font-weight: bold;
+}
+
+noscript a {
+	color: black;
+}
+
+noscript ol {
+	margin-left: 20px;
+}
+
+#chargement {
+	margin: 100px auto;
+	padding: 10px 30px;
+	text-align: center;
+	width: 100%;
+	position: absolute;
+}
+
+#chargement #progressbar {
+	width: 250px;
+	margin: auto;
+}
+
+#connexion {
+	text-align: center;
+}
+
+.alerte {
+	text-align: center;
+}
+
+.alerte a {
+	color: black;
+}
+
+#connexion #tableauConnexion {
+	margin: auto;
+}
+
+#applicationCenterContainer
+{
+	z-index:4;
+	overflow:visible;
+	background-color:transparent;
+}
+
+#applicationCenter {
+	overflow:visible;
+	z-index:4;
+	padding: 0px;
+	border: 0px;
+	background-color:transparent;
+}
+
+.uploadPhotosErreur .dijitButtonNode {
+	background-color: rgb(237,28,36) !important;
+}
+
+#applicationCenter #corbeille {
+	display: block;
+	float: left;
+}
+
+#applicationCenter #envoiAuxAnimateurs {
+	display: none;
+	float: right;
+}
+
+#applicationCenter #envoiAuxNonAnimateurs {
+	display: none;
+	float: right;
+}
+
+#applicationCenter #envoiATous {
+	display: none;
+	margin: auto;
+}
+
+#applicationCenter #afficherMenu1 {
+	display: none;
+	position: absolute;
+	top: -17px;
+	left: 250px;
+}
+
+#applicationCenter #afficherMenu1:hover {
+	top: 0px;
+	cursor: pointer;
+}
+
+#applicationCenter #afficherMenu2 {
+	display: none;
+	position: absolute;
+	top: -17px;
+	right: 250px;
+}
+
+#applicationCenter #afficherMenu2:hover {
+	top: 0px;
+	cursor: pointer;
+}
+
+#divBienvenue {
+	width: 400px;
+	margin: 100px auto;
+	padding: 0px;
+	border: none;
+}
+
+#divBienvenue h3 {
+	text-align: center;
+}
+
+#divBienvenue p {
+	text-align: justify;
+}
+
+div.carreCouleur {
+	height: 20px;
+	width: 20px;
+	float: left;
+	margin: 5px;
+	border: 1px rgb(181,188,199) solid;
+}
+
+div.carreCouleur:hover {
+	border: 1px rgb(117,157,192) solid;
+	cursor: pointer;
+}
+
+.contenuPI {
+	border: 1px rgb(181,188,199) solid;
+	text-align: center;
+	overflow: hidden;
+	box-shadow: 1px 1px 4px 0px #888888;
+}
+
+.contenuPI:hover {
+	border: 1px rgb(117,157,192) solid;
+	cursor: move;
+}
+
+div.resizeHandle {
+	height: 11px;
+	width: 11px;
+	background-image : url("../images/resize.png");
+	background-repeat: no-repeat;
+	cursor: se-resize;
+}
+
+#applicationBottom {
+	border: none;
+	padding: 0px;
+	background-color: transparent;
+}
+
+#applicationBottom table {
+	border-collapse: collapse;
+	border: none;
+	margin: auto;
+}
+
+#applicationBottom td {
+	
+	width: 100px;
+	height: 100px;
+	text-align:center;
+}
+#applicationBottom td.hover
+{	border: 2px rgb(181,188,199) solid;
+	
+}
+
+#applicationBottom div.groupe1 {
+	background-image: url("../images/participant.png");
+	background-repeat: no-repeat;
+}
+
+#applicationBottom div.groupe2 {
+	background-image: url("../images/groupe2.png");
+	background-repeat: no-repeat;
+}
+
+#applicationBottom div.groupe3 {
+	background-image: url("../images/groupe3.png");
+	background-repeat: no-repeat;
+}
+
+#applicationBottom div.dojoDndItemBefore {
+	border: none;
+	border-left: 2px black solid;
+}
+
+#applicationBottom div.dojoDndItemAfter {
+	border: none;
+	border-right: 2px black solid;
+}
+
+img.iconLoad {
+	background-image: url("../images/load.png");
+	width: 24px;
+	height: 24px;
+}
+
+img.iconSave {
+	background-image: url("../images/save.png");
+	width: 24px;
+	height: 24px;
+}
+
+img.iconLogout {
+	background-image: url("../images/logout.png");
+	width: 24px;
+	height: 24px;
+}
+
+img.couleur1, img.couleur2, img.couleur3, img.couleur4, img.couleur5 {
+	width: 24px;
+	height: 24px;
+	border: 1px solid lightgrey;
+}
+
+.ciblePrincipale:hover {
+	cursor: pointer;
+}
+
+.cibleHover {
+	background-color: rgb(153,217,237);
+}
+
+.cibleEnvoiReussi {
+	background-color: rgb(181,230,29);
+}
+
+.cibleEnvoiEchoue {
+	background-color: rgb(237,28,36);
+}
+
+.cibleReception {
+	background-color: rgb(153,217,237);
+}
+
+#DZBar {
+	height: 100px;
+	border:  2px rgb(181,188,199) solid;
+	overflow: visible;
+}
+
+.dijitBorderContainer, .dijitBorderContainerNoGutter {
+	overflow: visible;
+	z-index: 4;
+}
+
+#applicationTop_splitter, #applicationBottom_splitter, #DZBar_splitter {
+	display: none;
+}
+
+#applicationBottom {
+	overflow:visible;
+}
+
+.DropZone {
+	font-family: Arial;
+	cursor: move;
+}
+
+.DropZone.hover {
+	background-color: rgb(153,217,237);
+}
+
+.hidden {
+	display: none;
+}
