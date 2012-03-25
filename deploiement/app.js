@@ -88,7 +88,7 @@ app.use("/javascript", express.static(__dirname + '/javascript'));
 app.use("/images", express.static(__dirname + '/images'));
 app.use("/uploads", express.static(__dirname + '/uploads'));
 // le serveur écoute le port 490
-app.listen(490);
+app.listen(80);
 
 // lorsqu'un client se connecte on lui sert index.html via http
 app.get('/', function (req, res) {
