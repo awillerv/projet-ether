@@ -253,15 +253,12 @@ define(['dojo/_base/declare','dojo/query','dojo/dnd/autoscroll','ether/CibleEnvo
 			
 			toggleDisplay:function()
 			{
-				if(this.open)
-				{	
+				if(this.open) {	
 					this.hideBar();
-				}
-				else
-				{
-					
+				} else {	
 					this.manager.prepareAndShowDZBar(this, true);
 				}
+				this.open=!this.open;
 			},
 			
 			toggleDelete:function()
